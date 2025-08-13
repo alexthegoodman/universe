@@ -42,12 +42,28 @@ export interface AnimalPosition {
   rotation: number;
 }
 
+export interface InventoryItem {
+  id: string;
+  type: 'food' | 'water' | 'material' | 'tool';
+  name: string;
+  quantity: number;
+  quality: number; // 0-100
+  harvestedAt: number; // timestamp
+}
+
+export interface Inventory {
+  items: InventoryItem[];
+  maxCapacity: number;
+  currentWeight: number;
+}
+
 export interface Animal {
   id: string;
   name: string;
   dna: AnimalDNA;
   stats: AnimalStats;
   position: AnimalPosition;
+  inventory: Inventory;
   
   // Lifecycle
   birthTime: number; // timestamp
@@ -73,7 +89,8 @@ export type AnimalAction =
   | 'exploring'
   | 'socializing'
   | 'working'
-  | 'mating';
+  | 'mating'
+  | 'harvesting';
 
 export interface ActionResult {
   success: boolean;

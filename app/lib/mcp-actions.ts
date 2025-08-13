@@ -98,6 +98,8 @@ export class MCPActionSystem {
           return await this.executeSocialize(animal, parameters);
         case 'mating':
           return await this.executeMate(animal, parameters);
+        case 'harvesting':
+          return await this.executeHarvest(animal, parameters);
         default:
           return await this.executeIdle(animal, parameters);
       }
@@ -154,34 +156,86 @@ export class MCPActionSystem {
   }
   
   private async executeEat(animal: Animal, params: any): Promise<ActionResult> {
-    const { foodType = 'generic', quality = 1 } = params;
+    const { foodType = 'generic', quality = 1, useInventory = false } = params;
     
-    const hungerReduction = this.config.eat.hungerReduction * quality;
-    const energyGain = this.config.eat.energyGain * quality;
-    const healthGain = quality > 1 ? 5 : 2;
+    let actualQuality = quality;
+    let consumedItem = null;
+    
+    // Try to use food from inventory first
+    if (useInventory || animal.inventory.items.length > 0) {
+      const foodItem = animal.inventory.items.find(item => 
+        item.type === 'food' && item.quantity > 0
+      );
+      
+      if (foodItem) {
+        actualQuality = foodItem.quality / 100;
+        consumedItem = foodItem;
+        // This would be handled by the game manager to actually remove the item
+      } else if (useInventory) {
+        return {
+          success: false,
+          message: `${animal.name} has no food in their inventory`,
+          duration: 1000
+        };
+      }
+    }
+    
+    const hungerReduction = this.config.eat.hungerReduction * actualQuality;
+    const energyGain = this.config.eat.energyGain * actualQuality;
+    const healthGain = actualQuality > 1 ? 5 : 2;
+    
+    const sourceMessage = consumedItem 
+      ? `${consumedItem.name} from their inventory` 
+      : foodType;
     
     return {
       success: true,
-      message: `${animal.name} enjoyed eating ${foodType}`,
+      message: `${animal.name} enjoyed eating ${sourceMessage}`,
       statChanges: {
         hunger: Math.max(0, animal.stats.hunger - hungerReduction),
         energy: Math.min(100, animal.stats.energy + energyGain),
         health: Math.min(100, animal.stats.health + healthGain),
         happiness: Math.min(100, animal.stats.happiness + 5)
       },
-      duration: 5000 + (quality * 2000)
+      duration: 5000 + (actualQuality * 2000)
     };
   }
   
   private async executeDrink(animal: Animal, params: any): Promise<ActionResult> {
-    const { waterQuality = 1 } = params;
+    const { waterQuality = 1, useInventory = false } = params;
     
-    const thirstReduction = this.config.drink.thirstReduction * waterQuality;
-    const healthGain = this.config.drink.healthGain * waterQuality;
+    let actualQuality = waterQuality;
+    let consumedItem = null;
+    
+    // Try to use water from inventory first
+    if (useInventory || animal.inventory.items.length > 0) {
+      const waterItem = animal.inventory.items.find(item => 
+        item.type === 'water' && item.quantity > 0
+      );
+      
+      if (waterItem) {
+        actualQuality = waterItem.quality / 100;
+        consumedItem = waterItem;
+        // This would be handled by the game manager to actually remove the item
+      } else if (useInventory) {
+        return {
+          success: false,
+          message: `${animal.name} has no water in their inventory`,
+          duration: 1000
+        };
+      }
+    }
+    
+    const thirstReduction = this.config.drink.thirstReduction * actualQuality;
+    const healthGain = this.config.drink.healthGain * actualQuality;
+    
+    const sourceMessage = consumedItem 
+      ? 'from their stored water' 
+      : 'from a nearby source';
     
     return {
       success: true,
-      message: `${animal.name} quenched their thirst`,
+      message: `${animal.name} quenched their thirst ${sourceMessage}`,
       statChanges: {
         thirst: Math.max(0, animal.stats.thirst - thirstReduction),
         health: Math.min(100, animal.stats.health + healthGain)
@@ -380,6 +434,83 @@ export class MCPActionSystem {
     };
   }
   
+  private async executeHarvest(animal: Animal, params: any): Promise<ActionResult> {
+    const { resourceId, worldState } = params;
+    
+    if (!resourceId || !worldState) {
+      return {
+        success: false,
+        message: `${animal.name} couldn't find anything to harvest`,
+        duration: 2000
+      };
+    }
+    
+    // Find the resource
+    const resource = worldState.resources?.find((r: any) => r.id === resourceId);
+    if (!resource || !resource.harvestable || resource.quantity <= 0) {
+      return {
+        success: false,
+        message: `${animal.name} couldn't harvest this resource`,
+        duration: 2000
+      };
+    }
+    
+    // Check if animal is close enough to the resource
+    const distance = Math.sqrt(
+      Math.pow(resource.position.x - animal.position.x, 2) + 
+      Math.pow(resource.position.z - animal.position.z, 2)
+    );
+    
+    if (distance > 3) {
+      return {
+        success: false,
+        message: `${animal.name} is too far from the resource to harvest it`,
+        duration: 1000
+      };
+    }
+    
+    // Calculate success based on animal traits
+    const strengthMultiplier = animal.dna.strength / 100;
+    const intelligenceMultiplier = animal.dna.intelligence / 100;
+    const effectiveness = (strengthMultiplier + intelligenceMultiplier) / 2;
+    
+    const energyCost = 15 + (resource.type === 'stone' ? 10 : 0); // Stone is harder to harvest
+    
+    if (animal.stats.energy < energyCost) {
+      return {
+        success: false,
+        message: `${animal.name} is too tired to harvest`,
+        duration: 1000
+      };
+    }
+    
+    // Calculate harvest amount
+    const baseAmount = Math.floor(1 + effectiveness * 2);
+    const harvestAmount = Math.min(baseAmount, resource.quantity);
+    
+    // Check inventory capacity
+    const currentWeight = animal.inventory.currentWeight;
+    const itemWeight = harvestAmount * (resource.type === 'stone' ? 3 : resource.type === 'wood' ? 2 : 1);
+    
+    if (currentWeight + itemWeight > animal.inventory.maxCapacity) {
+      return {
+        success: false,
+        message: `${animal.name}'s inventory is too full to carry more`,
+        duration: 1000
+      };
+    }
+    
+    return {
+      success: true,
+      message: `${animal.name} harvested ${harvestAmount} ${resource.type} with ${Math.round(effectiveness * 100)}% efficiency`,
+      statChanges: {
+        energy: Math.max(0, animal.stats.energy - energyCost),
+        happiness: Math.min(100, animal.stats.happiness + 5)
+      },
+      duration: 3000 + (harvestAmount * 1000)
+    };
+  }
+
   private async executeIdle(animal: Animal, params: any): Promise<ActionResult> {
     return {
       success: true,

@@ -105,6 +105,27 @@ export default function AnimalInfo({ animal, onClose }: AnimalInfoProps) {
           </div>
         </div>
         
+        <div>
+          <div className="font-semibold mb-1">Inventory ({animal.inventory.currentWeight}/{animal.inventory.maxCapacity})</div>
+          <div className="text-sm max-h-24 overflow-y-auto">
+            {animal.inventory.items.length === 0 ? (
+              <div className="text-gray-500 italic">Empty</div>
+            ) : (
+              <div className="space-y-1">
+                {animal.inventory.items.map((item, index) => (
+                  <div key={index} className="flex justify-between items-center p-1 bg-gray-100 rounded text-xs">
+                    <span className="capitalize">{item.name}</span>
+                    <div className="flex gap-2 text-gray-600">
+                      <span>×{item.quantity}</span>
+                      <span>Q{item.quality}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
         {animal.dna.parentIds && (
           <div>
             <span className="font-semibold">Parents:</span> {animal.dna.parentIds.join(', ')}

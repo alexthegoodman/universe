@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import type { Animal, AnimalStats, AnimalPosition } from '../types/animal';
+import type { Animal, AnimalStats, AnimalPosition, Inventory } from '../types/animal';
 import { DNASystem } from './dna-system';
 
 export class AnimalLifecycle {
@@ -22,6 +22,7 @@ export class AnimalLifecycle {
       dna,
       stats: this.generateInitialStats(dna),
       position,
+      inventory: this.generateInitialInventory(dna),
       birthTime: now,
       lifespan,
       age: 0,
@@ -50,6 +51,20 @@ export class AnimalLifecycle {
       energy: Math.max(20, Math.min(100, base + (dna.strength - 50) * 0.2 + (Math.random() - 0.5) * variation)),
       happiness: Math.max(20, Math.min(100, base + (dna.social - 50) * 0.3 + (Math.random() - 0.5) * variation)),
       thirst: Math.max(0, Math.min(80, 20 + Math.random() * 20)), // Start somewhat thirsty
+    };
+  }
+
+  static generateInitialInventory(dna: any): Inventory {
+    // Inventory capacity based on strength (bigger/stronger animals can carry more)
+    const baseCapacity = 20;
+    const strengthMultiplier = dna.strength / 100;
+    const sizeMultiplier = dna.size;
+    const maxCapacity = Math.floor(baseCapacity * strengthMultiplier * sizeMultiplier);
+    
+    return {
+      items: [], // Start with empty inventory
+      maxCapacity: Math.max(5, maxCapacity), // Minimum capacity of 5
+      currentWeight: 0
     };
   }
   
