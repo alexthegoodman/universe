@@ -9,7 +9,7 @@ import { AnimalLifecycle } from "./animal-lifecycle";
 import { AnimalAI } from "./animal-ai";
 import { MXPActionSystem } from "./mxp-actions";
 import { animalStateManager } from "./animal-state-manager";
-import { ExplorationSystem } from "./exploration-system";
+import { explorationSystem, ExplorationSystem } from "./exploration-system";
 
 export const HARVEST_RADIUS = 6; // Animals can harvest within 6 units
 
@@ -40,7 +40,7 @@ export class HealthMonitor {
 
   constructor() {
     this.actionSystem = new MXPActionSystem();
-    this.explorationSystem = new ExplorationSystem();
+    this.explorationSystem = explorationSystem;
   }
 
   setGameManagerReference(gameManager: any): void {
@@ -567,9 +567,23 @@ export class HealthMonitor {
       SIGHT_RADIUS
     );
 
+    console.info("memories", this.explorationSystem.memories);
+
+    if (memories.length > 0) {
+      console.log(
+        `🧠 ${animal.name} has ${memories.length} relevant memories nearby`
+      );
+    } else {
+      console.log(`🧠 ${animal.name} has no relevant memories nearby`);
+    }
+
     // Separate failure memories for easier AI processing
-    const failureMemories = memories.filter(m => m.discoveryType === 'failure');
-    const discoveryMemories = memories.filter(m => m.discoveryType !== 'failure');
+    const failureMemories = memories.filter(
+      (m) => m.discoveryType === "failure"
+    );
+    const discoveryMemories = memories.filter(
+      (m) => m.discoveryType !== "failure"
+    );
 
     return {
       myPosition: animal.position,
@@ -580,21 +594,21 @@ export class HealthMonitor {
       environment,
       resourceSummary,
       memories: {
-        recentFailures: failureMemories.map(m => ({
-          action: m.description.split(':')[0].replace('Failed to ', ''),
-          reason: m.description.split(': ')[1] || m.description,
+        recentFailures: failureMemories.map((m) => ({
+          action: m.description.split(":")[0].replace("Failed to ", ""),
+          reason: m.description.split(": ")[1] || m.description,
           position: m.position,
           timestamp: m.timestamp,
-          reliability: m.reliability
+          reliability: m.reliability,
         })),
-        discoveries: discoveryMemories.map(m => ({
+        discoveries: discoveryMemories.map((m) => ({
           type: m.discoveryType,
           description: m.description,
           position: m.position,
           timestamp: m.timestamp,
-          reliability: m.reliability
-        }))
-      }
+          reliability: m.reliability,
+        })),
+      },
     };
   }
 

@@ -3,7 +3,7 @@ import type { ExplorationMemory, ExplorationGoal } from "../types/exploration";
 import { v4 as uuidv4 } from "uuid";
 
 export class ExplorationSystem {
-  private memories: Map<string, ExplorationMemory[]> = new Map();
+  public memories: Map<string, ExplorationMemory[]> = new Map();
   private explorationGoals: Map<string, ExplorationGoal[]> = new Map();
 
   // Calculate sight radius based on animal traits
@@ -265,23 +265,25 @@ export class ExplorationSystem {
   ): ExplorationMemory[] {
     const allMemories = this.memories.get(animalId) || [];
 
-    return allMemories
-      .filter(
-        (memory) =>
-          this.calculateDistance(memory.position, currentPosition) <=
-          maxDistance
-      )
-      .filter((memory) => memory.reliability > 0.3) // Only reasonably reliable memories
-      .sort((a, b) => {
-        const distanceA = this.calculateDistance(a.position, currentPosition);
-        const distanceB = this.calculateDistance(b.position, currentPosition);
-        const recencyA = Date.now() - a.lastVisited;
-        const recencyB = Date.now() - b.lastVisited;
+    return (
+      allMemories
+        // .filter(
+        //   (memory) =>
+        //     this.calculateDistance(memory.position, currentPosition) <=
+        //     maxDistance
+        // )
+        // .filter((memory) => memory.reliability > 0.3) // Only reasonably reliable memories
+        .sort((a, b) => {
+          const distanceA = this.calculateDistance(a.position, currentPosition);
+          const distanceB = this.calculateDistance(b.position, currentPosition);
+          const recencyA = Date.now() - a.lastVisited;
+          const recencyB = Date.now() - b.lastVisited;
 
-        // Balance distance and recency
-        return distanceA + recencyA / 10000 - (distanceB + recencyB / 10000);
-      })
-      .slice(0, 10); // Limit to top 10 most relevant
+          // Balance distance and recency
+          return distanceA + recencyA / 10000 - (distanceB + recencyB / 10000);
+        })
+        .slice(0, 10)
+    ); // Limit to top 10 most relevant
   }
 
   // Helper methods
@@ -411,3 +413,5 @@ export class ExplorationSystem {
     this.memories.set(animalId, cleanedMemories);
   }
 }
+
+export const explorationSystem = new ExplorationSystem();

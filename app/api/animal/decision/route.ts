@@ -32,8 +32,8 @@ export async function POST(request: NextRequest) {
       temperature: 0.7,
       openAIApiKey: apiKey,
       modelKwargs: {
-        response_format: { type: "json_object" }
-      }
+        response_format: { type: "json_object" },
+      },
     });
 
     const prompt = ChatPromptTemplate.fromTemplate(`
@@ -70,6 +70,8 @@ World State:
 {worldState}
 
 Based on your traits, current needs, and the world around you, what should you do next?
+
+Please consider your recent failures so you don't repeat mistakes.
 
 Available actions: idle, moving, eating, drinking, sleeping, playing, exploring, socializing, working, mating, harvesting
 
@@ -163,7 +165,7 @@ ${animal.inventory.items
   )
   .join("\n")}`;
 
-    const response = await chain.invoke({
+    const promptVariables = {
       name: animal.name,
       intelligence: animal.dna.intelligence,
       agility: animal.dna.agility,
@@ -185,9 +187,20 @@ ${animal.inventory.items
       inventory: inventoryDescription,
       sightRadius: worldState.sightRadius,
       harvestRadius: worldState.harvestRadius,
-      currentPosition: `x:${animal.position.x.toFixed(1)} z:${animal.position.z.toFixed(1)}`,
+      currentPosition: `x:${animal.position.x.toFixed(
+        1
+      )} z:${animal.position.z.toFixed(1)}`,
       worldState: JSON.stringify(worldState, null, 2),
-    });
+    };
+
+    // Log the full prompt with variables merged
+    const formattedPrompt = await prompt.format(promptVariables);
+    console.log(`🔍 Full AI Prompt for ${animal.name}:`, formattedPrompt);
+
+    const response = await chain.invoke(promptVariables);
+
+    // Log the full AI response
+    console.log(`🤖 AI Response for ${animal.name}:`, response);
 
     // Parse JSON response
     let parsedResponse;
@@ -197,10 +210,22 @@ ${animal.inventory.items
       console.error("Failed to parse AI JSON response:", response);
       // Fallback: try to extract action from response text
       const validActions = [
-        "moving", "eating", "drinking", "sleeping", "playing", 
-        "exploring", "socializing", "working", "mating", "harvesting", "idle"
+        "moving",
+        "eating",
+        "drinking",
+        "sleeping",
+        "playing",
+        "exploring",
+        "socializing",
+        "working",
+        "mating",
+        "harvesting",
+        "idle",
       ];
-      const action = validActions.find(action => response.toLowerCase().includes(action)) || "idle";
+      const action =
+        validActions.find((action) =>
+          response.toLowerCase().includes(action)
+        ) || "idle";
       return NextResponse.json({ action });
     }
 
@@ -209,8 +234,17 @@ ${animal.inventory.items
 
     // Validate action
     const validActions = [
-      "moving", "eating", "drinking", "sleeping", "playing", 
-      "exploring", "socializing", "working", "mating", "harvesting", "idle"
+      "moving",
+      "eating",
+      "drinking",
+      "sleeping",
+      "playing",
+      "exploring",
+      "socializing",
+      "working",
+      "mating",
+      "harvesting",
+      "idle",
     ];
 
     const finalAction = validActions.includes(action) ? action : "idle";
@@ -219,36 +253,39 @@ ${animal.inventory.items
     if (finalAction === "exploring" && parsedResponse.target) {
       const targetX = parseFloat(parsedResponse.target.x);
       const targetZ = parseFloat(parsedResponse.target.z);
-      
+
       if (!isNaN(targetX) && !isNaN(targetZ)) {
         // Validate coordinates are within 20 units of current position
         const distance = Math.sqrt(
-          Math.pow(targetX - animal.position.x, 2) + 
-          Math.pow(targetZ - animal.position.z, 2)
+          Math.pow(targetX - animal.position.x, 2) +
+            Math.pow(targetZ - animal.position.z, 2)
         );
-        
+
         if (distance <= 20) {
           explorationTarget = { x: targetX, z: targetZ };
         } else {
           // Limit to 20 units in the direction of the target
-          const angle = Math.atan2(targetZ - animal.position.z, targetX - animal.position.x);
+          const angle = Math.atan2(
+            targetZ - animal.position.z,
+            targetX - animal.position.x
+          );
           explorationTarget = {
             x: animal.position.x + Math.cos(angle) * 20,
-            z: animal.position.z + Math.sin(angle) * 20
+            z: animal.position.z + Math.sin(angle) * 20,
           };
         }
       }
     }
 
-    const result: any = { 
+    const result: any = {
       action: finalAction,
-      reasoning: parsedResponse.reasoning || "No reasoning provided"
+      reasoning: parsedResponse.reasoning || "No reasoning provided",
     };
-    
+
     if (finalAction === "exploring" && explorationTarget) {
       result.explorationTarget = explorationTarget;
     }
-    
+
     if (finalAction === "harvesting" && parsedResponse.resourceId) {
       result.resourceId = parsedResponse.resourceId;
     }
