@@ -3,6 +3,7 @@ import { AnimalLifecycle } from './animal-lifecycle';
 import { HealthMonitor } from './health-monitor';
 import { DNASystem } from './dna-system';
 import { BreedingSystem } from './breeding-system';
+import { animalStateManager } from './animal-state-manager';
 
 export interface GameConfig {
   maxAnimals: number;
@@ -59,8 +60,14 @@ export class GameManager {
     };
     
     this.healthMonitor = new HealthMonitor();
+    this.healthMonitor.setGameManagerReference(this);
     this.breedingSystem = new BreedingSystem();
     this.worldState = this.initializeWorld();
+    
+    // Subscribe to animal state updates to keep world state in sync
+    animalStateManager.subscribe('game-manager', (update) => {
+      this.handleAnimalStateUpdate(update);
+    });
     
     if (this.config.enableWebSocket) {
       this.setupWebSocketServer();
@@ -84,52 +91,64 @@ export class GameManager {
   private generateInitialResources(): WorldResource[] {
     const resources: WorldResource[] = [];
     const { width, depth } = this.config.worldSize;
+    const existingPositions: Array<{ x: number; z: number }> = [];
+    const minDistance = 15; // Minimum distance between resources
     
-    // Generate food sources (non-harvestable, direct consumption)
-    for (let i = 0; i < 20; i++) {
+    // Helper function to ensure minimum spacing between resources
+    const getValidPosition = (): { x: number; y: number; z: number } => {
+      let attempts = 0;
+      let position: { x: number; z: number };
+      
+      do {
+        position = {
+          x: (Math.random() - 0.5) * width * 0.8, // Keep within 80% of world bounds
+          z: (Math.random() - 0.5) * depth * 0.8
+        };
+        attempts++;
+      } while (
+        attempts < 50 && 
+        existingPositions.some(existing => 
+          Math.sqrt(Math.pow(existing.x - position.x, 2) + Math.pow(existing.z - position.z, 2)) < minDistance
+        )
+      );
+      
+      existingPositions.push(position);
+      return { x: position.x, y: 0, z: position.z };
+    };
+
+    // Generate fewer, spaced-out food sources (now harvestable)
+    for (let i = 0; i < 8; i++) {
       resources.push({
         id: `food_${i}`,
         type: 'food' as const,
-        position: {
-          x: (Math.random() - 0.5) * width,
-          y: 0,
-          z: (Math.random() - 0.5) * depth
-        },
-        quantity: 50 + Math.random() * 100,
-        harvestable: false,
+        position: getValidPosition(),
+        quantity: 20 + Math.random() * 30, // Reduced quantity
+        harvestable: true, // Now harvestable
         regeneratesOverTime: true,
         quality: 40 + Math.random() * 40
       });
     }
     
-    // Generate water sources (non-harvestable, direct consumption)
-    for (let i = 0; i < 10; i++) {
+    // Generate fewer, spaced-out water sources (now harvestable)
+    for (let i = 0; i < 5; i++) {
       resources.push({
         id: `water_${i}`,
         type: 'water' as const,
-        position: {
-          x: (Math.random() - 0.5) * width,
-          y: 0,
-          z: (Math.random() - 0.5) * depth
-        },
-        quantity: 200 + Math.random() * 300,
-        harvestable: false,
+        position: getValidPosition(),
+        quantity: 30 + Math.random() * 50, // Much reduced quantity
+        harvestable: true, // Now harvestable
         regeneratesOverTime: true,
         quality: 60 + Math.random() * 40
       });
     }
     
     // Generate berry bushes (harvestable food)
-    for (let i = 0; i < 15; i++) {
+    for (let i = 0; i < 10; i++) {
       resources.push({
         id: `berries_${i}`,
         type: 'berries' as const,
-        position: {
-          x: (Math.random() - 0.5) * width,
-          y: 0,
-          z: (Math.random() - 0.5) * depth
-        },
-        quantity: 10 + Math.random() * 30,
+        position: getValidPosition(),
+        quantity: 8 + Math.random() * 15, // Reduced quantity
         harvestable: true,
         regeneratesOverTime: true,
         quality: 50 + Math.random() * 50
@@ -137,16 +156,12 @@ export class GameManager {
     }
     
     // Generate wood sources (harvestable material)
-    for (let i = 0; i < 12; i++) {
+    for (let i = 0; i < 8; i++) {
       resources.push({
         id: `wood_${i}`,
         type: 'wood' as const,
-        position: {
-          x: (Math.random() - 0.5) * width,
-          y: 0,
-          z: (Math.random() - 0.5) * depth
-        },
-        quantity: 20 + Math.random() * 50,
+        position: getValidPosition(),
+        quantity: 15 + Math.random() * 25, // Reduced quantity
         harvestable: true,
         regeneratesOverTime: false,
         quality: 30 + Math.random() * 70
@@ -154,16 +169,12 @@ export class GameManager {
     }
     
     // Generate stone sources (harvestable material)
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 6; i++) {
       resources.push({
         id: `stone_${i}`,
         type: 'stone' as const,
-        position: {
-          x: (Math.random() - 0.5) * width,
-          y: 0,
-          z: (Math.random() - 0.5) * depth
-        },
-        quantity: 30 + Math.random() * 70,
+        position: getValidPosition(),
+        quantity: 20 + Math.random() * 40, // Reduced quantity
         harvestable: true,
         regeneratesOverTime: false,
         quality: 40 + Math.random() * 60
@@ -171,15 +182,11 @@ export class GameManager {
     }
     
     // Generate shelter locations
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 4; i++) {
       resources.push({
         id: `shelter_${i}`,
         type: 'shelter' as const,
-        position: {
-          x: (Math.random() - 0.5) * width,
-          y: 0,
-          z: (Math.random() - 0.5) * depth
-        },
+        position: getValidPosition(),
         quantity: 1,
         harvestable: false,
         regeneratesOverTime: false,
@@ -190,6 +197,37 @@ export class GameManager {
     return resources;
   }
   
+  private handleAnimalStateUpdate(update: any): void {
+    const animalIndex = this.worldState.animals.findIndex(a => a.id === update.animalId);
+    
+    if (update.type === 'full') {
+      if (animalIndex >= 0 && Object.keys(update.data).length === 0) {
+        // Animal removed
+        this.worldState.animals.splice(animalIndex, 1);
+      } else if (animalIndex >= 0) {
+        // Animal updated
+        this.worldState.animals[animalIndex] = { ...update.data as Animal };
+      } else if (Object.keys(update.data).length > 0) {
+        // New animal added
+        this.worldState.animals.push(update.data as Animal);
+      }
+    } else if (animalIndex >= 0) {
+      // Partial update
+      this.worldState.animals[animalIndex] = {
+        ...this.worldState.animals[animalIndex],
+        ...update.data
+      };
+    }
+    
+    // Broadcast position updates to WebSocket clients
+    if (this.websocketServer && (update.type === 'position' || update.type === 'action')) {
+      const animal = animalStateManager.getAnimal(update.animalId);
+      if (animal) {
+        this.websocketServer.updateAnimal(animal);
+      }
+    }
+  }
+
   private setupWebSocketServer() {
     try {
       // Dynamic import for server-side WebSocket
@@ -243,7 +281,7 @@ export class GameManager {
   }
   
   async spawnRandomAnimal(): Promise<Animal | null> {
-    if (this.worldState.animals.length >= this.config.maxAnimals) {
+    if (animalStateManager.getAllAnimals().length >= this.config.maxAnimals) {
       console.log('Maximum animal capacity reached');
       return null;
     }
@@ -253,10 +291,7 @@ export class GameManager {
     
     const animal = AnimalLifecycle.createAnimal(name, position);
     
-    // Add to world state
-    this.worldState.animals.push(animal);
-    
-    // Register with health monitor
+    // Register with health monitor (which will add to state manager)
     this.healthMonitor.addAnimal(animal);
     
     // Broadcast to clients

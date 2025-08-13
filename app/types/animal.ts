@@ -44,7 +44,7 @@ export interface AnimalPosition {
 
 export interface InventoryItem {
   id: string;
-  type: 'food' | 'water' | 'material' | 'tool';
+  type: 'food' | 'water' | 'material' | 'tool' | 'stone' | 'wood' | 'berries';
   name: string;
   quantity: number;
   quality: number; // 0-100
@@ -98,4 +98,50 @@ export interface ActionResult {
   statChanges?: Partial<AnimalStats>;
   newPosition?: AnimalPosition;
   duration?: number; // milliseconds
+  consumedItem?: InventoryItem; // Item that was consumed during eating/drinking actions
+  harvestedItem?: InventoryItem; // Item that was harvested during harvesting actions
+  resourceId?: string; // ID of the resource that was harvested from
+}
+
+// Sight-based system interfaces
+export interface NearbyResource {
+  id: string;
+  type: string;
+  distance: number; // Rounded to 1 decimal place
+  quantity: number;
+  quality: number;
+  harvestable: boolean;
+  canHarvestNow: boolean; // Within harvest radius and available
+  tooFarToHarvest: boolean; // Visible but too far to harvest
+  direction: 'north' | 'south' | 'east' | 'west';
+}
+
+export interface NearbyAnimal {
+  id: string;
+  name: string;
+  position: AnimalPosition;
+  currentAction: string;
+  age: number;
+  distance: number; // Rounded to 1 decimal place
+}
+
+export interface ResourceSummary {
+  foodSources: number; // Count of nearby food sources
+  waterSources: number; // Count of nearby water sources  
+  canHarvestNow: NearbyResource[]; // Resources ready to harvest
+  needToMoveCloserTo: NearbyResource[]; // Resources visible but too far
+}
+
+export interface SightBasedWorldState {
+  myPosition: AnimalPosition;
+  sightRadius: number;
+  harvestRadius: number;
+  nearbyAnimals: NearbyAnimal[];
+  nearbyResources: NearbyResource[];
+  environment: {
+    timeOfDay: string;
+    weather: string;
+    temperature: number;
+  };
+  resourceSummary: ResourceSummary;
 }

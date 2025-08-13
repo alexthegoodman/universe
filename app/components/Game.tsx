@@ -5,15 +5,19 @@ import { OrbitControls, Grid, Environment } from '@react-three/drei'
 import { Suspense, useEffect, useState, useCallback } from 'react'
 import { GameManager } from '../lib/game-manager'
 import type { Animal } from '../types/animal'
+import type { WorldResource } from '../lib/game-manager'
 import Animal3D from './Animal3D'
 import AnimalInfo from './AnimalInfo'
+import { Resource3D } from './Resource3D'
 
 interface SceneProps {
   animals: Animal[]
+  resources: WorldResource[]
   onAnimalClick: (animal: Animal) => void
+  onResourceClick?: (resource: WorldResource) => void
 }
 
-function Scene({ animals, onAnimalClick }: SceneProps) {
+function Scene({ animals, resources, onAnimalClick, onResourceClick }: SceneProps) {
   return (
     <>
       {/* Lighting */}
@@ -48,15 +52,14 @@ function Scene({ animals, onAnimalClick }: SceneProps) {
         />
       ))}
       
-      {/* World resources placeholder */}
-      <mesh position={[10, 1, 10]}>
-        <boxGeometry args={[2, 2, 2]} />
-        <meshStandardMaterial color="#10b981" />
-      </mesh>
-      <mesh position={[-10, 1, -10]}>
-        <cylinderGeometry args={[1, 1, 2]} />
-        <meshStandardMaterial color="#3b82f6" />
-      </mesh>
+      {/* World Resources */}
+      {resources.map(resource => (
+        <Resource3D
+          key={resource.id}
+          resource={resource}
+          onClick={onResourceClick}
+        />
+      ))}
     </>
   )
 }
@@ -64,6 +67,7 @@ function Scene({ animals, onAnimalClick }: SceneProps) {
 export default function Game() {
   const [gameManager, setGameManager] = useState<GameManager | null>(null)
   const [animals, setAnimals] = useState<Animal[]>([])
+  const [resources, setResources] = useState<WorldResource[]>([])
   const [selectedAnimal, setSelectedAnimal] = useState<Animal | null>(null)
   const [gameStarted, setGameStarted] = useState(false)
   
@@ -88,10 +92,13 @@ export default function Game() {
       await gameManager.startGame()
       setGameStarted(true)
       
-      // Update animals periodically
+      // Update animals and resources periodically
       const interval = setInterval(() => {
         const currentAnimals = gameManager.getAllAnimals()
+        const worldState = gameManager.getWorldState()
+        
         setAnimals([...currentAnimals])
+        setResources([...worldState.resources])
         
         // Update selected animal if it still exists
         if (selectedAnimal) {
@@ -126,7 +133,7 @@ export default function Game() {
     <div className="w-full h-screen relative">
       <Canvas camera={{ position: [15, 15, 15], fov: 50 }}>
         <Suspense fallback={null}>
-          <Scene animals={animals} onAnimalClick={handleAnimalClick} />
+          <Scene animals={animals} resources={resources} onAnimalClick={handleAnimalClick} />
           <OrbitControls
             enablePan={true}
             enableZoom={true}
@@ -153,6 +160,8 @@ export default function Game() {
               <div className="text-sm">
                 <div>Animals: {animals.length}</div>
                 <div>Alive: {animals.filter(a => a.isAlive).length}</div>
+                <div>Food Sources: {resources.filter(r => r.type === 'food' || r.type === 'berries').length}</div>
+                <div>Water Sources: {resources.filter(r => r.type === 'water').length}</div>
               </div>
             </div>
             <button
@@ -172,9 +181,9 @@ export default function Game() {
       <div className="absolute bottom-4 left-4 bg-black/70 text-white p-3 rounded-lg text-sm max-w-sm">
         <div className="font-semibold mb-1">Instructions:</div>
         <div>• Click an animal to see its details</div>
-        <div>• Animals live 1-24 hours and breed automatically</div>
-        <div>• Each animal has AI-powered behavior</div>
-        <div>• Watch them evolve and interact!</div>
+        <div>• Animals must harvest resources to survive</div>
+        <div>• Green spheres = food, Blue cylinders = water</div>
+        <div>• Animals need inventory items to eat/drink</div>
       </div>
     </div>
   )
