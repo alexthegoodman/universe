@@ -82,7 +82,7 @@ IMPORTANT SURVIVAL RULES:
 - Resources marked as "tooFarToHarvest: true" need you to move closer first
 - Only choose "eating" if you have food/berries in inventory
 - Only choose "drinking" if you have water in inventory
-- Choose "harvesting" when you see canHarvestNow resources and need them
+- Choose "harvesting" when you see canHarvestNow resources and need them (specify which resource by ID)
 - Choose "exploring" to search for resources when you can't see any suitable ones
 - Use resourceSummary to quickly understand what's available nearby
 
@@ -112,6 +112,13 @@ For non-exploration actions, omit the "target" field:
 {{
   "action": "eating",
   "reasoning": "I'm hungry and have food in inventory"
+}}
+
+For harvesting actions, include the resourceId:
+{{
+  "action": "harvesting",
+  "resourceId": "resource_12345",
+  "reasoning": "I need water and there's a water source I can harvest now"
 }}
 
 For exploration actions, include target coordinates (must be within 20 units):
@@ -233,6 +240,10 @@ ${animal.inventory.items
     
     if (finalAction === "exploring" && explorationTarget) {
       result.explorationTarget = explorationTarget;
+    }
+    
+    if (finalAction === "harvesting" && parsedResponse.resourceId) {
+      result.resourceId = parsedResponse.resourceId;
     }
 
     return NextResponse.json(result);

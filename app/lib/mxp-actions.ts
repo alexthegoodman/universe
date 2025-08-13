@@ -3,8 +3,10 @@ import type {
   AnimalAction,
   ActionResult,
   AnimalPosition,
+  NearbyResource,
 } from "../types/animal";
 import { ExplorationSystem } from "./exploration-system";
+import { HARVEST_RADIUS } from "./health-monitor";
 
 export interface MXPAction {
   name: string;
@@ -409,7 +411,11 @@ export class MXPActionSystem {
 
         // Store in memory
         this.explorationSystem.addMemory(animal.id, {
-          position: { x: resource.position?.x || 0, y: 0, z: resource.position?.z || 0 },
+          position: {
+            x: resource.position?.x || 0,
+            y: 0,
+            z: resource.position?.z || 0,
+          },
           discoveryType: resource.type as any,
           description: `Found ${resource.type} while exploring`,
           reliability: 0.8,
@@ -527,6 +533,7 @@ export class MXPActionSystem {
     const { resourceId, worldState } = params;
 
     if (!resourceId || !worldState) {
+      console.warn("harvest attempt", params);
       return {
         success: false,
         message: `${animal.name} couldn't find anything to harvest`,
@@ -535,10 +542,16 @@ export class MXPActionSystem {
     }
 
     // Find the resource
-    const resource = worldState.resources?.find(
-      (r: any) => r.id === resourceId
+    // check nearbyResources because this worldState is for per animal
+    const resource: NearbyResource = worldState.nearbyResources?.find(
+      (r: NearbyResource) => r.id === resourceId
     );
     if (!resource || !resource.harvestable || resource.quantity <= 0) {
+      console.warn(
+        "harvest attempt failed",
+        resourceId,
+        worldState.nearbyResources
+      );
       return {
         success: false,
         message: `${animal.name} couldn't harvest this resource`,
@@ -552,7 +565,7 @@ export class MXPActionSystem {
         Math.pow(resource.position.z - animal.position.z, 2)
     );
 
-    if (distance > 3) {
+    if (distance > HARVEST_RADIUS) {
       return {
         success: false,
         message: `${animal.name} is too far from the resource to harvest it`,
@@ -604,7 +617,7 @@ export class MXPActionSystem {
       },
       harvestedItem: {
         id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        type: resource.type === "berries" ? "food" : resource.type,
+        type: resource.type === "berries" ? "food" : (resource.type as any),
         name: resource.type,
         quantity: harvestAmount,
         quality: resource.quality,

@@ -6,14 +6,14 @@ export interface AnimalDNA {
   social: number; // 0-100
   curiosity: number; // 0-100
   resilience: number; // 0-100
-  
+
   // Physical traits
   size: number; // 0.5-2.0 multiplier
   color: {
     primary: string;
     secondary: string;
   };
-  
+
   // Behavioral traits
   personality: {
     aggressive: number; // 0-100
@@ -21,7 +21,7 @@ export interface AnimalDNA {
     cautious: number; // 0-100
     nurturing: number; // 0-100
   };
-  
+
   // Parent lineage for breeding
   parentIds?: [string, string];
   generation: number;
@@ -44,7 +44,7 @@ export interface AnimalPosition {
 
 export interface InventoryItem {
   id: string;
-  type: 'food' | 'water' | 'material' | 'tool' | 'stone' | 'wood' | 'berries';
+  type: "food" | "water" | "material" | "tool" | "stone" | "wood" | "berries";
   name: string;
   quantity: number;
   quality: number; // 0-100
@@ -64,33 +64,33 @@ export interface Animal {
   stats: AnimalStats;
   position: AnimalPosition;
   inventory: Inventory;
-  
+
   // Lifecycle
   birthTime: number; // timestamp
   lifespan: number; // milliseconds (1-24 hours)
   age: number; // 0-1 (percentage of lifespan)
-  
+
   // State
   currentAction: string;
   lastHealthCheck: number;
   isAlive: boolean;
-  
+
   // AI Chain reference
   chainId?: string;
 }
 
-export type AnimalAction = 
-  | 'idle'
-  | 'moving'
-  | 'eating'
-  | 'drinking'
-  | 'sleeping'
-  | 'playing'
-  | 'exploring'
-  | 'socializing'
-  | 'working'
-  | 'mating'
-  | 'harvesting';
+export type AnimalAction =
+  | "idle"
+  | "moving"
+  | "eating"
+  | "drinking"
+  | "sleeping"
+  | "playing"
+  | "exploring"
+  | "socializing"
+  | "working"
+  | "mating"
+  | "harvesting";
 
 export interface ActionResult {
   success: boolean;
@@ -107,13 +107,14 @@ export interface ActionResult {
 export interface NearbyResource {
   id: string;
   type: string;
+  position: AnimalPosition;
   distance: number; // Rounded to 1 decimal place
   quantity: number;
   quality: number;
   harvestable: boolean;
   canHarvestNow: boolean; // Within harvest radius and available
   tooFarToHarvest: boolean; // Visible but too far to harvest
-  direction: 'north' | 'south' | 'east' | 'west';
+  direction: "north" | "south" | "east" | "west";
 }
 
 export interface NearbyAnimal {
@@ -127,7 +128,7 @@ export interface NearbyAnimal {
 
 export interface ResourceSummary {
   foodSources: number; // Count of nearby food sources
-  waterSources: number; // Count of nearby water sources  
+  waterSources: number; // Count of nearby water sources
   canHarvestNow: NearbyResource[]; // Resources ready to harvest
   needToMoveCloserTo: NearbyResource[]; // Resources visible but too far
 }

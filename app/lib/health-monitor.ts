@@ -11,6 +11,8 @@ import { MXPActionSystem } from "./mxp-actions";
 import { animalStateManager } from "./animal-state-manager";
 import { ExplorationSystem } from "./exploration-system";
 
+export const HARVEST_RADIUS = 6; // Animals can harvest within 6 units
+
 export interface HealthAlert {
   animalId: string;
   severity: "low" | "medium" | "high" | "critical";
@@ -127,26 +129,21 @@ export class HealthMonitor {
         // Staggered AI decision making - each animal gets a different delay
         const staggerOffset = this.decisionStagger.get(animal.id) || 0;
 
-        // Always make decisions, but with staggered delays
+        // Always use AI for decision making, but adjust delay based on health status
+        let delayMultiplier = 1.0; // Default delay for healthy animals
         if (
           report.overallStatus === "critical" ||
           report.overallStatus === "dying"
         ) {
-          // Critical health - minimal delay
-          setTimeout(
-            () => this.handleCriticalHealth(animal),
-            staggerOffset * 0.1
-          );
+          delayMultiplier = 0.1; // Minimal delay for critical health
         } else if (report.overallStatus === "warning") {
-          // Warning - moderate delay
-          setTimeout(
-            () => this.handleHealthWarning(animal),
-            staggerOffset * 0.3
-          );
-        } else {
-          // Healthy - full stagger delay for recreational decisions
-          setTimeout(() => this.handleHealthyAnimal(animal), staggerOffset);
+          delayMultiplier = 0.3; // Moderate delay for warnings
         }
+
+        setTimeout(
+          () => this.handleAnimalDecision(animal, report.overallStatus),
+          staggerOffset * delayMultiplier
+        );
       } catch (error) {
         console.error(`Error checking health for animal ${animal.id}:`, error);
       }
@@ -320,98 +317,47 @@ export class HealthMonitor {
     };
   }
 
-  private async handleCriticalHealth(animal: Animal): Promise<void> {
-    console.log(`🚨 ${animal.name} needs immediate attention!`);
+  private async handleAnimalDecision(
+    animal: Animal,
+    healthStatus: "healthy" | "warning" | "critical" | "dying"
+  ): Promise<void> {
+    const statusEmoji = {
+      healthy: "🤔",
+      warning: "⚠️",
+      critical: "🚨",
+      dying: "💀",
+    };
 
-    const worldState = this.getWorldStateForAnimal(animal);
+    console.log(
+      `${statusEmoji[healthStatus]} ${animal.name} is deciding what to do... (${healthStatus})`
+    );
 
-    // Force survival actions with intelligent resource seeking
-    if (animal.stats.thirst > 80) {
-      console.log(`💧 ${animal.name} is desperately thirsty!`);
+    const ai = this.aiInstances.get(animal.id);
+    if (!ai) {
+      console.error(`No AI instance found for ${animal.name}`);
+      return;
+    }
 
-      // Check if animal has water in inventory first
-      const hasWater = animal.inventory.items.some(
-        (item) => item.type === "water" && item.quantity > 0
-      );
-      if (hasWater) {
-        await this.executeAnimalAction(animal, "drinking");
-        return;
+    try {
+      const worldState = this.getWorldStateForAnimal(animal);
+      const decision = await ai.decideAction(animal, worldState);
+
+      console.log(`🎯 ${animal.name} decided to: ${decision.action}`);
+
+      // Execute the AI's decision with any provided parameters
+      const actionParams: any = {};
+
+      if (decision.explorationTarget) {
+        actionParams.explorationTarget = decision.explorationTarget;
       }
 
-      // Look for nearby water sources
-      const nearbyWater = worldState.nearbyResources.filter(
-        (r) => r.type === "water"
-      )[0];
-      if (nearbyWater) {
-        if (nearbyWater.canHarvestNow) {
-          console.log(`💦 ${animal.name} found nearby water to harvest`);
-          await this.executeAnimalAction(animal, "harvesting", {
-            resourceId: nearbyWater.id,
-          });
-        } else if (nearbyWater.tooFarToHarvest) {
-          console.log(
-            `🏃 ${animal.name} moving towards water source at distance ${nearbyWater.distance}`
-          );
-          // Move towards the resource (we'll need to get position from game manager)
-          await this.executeAnimalAction(animal, "exploring");
-        }
-      } else {
-        console.log(
-          `⚠️ ${animal.name} found no water sources nearby - exploring`
-        );
-        await this.executeAnimalAction(animal, "exploring");
-      }
-    } else if (animal.stats.hunger > 80) {
-      console.log(`🍎 ${animal.name} is desperately hungry!`);
-
-      // Check if animal has food in inventory first
-      const hasFood = animal.inventory.items.some(
-        (item) =>
-          (item.type === "food" || item.type === "berries") && item.quantity > 0
-      );
-      if (hasFood) {
-        await this.executeAnimalAction(animal, "eating");
-        return;
+      if (decision.resourceId) {
+        actionParams.resourceId = decision.resourceId;
       }
 
-      // Look for nearby food sources
-      const nearbyFood = worldState.nearbyResources.filter(
-        (r) => r.type === "food" || r.type === "berries"
-      )[0];
-
-      if (nearbyFood) {
-        if (nearbyFood.canHarvestNow) {
-          console.log(`🌾 ${animal.name} found nearby food to harvest`);
-          await this.executeAnimalAction(animal, "harvesting", {
-            resourceId: nearbyFood.id,
-          });
-        } else if (nearbyFood.tooFarToHarvest) {
-          console.log(
-            `🏃 ${animal.name} moving towards food source at distance ${nearbyFood.distance}`
-          );
-          await this.executeAnimalAction(animal, "exploring");
-        }
-      } else {
-        console.log(
-          `⚠️ ${animal.name} found no food sources nearby - exploring`
-        );
-        await this.executeAnimalAction(animal, "exploring");
-      }
-    } else if (animal.stats.health < 20 || animal.stats.energy < 20) {
-      console.log(`😴 ${animal.name} needs rest badly!`);
-
-      // Look for nearby shelter
-      const nearbyShelter = worldState.nearbyResources.filter(
-        (r) => r.type === "shelter"
-      )[0];
-      if (nearbyShelter && nearbyShelter.distance > 3) {
-        console.log(
-          `🏃 ${animal.name} moving towards shelter at distance ${nearbyShelter.distance}`
-        );
-        await this.executeAnimalAction(animal, "exploring");
-      } else {
-        await this.executeAnimalAction(animal, "sleeping");
-      }
+      await this.executeAnimalAction(animal, decision.action, actionParams);
+    } catch (error) {
+      console.error(`Error getting AI decision for ${animal.name}:`, error);
     }
   }
 
@@ -440,34 +386,6 @@ export class HealthMonitor {
     return Math.sqrt(
       Math.pow(pos1.x - pos2.x, 2) + Math.pow(pos1.z - pos2.z, 2)
     );
-  }
-
-  private async handleHealthWarning(animal: Animal): Promise<void> {
-    console.log(`⚠️ ${animal.name} has health concerns`);
-
-    // Use AI to decide on appropriate action
-    const ai = this.aiInstances.get(animal.id);
-    if (ai) {
-      const worldState = this.getWorldStateForAnimal(animal);
-      const decision = await ai.decideAction(animal, worldState);
-      await this.executeAnimalAction(animal, decision.action, decision.explorationTarget ? { explorationTarget: decision.explorationTarget } : undefined);
-    }
-  }
-
-  private async handleHealthyAnimal(animal: Animal): Promise<void> {
-    console.log(`🤔 ${animal.name} is deciding what to do...`);
-    // For healthy animals, use AI to decide on fun activities
-    const ai = this.aiInstances.get(animal.id);
-    if (ai) {
-      const worldState = this.getWorldStateForAnimal(animal);
-      try {
-        const decision = await ai.decideAction(animal, worldState);
-        console.log(`🎯 ${animal.name} decided to: ${decision.action}`);
-        await this.executeAnimalAction(animal, decision.action, decision.explorationTarget ? { explorationTarget: decision.explorationTarget } : undefined);
-      } catch (error) {
-        console.error(`Error getting AI decision for ${animal.name}:`, error);
-      }
-    }
   }
 
   private async executeAnimalAction(
@@ -565,7 +483,6 @@ export class HealthMonitor {
 
   private getWorldStateForAnimal(animal: Animal): SightBasedWorldState {
     const SIGHT_RADIUS = this.explorationSystem.getSightRadius(animal);
-    const HARVEST_RADIUS = 6; // Animals can harvest within 6 units
 
     // Get nearby animals (within sight)
     const nearbyAnimalsWithDistance = animalStateManager
@@ -612,6 +529,7 @@ export class HealthMonitor {
         return {
           id: resource.id,
           type: resource.type,
+          position: resource.position,
           distance: Math.round(distance * 10) / 10, // Round to 1 decimal
           quantity: resource.quantity,
           quality: resource.quality,

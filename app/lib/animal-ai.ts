@@ -7,7 +7,7 @@ export class AnimalAI {
     this.animalId = animalId;
   }
 
-  async decideAction(animal: Animal, worldState: any): Promise<{action: AnimalAction, explorationTarget?: {x: number, z: number}}> {
+  async decideAction(animal: Animal, worldState: any): Promise<{action: AnimalAction, explorationTarget?: {x: number, z: number}, resourceId?: string}> {
     try {
       console.log(`📡 Making API call for ${animal.name}...`);
       // Call our secure API route instead of direct OpenAI
@@ -53,6 +53,9 @@ export class AnimalAI {
         const response: any = { action };
         if (action === "exploring" && result.explorationTarget) {
           response.explorationTarget = result.explorationTarget;
+        }
+        if (action === "harvesting" && result.resourceId) {
+          response.resourceId = result.resourceId;
         }
         return response;
       }
