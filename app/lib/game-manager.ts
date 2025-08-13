@@ -367,15 +367,18 @@ export class GameManager {
   }
   
   getAnimal(animalId: string): Animal | undefined {
-    return this.worldState.animals.find(a => a.id === animalId);
+    // Get the most up-to-date animal from the health monitor
+    return this.healthMonitor.getAnimal(animalId);
   }
   
   getAllAnimals(): Animal[] {
-    return [...this.worldState.animals];
+    // Get the most up-to-date animals from the health monitor
+    return this.healthMonitor.getAllAnimals();
   }
   
   getAnimalsByPosition(x: number, z: number, radius: number = 10): Animal[] {
-    return this.worldState.animals.filter(animal => {
+    // Use up-to-date animals from health monitor
+    return this.healthMonitor.getAllAnimals().filter(animal => {
       const distance = Math.sqrt(
         Math.pow(animal.position.x - x, 2) + 
         Math.pow(animal.position.z - z, 2)

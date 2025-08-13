@@ -17,21 +17,30 @@ export default function Animal3D({ animal, onClick }: Animal3DProps) {
   const [actionStartTime, setActionStartTime] = useState<number>(0)
   const [targetPosition, setTargetPosition] = useState<THREE.Vector3 | null>(null)
   const [currentPosition, setCurrentPosition] = useState(new THREE.Vector3(animal.position.x, 0, animal.position.z))
+  const [previousPosition, setPreviousPosition] = useState(new THREE.Vector3(animal.position.x, 0, animal.position.z))
   
-  // Update target position when animal's action changes
+  // Update target position when animal's logical position changes
   useEffect(() => {
-    if (animal.currentAction === 'exploring' || animal.currentAction === 'moving') {
-      // Generate a random nearby position for exploration/movement
-      const range = animal.currentAction === 'exploring' ? 8 : 5
-      const newTarget = new THREE.Vector3(
-        animal.position.x + (Math.random() - 0.5) * range,
-        0,
-        animal.position.z + (Math.random() - 0.5) * range
-      )
-      setTargetPosition(newTarget)
-    } else {
+    const newLogicalPosition = new THREE.Vector3(animal.position.x, 0, animal.position.z)
+    
+    // Check if the animal has actually moved to a different position
+    const distance = newLogicalPosition.distanceTo(previousPosition)
+    
+    if (distance > 0.1) { // Only animate if there's meaningful movement
+      if (animal.currentAction === 'exploring' || animal.currentAction === 'moving') {
+        setTargetPosition(newLogicalPosition.clone())
+        setPreviousPosition(newLogicalPosition.clone())
+      } else {
+        // For non-movement actions, snap to position immediately
+        setCurrentPosition(newLogicalPosition.clone())
+        setPreviousPosition(newLogicalPosition.clone())
+        setTargetPosition(null)
+      }
+    } else if (animal.currentAction !== 'exploring' && animal.currentAction !== 'moving') {
+      // Not moving and no position change - clear target
       setTargetPosition(null)
     }
+    
     setActionStartTime(Date.now())
   }, [animal.currentAction, animal.position.x, animal.position.z])
   
@@ -44,21 +53,31 @@ export default function Animal3D({ animal, onClick }: Animal3DProps) {
     
     // Move towards target position if exploring/moving
     if (targetPosition && (animal.currentAction === 'exploring' || animal.currentAction === 'moving')) {
-      const speed = animal.dna.agility / 100 * 2
-      currentPosition.lerp(targetPosition, speed * 0.02)
+      const speed = (animal.dna.agility / 100) * 0.8 + 0.2 // Speed between 0.2 and 1.0
+      const distance = currentPosition.distanceTo(targetPosition)
       
-      // Look at movement direction
-      const direction = new THREE.Vector3().subVectors(targetPosition, currentPosition).normalize()
-      if (direction.length() > 0) {
-        groupRef.current.lookAt(currentPosition.x + direction.x, 0, currentPosition.z + direction.z)
+      if (distance > 0.1) {
+        // Smooth movement towards target
+        currentPosition.lerp(targetPosition, speed * 0.03)
+        
+        // Look at movement direction
+        const direction = new THREE.Vector3().subVectors(targetPosition, currentPosition).normalize()
+        if (direction.length() > 0) {
+          groupRef.current.lookAt(currentPosition.x + direction.x, 0, currentPosition.z + direction.z)
+        }
+        
+        // Subtle walking animation - reduced vertical movement
+        const walkIntensity = animal.currentAction === 'exploring' ? 0.08 : 0.05
+        meshRef.current.position.y = Math.sin(state.clock.elapsedTime * 6) * walkIntensity + 0.3
+        
+        // Slight scale variation while walking
+        const walkScale = 1 + Math.sin(state.clock.elapsedTime * 4) * 0.03
+        meshRef.current.scale.setScalar(walkScale * baseScale)
+      } else {
+        // Reached target - switch to idle animation
+        setTargetPosition(null)
+        meshRef.current.position.y = Math.sin(state.clock.elapsedTime * 1.5) * 0.1
       }
-      
-      // Bobbing animation while moving
-      const bobIntensity = animal.currentAction === 'exploring' ? 0.2 : 0.1
-      meshRef.current.position.y = Math.sin(state.clock.elapsedTime * 8) * bobIntensity + 0.5
-      
-      const moveScale = 1 + Math.sin(state.clock.elapsedTime * 4) * 0.08
-      meshRef.current.scale.setScalar(moveScale * baseScale)
     } else {
       // Action-specific animations
       switch (animal.currentAction) {

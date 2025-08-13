@@ -281,12 +281,12 @@ export class ExplorationSystem {
   }
   
   private getExplorationRange(animal: Animal): number {
-    const baseRange = 6;
+    const baseRange = 12; // Increased from 6 to 12 for more significant movement
     const agilityMultiplier = animal.dna.agility / 100;
     const curiosityMultiplier = animal.dna.curiosity / 100;
     const energyFactor = animal.stats.energy / 100;
     
-    return baseRange * agilityMultiplier * (1 + curiosityMultiplier * 0.5) * energyFactor;
+    return Math.max(8, baseRange * agilityMultiplier * (1 + curiosityMultiplier * 0.5) * energyFactor);
   }
   
   private determineRelationship(animal1: Animal, animal2: Animal): 'friendly' | 'neutral' | 'rival' {
