@@ -1,29 +1,34 @@
-'use client'
+"use client";
 
-import { Canvas } from '@react-three/fiber'
-import { OrbitControls, Grid, Environment } from '@react-three/drei'
-import { Suspense, useEffect, useState, useCallback } from 'react'
-import { GameManager } from '../lib/game-manager'
-import type { Animal } from '../types/animal'
-import type { WorldResource } from '../lib/game-manager'
-import Animal3D from './Animal3D'
-import AnimalInfo from './AnimalInfo'
-import { Resource3D } from './Resource3D'
+import { Canvas } from "@react-three/fiber";
+import { OrbitControls, Grid, Environment } from "@react-three/drei";
+import { Suspense, useEffect, useState, useCallback } from "react";
+import { GameManager } from "../lib/game-manager";
+import type { Animal } from "../types/animal";
+import type { WorldResource } from "../lib/game-manager";
+import Animal3D from "./Animal3D";
+import AnimalInfo from "./AnimalInfo";
+import { Resource3D } from "./Resource3D";
 
 interface SceneProps {
-  animals: Animal[]
-  resources: WorldResource[]
-  onAnimalClick: (animal: Animal) => void
-  onResourceClick?: (resource: WorldResource) => void
+  animals: Animal[];
+  resources: WorldResource[];
+  onAnimalClick: (animal: Animal) => void;
+  onResourceClick?: (resource: WorldResource) => void;
 }
 
-function Scene({ animals, resources, onAnimalClick, onResourceClick }: SceneProps) {
+function Scene({
+  animals,
+  resources,
+  onAnimalClick,
+  onResourceClick,
+}: SceneProps) {
   return (
     <>
       {/* Lighting */}
       <ambientLight intensity={0.4} />
       <directionalLight position={[10, 10, 5]} intensity={1} />
-      
+
       {/* Ground */}
       <Grid
         args={[50, 50]}
@@ -39,21 +44,17 @@ function Scene({ animals, resources, onAnimalClick, onResourceClick }: SceneProp
         followCamera
         infiniteGrid
       />
-      
+
       {/* Environment */}
       <Environment preset="sunset" />
-      
+
       {/* Animals */}
-      {animals.map(animal => (
-        <Animal3D 
-          key={animal.id} 
-          animal={animal} 
-          onClick={onAnimalClick}
-        />
+      {animals.map((animal) => (
+        <Animal3D key={animal.id} animal={animal} onClick={onAnimalClick} />
       ))}
-      
+
       {/* World Resources */}
-      {resources.map(resource => (
+      {resources.map((resource) => (
         <Resource3D
           key={resource.id}
           resource={resource}
@@ -61,79 +62,87 @@ function Scene({ animals, resources, onAnimalClick, onResourceClick }: SceneProp
         />
       ))}
     </>
-  )
+  );
 }
 
 export default function Game() {
-  const [gameManager, setGameManager] = useState<GameManager | null>(null)
-  const [animals, setAnimals] = useState<Animal[]>([])
-  const [resources, setResources] = useState<WorldResource[]>([])
-  const [selectedAnimal, setSelectedAnimal] = useState<Animal | null>(null)
-  const [gameStarted, setGameStarted] = useState(false)
-  
+  const [gameManager, setGameManager] = useState<GameManager | null>(null);
+  const [animals, setAnimals] = useState<Animal[]>([]);
+  const [resources, setResources] = useState<WorldResource[]>([]);
+  const [selectedAnimal, setSelectedAnimal] = useState<Animal | null>(null);
+  const [gameStarted, setGameStarted] = useState(false);
+  const [version, setVersion] = useState(0);
+
   useEffect(() => {
     const manager = new GameManager({
       startingAnimals: 3,
       maxAnimals: 20,
       enableWebSocket: false, // Disable for now to avoid server dependency
-    })
-    
-    setGameManager(manager)
-    
+    });
+
+    setGameManager(manager);
+
     return () => {
       if (manager) {
-        manager.stopGame()
+        manager.stopGame();
       }
-    }
-  }, [])
-  
+    };
+  }, []);
+
   const startGame = useCallback(async () => {
     if (gameManager && !gameStarted) {
-      await gameManager.startGame()
-      setGameStarted(true)
-      
+      await gameManager.startGame();
+      setGameStarted(true);
+
       // Update animals and resources periodically
       const interval = setInterval(() => {
-        const currentAnimals = gameManager.getAllAnimals()
-        const worldState = gameManager.getWorldState()
-        
-        setAnimals([...currentAnimals])
-        setResources([...worldState.resources])
-        
+        const currentAnimals = gameManager.getAllAnimals();
+        const worldState = gameManager.getWorldState();
+
+        setAnimals([...currentAnimals]);
+        setResources([...worldState.resources]);
+        setVersion((v) => v + 1);
+
         // Update selected animal if it still exists
         if (selectedAnimal) {
-          const updated = currentAnimals.find(a => a.id === selectedAnimal.id)
+          const updated = currentAnimals.find(
+            (a) => a.id === selectedAnimal.id
+          );
           if (updated) {
-            setSelectedAnimal(updated)
+            setSelectedAnimal(updated);
           } else {
-            setSelectedAnimal(null)
+            setSelectedAnimal(null);
           }
         }
-      }, 1000)
-      
-      return () => clearInterval(interval)
+      }, 1000);
+
+      return () => clearInterval(interval);
     }
-  }, [gameManager, gameStarted, selectedAnimal])
-  
+  }, [gameManager, gameStarted, selectedAnimal]);
+
   const handleAnimalClick = useCallback((animal: Animal) => {
-    setSelectedAnimal(animal)
-  }, [])
-  
+    setSelectedAnimal(animal);
+  }, []);
+
   const closeAnimalInfo = useCallback(() => {
-    setSelectedAnimal(null)
-  }, [])
-  
+    setSelectedAnimal(null);
+  }, []);
+
   const spawnNewAnimal = useCallback(async () => {
     if (gameManager) {
-      await gameManager.spawnRandomAnimal()
+      await gameManager.spawnRandomAnimal();
     }
-  }, [gameManager])
-  
+  }, [gameManager]);
+
   return (
     <div className="w-full h-screen relative">
       <Canvas camera={{ position: [15, 15, 15], fov: 50 }}>
         <Suspense fallback={null}>
-          <Scene animals={animals} resources={resources} onAnimalClick={handleAnimalClick} />
+          <Scene
+            animals={animals}
+            resources={resources}
+            onAnimalClick={handleAnimalClick}
+          />
           <OrbitControls
             enablePan={true}
             enableZoom={true}
@@ -144,7 +153,7 @@ export default function Game() {
           />
         </Suspense>
       </Canvas>
-      
+
       {/* UI Controls */}
       <div className="absolute top-4 left-4 space-y-2">
         {!gameStarted ? (
@@ -159,9 +168,19 @@ export default function Game() {
             <div className="bg-white/90 backdrop-blur-sm p-3 rounded-lg">
               <div className="text-sm">
                 <div>Animals: {animals.length}</div>
-                <div>Alive: {animals.filter(a => a.isAlive).length}</div>
-                <div>Food Sources: {resources.filter(r => r.type === 'food' || r.type === 'berries').length}</div>
-                <div>Water Sources: {resources.filter(r => r.type === 'water').length}</div>
+                <div>Alive: {animals.filter((a) => a.isAlive).length}</div>
+                <div>
+                  Food Sources:{" "}
+                  {
+                    resources.filter(
+                      (r) => r.type === "food" || r.type === "berries"
+                    ).length
+                  }
+                </div>
+                <div>
+                  Water Sources:{" "}
+                  {resources.filter((r) => r.type === "water").length}
+                </div>
               </div>
             </div>
             <button
@@ -173,18 +192,17 @@ export default function Game() {
           </>
         )}
       </div>
-      
+
       {/* Animal Info Panel */}
       <AnimalInfo animal={selectedAnimal} onClose={closeAnimalInfo} />
-      
+
       {/* Instructions */}
       <div className="absolute bottom-4 left-4 bg-black/70 text-white p-3 rounded-lg text-sm max-w-sm">
         <div className="font-semibold mb-1">Instructions:</div>
         <div>• Click an animal to see its details</div>
         <div>• Animals must harvest resources to survive</div>
-        <div>• Green spheres = food, Blue cylinders = water</div>
         <div>• Animals need inventory items to eat/drink</div>
       </div>
     </div>
-  )
+  );
 }
