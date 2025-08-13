@@ -1,13 +1,13 @@
-import type { 
-  Animal, 
-  SightBasedWorldState, 
-  NearbyResource, 
-  NearbyAnimal, 
-  ResourceSummary 
+import type {
+  Animal,
+  SightBasedWorldState,
+  NearbyResource,
+  NearbyAnimal,
+  ResourceSummary,
 } from "../types/animal";
 import { AnimalLifecycle } from "./animal-lifecycle";
 import { AnimalAI } from "./animal-ai";
-import { MCPActionSystem } from "./mcp-actions";
+import { MXPActionSystem } from "./mxp-actions";
 import { animalStateManager } from "./animal-state-manager";
 
 export interface HealthAlert {
@@ -27,7 +27,7 @@ export interface HealthReport {
 
 export class HealthMonitor {
   private aiInstances: Map<string, AnimalAI> = new Map();
-  private actionSystem: MCPActionSystem;
+  private actionSystem: MXPActionSystem;
   private healthCheckInterval: NodeJS.Timeout | null = null;
   private decisionStagger: Map<string, number> = new Map();
   private gameManagerRef: any = null; // Weak reference to avoid circular dependency
@@ -35,7 +35,7 @@ export class HealthMonitor {
   private readonly DECISION_STAGGER_RANGE = 15000; // 15 second range for staggering
 
   constructor() {
-    this.actionSystem = new MCPActionSystem();
+    this.actionSystem = new MXPActionSystem();
   }
 
   setGameManagerReference(gameManager: any): void {
@@ -325,35 +325,46 @@ export class HealthMonitor {
     // Force survival actions with intelligent resource seeking
     if (animal.stats.thirst > 80) {
       console.log(`💧 ${animal.name} is desperately thirsty!`);
-      
+
       // Check if animal has water in inventory first
-      const hasWater = animal.inventory.items.some(item => item.type === "water" && item.quantity > 0);
+      const hasWater = animal.inventory.items.some(
+        (item) => item.type === "water" && item.quantity > 0
+      );
       if (hasWater) {
         await this.executeAnimalAction(animal, "drinking");
         return;
       }
 
       // Look for nearby water sources
-      const nearbyWater = worldState.nearbyResources.filter(r => r.type === "water")[0];
+      const nearbyWater = worldState.nearbyResources.filter(
+        (r) => r.type === "water"
+      )[0];
       if (nearbyWater) {
         if (nearbyWater.canHarvestNow) {
           console.log(`💦 ${animal.name} found nearby water to harvest`);
-          await this.executeAnimalAction(animal, "harvesting", { resourceId: nearbyWater.id });
+          await this.executeAnimalAction(animal, "harvesting", {
+            resourceId: nearbyWater.id,
+          });
         } else if (nearbyWater.tooFarToHarvest) {
-          console.log(`🏃 ${animal.name} moving towards water source at distance ${nearbyWater.distance}`);
+          console.log(
+            `🏃 ${animal.name} moving towards water source at distance ${nearbyWater.distance}`
+          );
           // Move towards the resource (we'll need to get position from game manager)
           await this.executeAnimalAction(animal, "exploring");
         }
       } else {
-        console.log(`⚠️ ${animal.name} found no water sources nearby - exploring`);
+        console.log(
+          `⚠️ ${animal.name} found no water sources nearby - exploring`
+        );
         await this.executeAnimalAction(animal, "exploring");
       }
     } else if (animal.stats.hunger > 80) {
       console.log(`🍎 ${animal.name} is desperately hungry!`);
-      
-      // Check if animal has food in inventory first  
-      const hasFood = animal.inventory.items.some(item => 
-        (item.type === "food" || item.type === "berries") && item.quantity > 0
+
+      // Check if animal has food in inventory first
+      const hasFood = animal.inventory.items.some(
+        (item) =>
+          (item.type === "food" || item.type === "berries") && item.quantity > 0
       );
       if (hasFood) {
         await this.executeAnimalAction(animal, "eating");
@@ -361,29 +372,39 @@ export class HealthMonitor {
       }
 
       // Look for nearby food sources
-      const nearbyFood = worldState.nearbyResources.filter(r => 
-        r.type === "food" || r.type === "berries"
+      const nearbyFood = worldState.nearbyResources.filter(
+        (r) => r.type === "food" || r.type === "berries"
       )[0];
-      
+
       if (nearbyFood) {
         if (nearbyFood.canHarvestNow) {
           console.log(`🌾 ${animal.name} found nearby food to harvest`);
-          await this.executeAnimalAction(animal, "harvesting", { resourceId: nearbyFood.id });
+          await this.executeAnimalAction(animal, "harvesting", {
+            resourceId: nearbyFood.id,
+          });
         } else if (nearbyFood.tooFarToHarvest) {
-          console.log(`🏃 ${animal.name} moving towards food source at distance ${nearbyFood.distance}`);
+          console.log(
+            `🏃 ${animal.name} moving towards food source at distance ${nearbyFood.distance}`
+          );
           await this.executeAnimalAction(animal, "exploring");
         }
       } else {
-        console.log(`⚠️ ${animal.name} found no food sources nearby - exploring`);
+        console.log(
+          `⚠️ ${animal.name} found no food sources nearby - exploring`
+        );
         await this.executeAnimalAction(animal, "exploring");
       }
     } else if (animal.stats.health < 20 || animal.stats.energy < 20) {
       console.log(`😴 ${animal.name} needs rest badly!`);
-      
+
       // Look for nearby shelter
-      const nearbyShelter = worldState.nearbyResources.filter(r => r.type === "shelter")[0];
+      const nearbyShelter = worldState.nearbyResources.filter(
+        (r) => r.type === "shelter"
+      )[0];
       if (nearbyShelter && nearbyShelter.distance > 3) {
-        console.log(`🏃 ${animal.name} moving towards shelter at distance ${nearbyShelter.distance}`);
+        console.log(
+          `🏃 ${animal.name} moving towards shelter at distance ${nearbyShelter.distance}`
+        );
         await this.executeAnimalAction(animal, "exploring");
       } else {
         await this.executeAnimalAction(animal, "sleeping");
@@ -496,16 +517,18 @@ export class HealthMonitor {
             result.resourceId,
             result.harvestedItem.quantity
           );
-          
+
           if (harvestResult.success && harvestResult.item) {
             // Add the harvested item to the animal's inventory
             const added = this.gameManagerRef.addItemToAnimalInventory(
               animal.id,
               harvestResult.item
             );
-            
+
             if (!added) {
-              console.warn(`⚠️ ${animal.name} couldn't carry the harvested items - inventory full`);
+              console.warn(
+                `⚠️ ${animal.name} couldn't carry the harvested items - inventory full`
+              );
             }
           }
         }
@@ -540,28 +563,34 @@ export class HealthMonitor {
   private getWorldStateForAnimal(animal: Animal): SightBasedWorldState {
     const SIGHT_RADIUS = 20; // Animals can see resources within 20 units
     const HARVEST_RADIUS = 3; // Animals can harvest within 3 units
-    
+
     // Get nearby animals (within sight)
-    const nearbyAnimalsWithDistance = animalStateManager.getAllAnimals()
-      .filter(otherAnimal => otherAnimal.id !== animal.id)
+    const nearbyAnimalsWithDistance = animalStateManager
+      .getAllAnimals()
+      .filter((otherAnimal) => otherAnimal.id !== animal.id)
       .map((otherAnimal) => {
-        const distance = this.getDistance(animal.position, otherAnimal.position);
+        const distance = this.getDistance(
+          animal.position,
+          otherAnimal.position
+        );
         return {
           distance,
-          animal: otherAnimal
+          animal: otherAnimal,
         };
       })
-      .filter(entry => entry.distance <= SIGHT_RADIUS)
+      .filter((entry) => entry.distance <= SIGHT_RADIUS)
       .sort((a, b) => a.distance - b.distance);
 
-    const nearbyAnimals: NearbyAnimal[] = nearbyAnimalsWithDistance.map(entry => ({
-      id: entry.animal.id,
-      name: entry.animal.name,
-      position: entry.animal.position,
-      currentAction: entry.animal.currentAction,
-      age: entry.animal.age,
-      distance: Math.round(entry.distance * 10) / 10
-    }));
+    const nearbyAnimals: NearbyAnimal[] = nearbyAnimalsWithDistance.map(
+      (entry) => ({
+        id: entry.animal.id,
+        name: entry.animal.name,
+        position: entry.animal.position,
+        currentAction: entry.animal.currentAction,
+        age: entry.animal.age,
+        distance: Math.round(entry.distance * 10) / 10,
+      })
+    );
 
     // Get environment info
     let environment = { timeOfDay: "day", weather: "clear", temperature: 72 };
@@ -584,19 +613,30 @@ export class HealthMonitor {
           quantity: resource.quantity,
           quality: resource.quality,
           harvestable: resource.harvestable,
-          canHarvestNow: resource.harvestable && distance <= HARVEST_RADIUS && resource.quantity > 0,
+          canHarvestNow:
+            resource.harvestable &&
+            distance <= HARVEST_RADIUS &&
+            resource.quantity > 0,
           tooFarToHarvest: resource.harvestable && distance > HARVEST_RADIUS,
-          direction: this.getDirection(animal.position, resource.position) as 'north' | 'south' | 'east' | 'west'
+          direction: this.getDirection(animal.position, resource.position) as
+            | "north"
+            | "south"
+            | "east"
+            | "west",
         };
       })
-      .filter(resource => resource.distance <= SIGHT_RADIUS && resource.quantity > 0)
+      .filter(
+        (resource) => resource.distance <= SIGHT_RADIUS && resource.quantity > 0
+      )
       .sort((a, b) => a.distance - b.distance);
 
     const resourceSummary: ResourceSummary = {
-      foodSources: nearbyResources.filter(r => r.type === 'food' || r.type === 'berries').length,
-      waterSources: nearbyResources.filter(r => r.type === 'water').length,
-      canHarvestNow: nearbyResources.filter(r => r.canHarvestNow),
-      needToMoveCloserTo: nearbyResources.filter(r => r.tooFarToHarvest)
+      foodSources: nearbyResources.filter(
+        (r) => r.type === "food" || r.type === "berries"
+      ).length,
+      waterSources: nearbyResources.filter((r) => r.type === "water").length,
+      canHarvestNow: nearbyResources.filter((r) => r.canHarvestNow),
+      needToMoveCloserTo: nearbyResources.filter((r) => r.tooFarToHarvest),
     };
 
     return {
@@ -606,18 +646,21 @@ export class HealthMonitor {
       nearbyAnimals,
       nearbyResources,
       environment,
-      resourceSummary
+      resourceSummary,
     };
   }
 
-  private getDirection(from: any, to: any): 'north' | 'south' | 'east' | 'west' {
+  private getDirection(
+    from: any,
+    to: any
+  ): "north" | "south" | "east" | "west" {
     const dx = to.x - from.x;
     const dz = to.z - from.z;
-    
+
     if (Math.abs(dx) > Math.abs(dz)) {
-      return dx > 0 ? 'east' : 'west';
+      return dx > 0 ? "east" : "west";
     } else {
-      return dz > 0 ? 'south' : 'north';
+      return dz > 0 ? "south" : "north";
     }
   }
 

@@ -73,10 +73,12 @@ export class AnimalAI {
   private getFallbackAction(animal: Animal): AnimalAction {
     // Simple rule-based fallback when API is unavailable
     if (animal.stats.health < 30) return "sleeping";
-    
+
     // Check inventory before deciding to eat/drink
     if (animal.stats.thirst > 70) {
-      const hasWater = animal.inventory.items.some(item => item.type === "water" && item.quantity > 0);
+      const hasWater = animal.inventory.items.some(
+        (item) => item.type === "water" && item.quantity > 0
+      );
       if (hasWater) {
         return "drinking";
       } else {
@@ -84,10 +86,11 @@ export class AnimalAI {
         return "exploring"; // Let the health monitor handle finding water sources
       }
     }
-    
+
     if (animal.stats.hunger > 70) {
-      const hasFood = animal.inventory.items.some(item => 
-        (item.type === "food" || item.type === "berries") && item.quantity > 0
+      const hasFood = animal.inventory.items.some(
+        (item) =>
+          (item.type === "food" || item.type === "berries") && item.quantity > 0
       );
       if (hasFood) {
         return "eating";
@@ -96,7 +99,7 @@ export class AnimalAI {
         return "exploring"; // Let the health monitor handle finding food sources
       }
     }
-    
+
     if (animal.stats.energy < 30) return "sleeping";
     if (animal.stats.happiness < 30) return "playing";
 
@@ -112,7 +115,7 @@ export class AnimalAI {
     animal: Animal,
     action: AnimalAction
   ): Promise<ActionResult> {
-    // This will be enhanced with MCP integration
+    // This will be enhanced with MXP integration
     // For now, basic stat changes based on actions
 
     const statChanges: Partial<typeof animal.stats> = {};

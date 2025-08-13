@@ -6,13 +6,13 @@ import type {
 } from "../types/animal";
 import { ExplorationSystem } from "./exploration-system";
 
-export interface MCPAction {
+export interface MXPAction {
   name: string;
   description: string;
   parameters: Record<string, any>;
 }
 
-export interface MCPActionConfig {
+export interface MXPActionConfig {
   move: {
     maxDistance: number;
     energyCost: number;
@@ -43,8 +43,8 @@ export interface MCPActionConfig {
   };
 }
 
-export class MCPActionSystem {
-  private config: MCPActionConfig;
+export class MXPActionSystem {
+  private config: MXPActionConfig;
   private explorationSystem: ExplorationSystem;
 
   constructor() {
@@ -212,7 +212,7 @@ export class MCPActionSystem {
         name: foodItem.name,
         quantity: 1,
         quality: foodItem.quality,
-        harvestedAt: foodItem.harvestedAt
+        harvestedAt: foodItem.harvestedAt,
       },
       duration: 5000 + actualQuality * 2000,
     };
@@ -254,7 +254,7 @@ export class MCPActionSystem {
         name: waterItem.name,
         quantity: 1,
         quality: waterItem.quality,
-        harvestedAt: waterItem.harvestedAt
+        harvestedAt: waterItem.harvestedAt,
       },
       duration: 3000,
     };
@@ -590,11 +590,11 @@ export class MCPActionSystem {
       },
       harvestedItem: {
         id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        type: resource.type === 'berries' ? 'food' : resource.type,
+        type: resource.type === "berries" ? "food" : resource.type,
         name: resource.type,
         quantity: harvestAmount,
         quality: resource.quality,
-        harvestedAt: Date.now()
+        harvestedAt: Date.now(),
       },
       resourceId: resourceId,
       duration: 3000 + harvestAmount * 1000,

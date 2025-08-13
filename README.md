@@ -27,7 +27,7 @@ Universe is a groundbreaking Three.js game where you breed and nurture highly in
 
 - **Real-time Health Monitoring**: 30-second health checks with stat degradation
 - **Dynamic Lifespan**: Animals live 1-24 hours with aging effects
-- **MCP Action System**: Model Context Protocol for structured animal behaviors
+- **MXP Action System**: Model Context Protocol for structured animal behaviors
 - **Resource Management**: Food, water, shelter, and materials spawn throughout the world
 - **Environmental Simulation**: Day/night cycles, weather, temperature, and humidity
 
@@ -128,7 +128,7 @@ universe/
 │   │   ├── dna-system.ts        # Genetics and inheritance
 │   │   ├── animal-lifecycle.ts  # Birth, aging, death
 │   │   ├── health-monitor.ts    # Health tracking system
-│   │   ├── mcp-actions.ts       # Action execution system
+│   │   ├── mxp-actions.ts       # Action execution system
 │   │   └── breeding-system.ts   # Breeding mechanics
 │   └── types/
 │       └── animal.ts      # TypeScript definitions
@@ -243,9 +243,9 @@ const gameConfig = {
 
 ## 🌟 Advanced Features
 
-### MCP (Model Context Protocol) Actions
+### MXP (Model Context Protocol) Actions
 
-Each animal action is structured through MCP for consistency:
+Each animal action is structured through MXP for consistency:
 
 ```typescript
 // Example: Moving action
@@ -296,7 +296,7 @@ ws.on("message", (data) => {
 ### Creating New Actions
 
 1. Add action type to `AnimalAction` union in `types/animal.ts`
-2. Implement action logic in `mcp-actions.ts`
+2. Implement action logic in `mxp-actions.ts`
 3. Update AI decision-making in `animal-ai.ts`
 4. Add visual feedback in `Animal3D.tsx`
 
