@@ -330,6 +330,14 @@ export class MXPActionSystem {
       (this.config.work.energyCost * difficulty) / effectiveness;
 
     if (animal.stats.energy < energyCost) {
+      // Store failure memory
+      this.explorationSystem.addFailureMemory(
+        animal.id,
+        animal.position,
+        "work",
+        `not enough energy (needed ${energyCost.toFixed(1)}, had ${animal.stats.energy})`
+      );
+      
       return {
         success: false,
         message: `${animal.name} is too tired to work effectively`,
@@ -532,6 +540,15 @@ export class MXPActionSystem {
   ): Promise<ActionResult> {
     const { resourceId, worldState } = params;
 
+    // Check if animal has recently failed to harvest at this location
+    if (this.explorationSystem.hasRecentFailure(animal.id, animal.position, "harvest")) {
+      return {
+        success: false,
+        message: `${animal.name} remembers failing to harvest here recently and decided not to try again`,
+        duration: 1000,
+      };
+    }
+
     if (!resourceId || !worldState) {
       console.warn("harvest attempt", params);
       return {
@@ -566,6 +583,14 @@ export class MXPActionSystem {
     );
 
     if (distance > HARVEST_RADIUS) {
+      // Store failure memory
+      this.explorationSystem.addFailureMemory(
+        animal.id,
+        animal.position,
+        "harvest",
+        `too far from resource (distance: ${distance.toFixed(1)})`
+      );
+      
       return {
         success: false,
         message: `${animal.name} is too far from the resource to harvest it`,
@@ -581,6 +606,14 @@ export class MXPActionSystem {
     const energyCost = 15 + (resource.type === "stone" ? 10 : 0); // Stone is harder to harvest
 
     if (animal.stats.energy < energyCost) {
+      // Store failure memory
+      this.explorationSystem.addFailureMemory(
+        animal.id,
+        animal.position,
+        "harvest",
+        `not enough energy (needed ${energyCost}, had ${animal.stats.energy})`
+      );
+      
       return {
         success: false,
         message: `${animal.name} is too tired to harvest`,
@@ -599,6 +632,14 @@ export class MXPActionSystem {
       (resource.type === "stone" ? 3 : resource.type === "wood" ? 2 : 1);
 
     if (currentWeight + itemWeight > animal.inventory.maxCapacity) {
+      // Store failure memory
+      this.explorationSystem.addFailureMemory(
+        animal.id,
+        animal.position,
+        "harvest",
+        `inventory full (${currentWeight}/${animal.inventory.maxCapacity})`
+      );
+      
       return {
         success: false,
         message: `${animal.name}'s inventory is too full to carry more`,

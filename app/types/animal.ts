@@ -145,4 +145,20 @@ export interface SightBasedWorldState {
     temperature: number;
   };
   resourceSummary: ResourceSummary;
+  memories: {
+    recentFailures: Array<{
+      action: string;
+      reason: string;
+      position: { x: number; y: number; z: number };
+      timestamp: number;
+      reliability: number;
+    }>;
+    discoveries: Array<{
+      type: string;
+      description: string;
+      position: { x: number; y: number; z: number };
+      timestamp: number;
+      reliability: number;
+    }>;
+  };
 }

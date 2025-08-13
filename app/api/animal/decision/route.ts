@@ -98,6 +98,13 @@ Your current position is: {currentPosition}
 If you choose "exploring", specify where to go by providing coordinates within 20 units of your current position.
 Consider moving towards areas you haven't explored, towards distant resources, or in directions that match your goals.
 
+MEMORY & EXPERIENCE:
+Check your memories.recentFailures before attempting actions that have recently failed.
+- If you recently failed to harvest due to low energy, consider sleeping or eating first
+- If you failed due to being too far, move closer before attempting again
+- If you failed due to full inventory, consider eating/drinking items to make space
+- Learn from your past failures and avoid repeating the same mistakes in the same locations
+
 IMPORTANT: You must respond with valid JSON in this exact format:
 {{
   "action": "action_name",

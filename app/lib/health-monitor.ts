@@ -560,6 +560,17 @@ export class HealthMonitor {
       needToMoveCloserTo: nearbyResources.filter((r) => r.tooFarToHarvest),
     };
 
+    // Get relevant memories for the animal
+    const memories = this.explorationSystem.getRelevantMemories(
+      animal.id,
+      animal.position,
+      SIGHT_RADIUS
+    );
+
+    // Separate failure memories for easier AI processing
+    const failureMemories = memories.filter(m => m.discoveryType === 'failure');
+    const discoveryMemories = memories.filter(m => m.discoveryType !== 'failure');
+
     return {
       myPosition: animal.position,
       sightRadius: SIGHT_RADIUS,
@@ -568,6 +579,22 @@ export class HealthMonitor {
       nearbyResources,
       environment,
       resourceSummary,
+      memories: {
+        recentFailures: failureMemories.map(m => ({
+          action: m.description.split(':')[0].replace('Failed to ', ''),
+          reason: m.description.split(': ')[1] || m.description,
+          position: m.position,
+          timestamp: m.timestamp,
+          reliability: m.reliability
+        })),
+        discoveries: discoveryMemories.map(m => ({
+          type: m.discoveryType,
+          description: m.description,
+          position: m.position,
+          timestamp: m.timestamp,
+          reliability: m.reliability
+        }))
+      }
     };
   }
 

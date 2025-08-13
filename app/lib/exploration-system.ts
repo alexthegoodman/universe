@@ -359,6 +359,40 @@ export class ExplorationSystem {
     };
   }
 
+  // Add failure memory for action attempts
+  addFailureMemory(
+    animalId: string,
+    position: { x: number; y: number; z: number },
+    actionType: string,
+    reason: string
+  ): void {
+    this.addMemory(animalId, {
+      position,
+      discoveryType: "failure",
+      description: `Failed to ${actionType}: ${reason}`,
+      reliability: 0.9,
+    });
+  }
+
+  // Check if animal has recent failures for an action type at this location
+  hasRecentFailure(
+    animalId: string,
+    position: { x: number; y: number; z: number },
+    actionType: string,
+    radiusCheck: number = 5
+  ): boolean {
+    const memories = this.memories.get(animalId) || [];
+    const recentTime = Date.now() - 2 * 60 * 1000; // 2 minutes ago
+
+    return memories.some(
+      (memory) =>
+        memory.discoveryType === "failure" &&
+        memory.description.includes(actionType) &&
+        memory.timestamp > recentTime &&
+        this.calculateDistance(memory.position, position) < radiusCheck
+    );
+  }
+
   // Clean up old memories
   cleanupMemories(animalId: string): void {
     const memories = this.memories.get(animalId) || [];

@@ -2,7 +2,7 @@ export interface ExplorationMemory {
   id: string;
   animalId: string;
   position: { x: number; y: number; z: number };
-  discoveryType: 'food' | 'water' | 'shelter' | 'material' | 'danger' | 'interesting';
+  discoveryType: 'food' | 'water' | 'shelter' | 'material' | 'danger' | 'interesting' | 'failure';
   description: string;
   timestamp: number;
   reliability: number; // 0-1, how confident the animal is about this memory
