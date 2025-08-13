@@ -9,6 +9,7 @@ import { AnimalLifecycle } from "./animal-lifecycle";
 import { AnimalAI } from "./animal-ai";
 import { MXPActionSystem } from "./mxp-actions";
 import { animalStateManager } from "./animal-state-manager";
+import { ExplorationSystem } from "./exploration-system";
 
 export interface HealthAlert {
   animalId: string;
@@ -28,6 +29,7 @@ export interface HealthReport {
 export class HealthMonitor {
   private aiInstances: Map<string, AnimalAI> = new Map();
   private actionSystem: MXPActionSystem;
+  private explorationSystem: ExplorationSystem;
   private healthCheckInterval: NodeJS.Timeout | null = null;
   private decisionStagger: Map<string, number> = new Map();
   private gameManagerRef: any = null; // Weak reference to avoid circular dependency
@@ -36,6 +38,7 @@ export class HealthMonitor {
 
   constructor() {
     this.actionSystem = new MXPActionSystem();
+    this.explorationSystem = new ExplorationSystem();
   }
 
   setGameManagerReference(gameManager: any): void {
@@ -561,8 +564,8 @@ export class HealthMonitor {
   }
 
   private getWorldStateForAnimal(animal: Animal): SightBasedWorldState {
-    const SIGHT_RADIUS = 20; // Animals can see resources within 20 units
-    const HARVEST_RADIUS = 3; // Animals can harvest within 3 units
+    const SIGHT_RADIUS = this.explorationSystem.getSightRadius(animal);
+    const HARVEST_RADIUS = 6; // Animals can harvest within 6 units
 
     // Get nearby animals (within sight)
     const nearbyAnimalsWithDistance = animalStateManager

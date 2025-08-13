@@ -360,13 +360,9 @@ export class MXPActionSystem {
     const agilityMultiplier = animal.dna.agility / 100;
 
     // Use the exploration system for intelligent exploration
-    const sightData = this.explorationSystem.scanEnvironment(
-      animal,
-      worldState || {}
-    );
     const explorationGoal = this.explorationSystem.determineExplorationGoal(
       animal,
-      sightData
+      worldState || {}
     );
     const newPosition = this.explorationSystem.generateExplorationPosition(
       animal,
@@ -381,29 +377,29 @@ export class MXPActionSystem {
     const energyCost = Math.min(15 + distance * 2, animal.stats.energy * 0.3);
     const happiness = 10 * curiosityMultiplier + explorationGoal.priority * 2;
 
-    // Check for discoveries based on sight data and exploration goal
+    // Check for discoveries based on world state and exploration goal
     let discoveryMessage = "";
     if (
-      sightData.visibleResources.length > 0 ||
+      worldState.nearbyResources?.length > 0 ||
       Math.random() < curiosityMultiplier * 0.4
     ) {
       const discoveries = [];
 
-      if (sightData.visibleResources.length > 0) {
-        const resource = sightData.visibleResources[0];
+      if (worldState.nearbyResources?.length > 0) {
+        const resource = worldState.nearbyResources[0];
         discoveries.push(`spotted ${resource.type}`);
 
         // Store in memory
         this.explorationSystem.addMemory(animal.id, {
-          position: resource.position,
+          position: { x: resource.position?.x || 0, y: 0, z: resource.position?.z || 0 },
           discoveryType: resource.type as any,
           description: `Found ${resource.type} while exploring`,
           reliability: 0.8,
         });
       }
 
-      if (sightData.visibleAnimals.length > 0) {
-        const otherAnimal = sightData.visibleAnimals[0];
+      if (worldState.nearbyAnimals?.length > 0) {
+        const otherAnimal = worldState.nearbyAnimals[0];
         discoveries.push(`noticed ${otherAnimal.name}`);
       }
 

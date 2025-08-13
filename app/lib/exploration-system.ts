@@ -1,9 +1,5 @@
 import type { Animal, AnimalPosition } from "../types/animal";
-import type {
-  ExplorationMemory,
-  SightData,
-  ExplorationGoal,
-} from "../types/exploration";
+import type { ExplorationMemory, ExplorationGoal } from "../types/exploration";
 import { v4 as uuidv4 } from "uuid";
 
 export class ExplorationSystem {
@@ -12,62 +8,19 @@ export class ExplorationSystem {
 
   // Calculate sight radius based on animal traits
   getSightRadius(animal: Animal): number {
-    const baseRadius = 5;
+    const baseRadius = 15;
     const intelligenceBonus = (animal.dna.intelligence / 100) * 3;
     const curiosityBonus = (animal.dna.curiosity / 100) * 2;
     const ageBonus = animal.age < 0.3 ? 1 : animal.age > 0.7 ? -1 : 0; // Young animals see farther
 
     return Math.max(
-      3,
+      10,
       baseRadius + intelligenceBonus + curiosityBonus + ageBonus
     );
   }
 
-  // Scan the environment within sight radius
-  scanEnvironment(animal: Animal, worldState: any): SightData {
-    const sightRadius = this.getSightRadius(animal);
-    const animalPos = animal.position;
-
-    // Find visible resources
-    const visibleResources = (worldState.resources || [])
-      .map((resource: any) => ({
-        ...resource,
-        distance: this.calculateDistance(animalPos, resource.position),
-      }))
-      .filter((resource: any) => resource.distance <= sightRadius)
-      .sort((a: any, b: any) => a.distance - b.distance);
-
-    // Find visible animals
-    const visibleAnimals = (worldState.animals || [])
-      .filter((other: any) => other.id !== animal.id)
-      .map((other: any) => ({
-        id: other.id,
-        name: other.name,
-        position: other.position,
-        distance: this.calculateDistance(animalPos, other.position),
-        relationship: this.determineRelationship(animal, other),
-      }))
-      .filter((other: any) => other.distance <= sightRadius)
-      .sort((a: any, b: any) => a.distance - b.distance);
-
-    // Generate terrain features (simplified)
-    const terrainFeatures = this.generateTerrainFeatures(
-      animalPos,
-      sightRadius
-    );
-
-    return {
-      visibleResources,
-      visibleAnimals,
-      terrainFeatures,
-    };
-  }
-
   // Determine exploration goal based on animal state and memories
-  determineExplorationGoal(
-    animal: Animal,
-    sightData: SightData
-  ): ExplorationGoal {
+  determineExplorationGoal(animal: Animal, worldState: any): ExplorationGoal {
     const animalMemories = this.memories.get(animal.id) || [];
     const currentGoals = this.explorationGoals.get(animal.id) || [];
 
@@ -90,13 +43,17 @@ export class ExplorationSystem {
       }
 
       // Look for visible food
-      const visibleFood = sightData.visibleResources.find(
-        (r) => r.type === "food"
+      const visibleFood = worldState.nearbyResources?.find(
+        (r: any) => r.type === "food"
       );
       if (visibleFood) {
         return {
           type: "targeted",
-          targetPosition: visibleFood.position,
+          targetPosition: {
+            x: visibleFood.position?.x || 0,
+            y: 0,
+            z: visibleFood.position?.z || 0,
+          },
           reason: "Moving towards visible food",
           priority: 8,
         };
@@ -117,13 +74,17 @@ export class ExplorationSystem {
         };
       }
 
-      const visibleWater = sightData.visibleResources.find(
-        (r) => r.type === "water"
+      const visibleWater = worldState.nearbyResources?.find(
+        (r: any) => r.type === "water"
       );
       if (visibleWater) {
         return {
           type: "targeted",
-          targetPosition: visibleWater.position,
+          targetPosition: {
+            x: visibleWater.position?.x || 0,
+            y: 0,
+            z: visibleWater.position?.z || 0,
+          },
           reason: "Moving towards visible water",
           priority: 8,
         };
@@ -132,13 +93,17 @@ export class ExplorationSystem {
 
     // Priority 2: Social behavior
     if (animal.dna.social > 70 && animal.stats.happiness < 50) {
-      const friendlyAnimal = sightData.visibleAnimals.find(
-        (a) => a.relationship === "friendly"
+      const friendlyAnimal = worldState.nearbyAnimals?.find(
+        (a: any) => this.determineRelationship(animal, a) === "friendly"
       );
       if (friendlyAnimal) {
         return {
           type: "targeted",
-          targetPosition: friendlyAnimal.position,
+          targetPosition: {
+            x: friendlyAnimal.position?.x || 0,
+            y: 0,
+            z: friendlyAnimal.position?.z || 0,
+          },
           reason: "Approaching friendly animal for social interaction",
           priority: 6,
         };
