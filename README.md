@@ -51,7 +51,7 @@ Universe is a groundbreaking Three.js game where you breed and nurture highly in
 
 ### 🔗 Multiplayer Ready
 
-- **WebSocket Server**: Real-time game state synchronization
+- **WebSocket Server**: Real-time game state synchronization (not enabled by default)
 - **Event Broadcasting**: Share animal births, deaths, and major events
 - **Scalable Architecture**: Built to support multiple concurrent players
 
