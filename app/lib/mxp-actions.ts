@@ -354,20 +354,38 @@ export class MXPActionSystem {
     animal: Animal,
     params: any
   ): Promise<ActionResult> {
-    const { worldState } = params;
+    const { worldState, explorationTarget } = params;
 
     const curiosityMultiplier = animal.dna.curiosity / 100;
     const agilityMultiplier = animal.dna.agility / 100;
 
-    // Use the exploration system for intelligent exploration
-    const explorationGoal = this.explorationSystem.determineExplorationGoal(
-      animal,
-      worldState || {}
-    );
-    const newPosition = this.explorationSystem.generateExplorationPosition(
-      animal,
-      explorationGoal
-    );
+    let newPosition;
+    let goalReason = "Exploring based on curiosity";
+
+    if (explorationTarget) {
+      // Use AI-provided exploration target
+      newPosition = {
+        x: explorationTarget.x,
+        y: animal.position.y,
+        z: explorationTarget.z,
+        rotation: Math.atan2(
+          explorationTarget.z - animal.position.z,
+          explorationTarget.x - animal.position.x
+        ),
+      };
+      goalReason = "Exploring towards AI-chosen destination";
+    } else {
+      // Fallback to exploration system for intelligent exploration
+      const explorationGoal = this.explorationSystem.determineExplorationGoal(
+        animal,
+        worldState || {}
+      );
+      newPosition = this.explorationSystem.generateExplorationPosition(
+        animal,
+        explorationGoal
+      );
+      goalReason = explorationGoal.reason;
+    }
 
     // Calculate energy cost and happiness gain
     const distance = Math.sqrt(
@@ -375,7 +393,7 @@ export class MXPActionSystem {
         Math.pow(newPosition.z - animal.position.z, 2)
     );
     const energyCost = Math.min(15 + distance * 2, animal.stats.energy * 0.3);
-    const happiness = 10 * curiosityMultiplier + explorationGoal.priority * 2;
+    const happiness = 10 * curiosityMultiplier + (explorationTarget ? 5 : 3); // AI-driven exploration gives more happiness
 
     // Check for discoveries based on world state and exploration goal
     let discoveryMessage = "";
@@ -444,7 +462,7 @@ export class MXPActionSystem {
 
     return {
       success: true,
-      message: `${animal.name} ${explorationGoal.reason}${discoveryMessage}${memoryContext}`,
+      message: `${animal.name} ${goalReason}${discoveryMessage}${memoryContext}`,
       statChanges: {
         happiness: Math.min(100, animal.stats.happiness + happiness),
         energy: Math.max(0, animal.stats.energy - energyCost),

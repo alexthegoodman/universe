@@ -7,7 +7,7 @@ export class AnimalAI {
     this.animalId = animalId;
   }
 
-  async decideAction(animal: Animal, worldState: any): Promise<AnimalAction> {
+  async decideAction(animal: Animal, worldState: any): Promise<{action: AnimalAction, explorationTarget?: {x: number, z: number}}> {
     try {
       console.log(`📡 Making API call for ${animal.name}...`);
       // Call our secure API route instead of direct OpenAI
@@ -46,10 +46,15 @@ export class AnimalAI {
         "socializing",
         "working",
         "mating",
+        "harvesting",
       ];
 
       if (validActions.includes(action)) {
-        return action;
+        const response: any = { action };
+        if (action === "exploring" && result.explorationTarget) {
+          response.explorationTarget = result.explorationTarget;
+        }
+        return response;
       }
 
       const fallback = this.getFallbackAction(animal);
@@ -60,13 +65,13 @@ export class AnimalAI {
         fallback
       );
 
-      return fallback;
+      return { action: fallback };
     } catch (error) {
       console.error(
         `Error getting AI decision for animal ${animal.id}:`,
         error
       );
-      return this.getFallbackAction(animal);
+      return { action: this.getFallbackAction(animal) };
     }
   }
 

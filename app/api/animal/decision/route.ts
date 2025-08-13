@@ -31,6 +31,9 @@ export async function POST(request: NextRequest) {
       model: "gpt-4o-mini",
       temperature: 0.7,
       openAIApiKey: apiKey,
+      modelKwargs: {
+        response_format: { type: "json_object" }
+      }
     });
 
     const prompt = ChatPromptTemplate.fromTemplate(`
@@ -90,7 +93,40 @@ ACTION PRIORITY:
 4. If no suitable resources visible → explore to find new areas
 5. If needs are met → recreational activities based on personality
 
-Respond with just the action name. Consider:
+EXPLORATION GUIDANCE:
+Your current position is: {currentPosition}
+If you choose "exploring", specify where to go by providing coordinates within 20 units of your current position.
+Consider moving towards areas you haven't explored, towards distant resources, or in directions that match your goals.
+
+IMPORTANT: You must respond with valid JSON in this exact format:
+{{
+  "action": "action_name",
+  "target": {{
+    "x": number,
+    "z": number
+  }},
+  "reasoning": "brief explanation of choice"
+}}
+
+For non-exploration actions, omit the "target" field:
+{{
+  "action": "eating",
+  "reasoning": "I'm hungry and have food in inventory"
+}}
+
+For exploration actions, include target coordinates (must be within 20 units):
+{{
+  "action": "exploring", 
+  "target": {{
+    "x": 15.5,
+    "z": 25.0
+  }},
+  "reasoning": "Moving towards unexplored area to the northeast"
+}}
+
+Valid actions: idle, moving, eating, drinking, sleeping, playing, exploring, socializing, working, mating, harvesting
+
+Consider:
 - Check your inventory first before choosing survival actions
 - Use the distance and direction info to understand your surroundings  
 - Prioritize closer resources when multiple options are available
@@ -135,34 +171,71 @@ ${animal.inventory.items
       inventory: inventoryDescription,
       sightRadius: worldState.sightRadius,
       harvestRadius: worldState.harvestRadius,
+      currentPosition: `x:${animal.position.x.toFixed(1)} z:${animal.position.z.toFixed(1)}`,
       worldState: JSON.stringify(worldState, null, 2),
     });
 
-    const action = response.toLowerCase().trim();
+    // Parse JSON response
+    let parsedResponse;
+    try {
+      parsedResponse = JSON.parse(response);
+    } catch (error) {
+      console.error("Failed to parse AI JSON response:", response);
+      // Fallback: try to extract action from response text
+      const validActions = [
+        "moving", "eating", "drinking", "sleeping", "playing", 
+        "exploring", "socializing", "working", "mating", "harvesting", "idle"
+      ];
+      const action = validActions.find(action => response.toLowerCase().includes(action)) || "idle";
+      return NextResponse.json({ action });
+    }
 
-    // Validate the action
+    const action = parsedResponse.action;
+    let explorationTarget = null;
+
+    // Validate action
     const validActions = [
-      "moving",
-      "eating",
-      "drinking",
-      "sleeping",
-      "playing",
-      "exploring",
-      "socializing",
-      "working",
-      "mating",
-      "harvesting",
-      "idle", //  last resort
+      "moving", "eating", "drinking", "sleeping", "playing", 
+      "exploring", "socializing", "working", "mating", "harvesting", "idle"
     ];
 
-    // const finalAction = validActions.includes(action) ? action : 'idle';
+    const finalAction = validActions.includes(action) ? action : "idle";
 
-    // check if action includes a valid action within it
-    const finalAction =
-      validActions.find((validAction) => action.includes(validAction)) ||
-      "idle";
+    // Handle exploration target if present
+    if (finalAction === "exploring" && parsedResponse.target) {
+      const targetX = parseFloat(parsedResponse.target.x);
+      const targetZ = parseFloat(parsedResponse.target.z);
+      
+      if (!isNaN(targetX) && !isNaN(targetZ)) {
+        // Validate coordinates are within 20 units of current position
+        const distance = Math.sqrt(
+          Math.pow(targetX - animal.position.x, 2) + 
+          Math.pow(targetZ - animal.position.z, 2)
+        );
+        
+        if (distance <= 20) {
+          explorationTarget = { x: targetX, z: targetZ };
+        } else {
+          // Limit to 20 units in the direction of the target
+          const angle = Math.atan2(targetZ - animal.position.z, targetX - animal.position.x);
+          explorationTarget = {
+            x: animal.position.x + Math.cos(angle) * 20,
+            z: animal.position.z + Math.sin(angle) * 20
+          };
+        }
+      }
+    }
 
-    return NextResponse.json({ action: finalAction });
+    const result: any = { 
+      action: finalAction,
+      reasoning: parsedResponse.reasoning || "No reasoning provided"
+    };
+    
+    if (finalAction === "exploring" && explorationTarget) {
+      result.explorationTarget = explorationTarget;
+    }
+
+    return NextResponse.json(result);
   } catch (error) {
     console.error("Error in animal decision API:", error);
 

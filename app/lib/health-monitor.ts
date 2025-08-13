@@ -449,8 +449,8 @@ export class HealthMonitor {
     const ai = this.aiInstances.get(animal.id);
     if (ai) {
       const worldState = this.getWorldStateForAnimal(animal);
-      const action = await ai.decideAction(animal, worldState);
-      await this.executeAnimalAction(animal, action);
+      const decision = await ai.decideAction(animal, worldState);
+      await this.executeAnimalAction(animal, decision.action, decision.explorationTarget ? { explorationTarget: decision.explorationTarget } : undefined);
     }
   }
 
@@ -461,9 +461,9 @@ export class HealthMonitor {
     if (ai) {
       const worldState = this.getWorldStateForAnimal(animal);
       try {
-        const action = await ai.decideAction(animal, worldState);
-        console.log(`🎯 ${animal.name} decided to: ${action}`);
-        await this.executeAnimalAction(animal, action);
+        const decision = await ai.decideAction(animal, worldState);
+        console.log(`🎯 ${animal.name} decided to: ${decision.action}`);
+        await this.executeAnimalAction(animal, decision.action, decision.explorationTarget ? { explorationTarget: decision.explorationTarget } : undefined);
       } catch (error) {
         console.error(`Error getting AI decision for ${animal.name}:`, error);
       }
