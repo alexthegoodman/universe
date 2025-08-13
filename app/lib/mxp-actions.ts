@@ -543,19 +543,20 @@ export class MXPActionSystem {
     const { resourceId, worldState } = params;
 
     // Check if animal has recently failed to harvest at this location
-    if (
-      this.explorationSystem.hasRecentFailure(
-        animal.id,
-        animal.position,
-        "harvest"
-      )
-    ) {
-      return {
-        success: false,
-        message: `${animal.name} remembers failing to harvest here recently and decided not to try again`,
-        duration: 1000,
-      };
-    }
+    // not needed now, it will know when it wants to
+    // if (
+    //   this.explorationSystem.hasRecentFailure(
+    //     animal.id,
+    //     animal.position,
+    //     "harvest"
+    //   )
+    // ) {
+    //   return {
+    //     success: false,
+    //     message: `${animal.name} remembers failing to harvest here recently and decided not to try again`,
+    //     duration: 1000,
+    //   };
+    // }
 
     if (!resourceId || !worldState) {
       console.warn("harvest attempt", params);

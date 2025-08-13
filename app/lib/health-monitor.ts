@@ -10,6 +10,7 @@ import { AnimalAI } from "./animal-ai";
 import { MXPActionSystem } from "./mxp-actions";
 import { animalStateManager } from "./animal-state-manager";
 import { explorationSystem, ExplorationSystem } from "./exploration-system";
+import { actionLogger } from "./action-logger";
 
 export const HARVEST_RADIUS = 6; // Animals can harvest within 6 units
 
@@ -394,6 +395,9 @@ export class HealthMonitor {
     customParams?: any
   ): Promise<void> {
     try {
+      // Capture stats before action for logging
+      const statsBefore = { ...animal.stats };
+
       // Generate random parameters for certain actions
       let params: any = {
         worldState: this.getWorldStateForAnimal(animal), // Always include world state
@@ -473,6 +477,20 @@ export class HealthMonitor {
         }
         console.log(`❌ ${result.message}`);
       }
+
+      // Get stats after action for logging
+      const updatedAnimal = animalStateManager.getAnimal(animal.id) || animal;
+      const statsAfter = { ...updatedAnimal.stats };
+
+      // Log the action with before/after stats
+      actionLogger.logAction(
+        animal,
+        action,
+        result,
+        statsBefore,
+        statsAfter
+      );
+
     } catch (error) {
       console.error(
         `Error executing action ${action} for ${animal.name}:`,

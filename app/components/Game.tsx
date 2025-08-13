@@ -9,6 +9,8 @@ import type { WorldResource } from "../lib/game-manager";
 import Animal3D from "./Animal3D";
 import AnimalInfo from "./AnimalInfo";
 import { Resource3D } from "./Resource3D";
+import ActionLog, { type ActionLogEntry } from "./ActionLog";
+import { actionLogger } from "../lib/action-logger";
 
 interface SceneProps {
   animals: Animal[];
@@ -72,6 +74,7 @@ export default function Game() {
   const [selectedAnimal, setSelectedAnimal] = useState<Animal | null>(null);
   const [gameStarted, setGameStarted] = useState(false);
   const [version, setVersion] = useState(0);
+  const [actionLogs, setActionLogs] = useState<ActionLogEntry[]>([]);
 
   useEffect(() => {
     const manager = new GameManager({
@@ -82,10 +85,16 @@ export default function Game() {
 
     setGameManager(manager);
 
+    // Subscribe to action logs
+    const unsubscribe = actionLogger.subscribe((logs) => {
+      setActionLogs(logs);
+    });
+
     return () => {
       if (manager) {
         manager.stopGame();
       }
+      unsubscribe();
     };
   }, []);
 
@@ -133,6 +142,7 @@ export default function Game() {
       await gameManager.spawnRandomAnimal();
     }
   }, [gameManager]);
+
 
   return (
     <div className="w-full h-screen relative">
@@ -195,6 +205,9 @@ export default function Game() {
 
       {/* Animal Info Panel */}
       <AnimalInfo animal={selectedAnimal} onClose={closeAnimalInfo} />
+
+      {/* Action Log */}
+      <ActionLog entries={actionLogs} />
 
       {/* Instructions */}
       <div className="absolute bottom-4 left-4 bg-black/70 text-white p-3 rounded-lg text-sm max-w-sm">

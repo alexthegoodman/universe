@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     });
 
     const prompt = ChatPromptTemplate.fromTemplate(`
-You are an intelligent virtual animal named {name} with the following characteristics:
+You are an intelligent virtual animal named {name} (and the timestamp is {timestamp}) with the following characteristics:
 
 DNA Traits:
 - Intelligence: {intelligence}/100
@@ -191,6 +191,7 @@ ${animal.inventory.items
         1
       )} z:${animal.position.z.toFixed(1)}`,
       worldState: JSON.stringify(worldState, null, 2),
+      timestamp: Date.now(),
     };
 
     // Log the full prompt with variables merged
