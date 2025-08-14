@@ -73,6 +73,10 @@ Based on your traits, current needs, and the world around you, what should you d
 
 Please consider your recent failures so you don't repeat mistakes. For example, a full inventory indicates that you cannot harvest more items at the moment. Also if you don't have enough energy, you won't be able to do certain things, like harvest.
 
+If you are in good health and your needs are met, consider being creative about which action to take next.
+
+Remember, if you are close to the middle of your lifespan, you might want to start breeding to ensure your genes are passed on.
+
 Available actions: idle, moving, eating, drinking, sleeping, playing, exploring, socializing, working, mating, harvesting
 
 IMPORTANT SURVIVAL RULES:

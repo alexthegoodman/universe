@@ -36,8 +36,10 @@ export class HealthMonitor {
   private healthCheckInterval: NodeJS.Timeout | null = null;
   private decisionStagger: Map<string, number> = new Map();
   private gameManagerRef: any = null; // Weak reference to avoid circular dependency
-  private readonly HEALTH_CHECK_INTERVAL = 30000; // 30 seconds
-  private readonly DECISION_STAGGER_RANGE = 15000; // 15 second range for staggering
+  // private readonly HEALTH_CHECK_INTERVAL = 30000; // 30 seconds
+  // private readonly DECISION_STAGGER_RANGE = 15000; // 15 second range for staggering
+  private readonly HEALTH_CHECK_INTERVAL = 10000; // 10 seconds for testing
+  private readonly DECISION_STAGGER_RANGE = 5000; // 5 seconds for testing
 
   constructor() {
     this.actionSystem = new MXPActionSystem();
