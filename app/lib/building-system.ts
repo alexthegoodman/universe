@@ -34,6 +34,28 @@ export class BuildingSystem {
     return Math.min(20, Math.floor(extraArea / 2));
   }
 
+  // Check if position is too close to existing buildings
+  private checkBuildingProximity(
+    position: { x: number; y: number; z: number },
+    minDistance: number = 8
+  ): { canBuild: boolean; conflictingBuilding?: Building } {
+    for (const building of this.buildings.values()) {
+      const distance = Math.sqrt(
+        Math.pow(position.x - building.position.x, 2) +
+        Math.pow(position.z - building.position.z, 2)
+      );
+      
+      if (distance < minDistance) {
+        return {
+          canBuild: false,
+          conflictingBuilding: building
+        };
+      }
+    }
+    
+    return { canBuild: true };
+  }
+
   // Create a new building
   createBuilding(
     animal: Animal,
@@ -48,6 +70,17 @@ export class BuildingSystem {
       return {
         success: false,
         message: materialCheck.message!,
+        duration: 2000,
+      };
+    }
+
+    // Check building proximity to prevent overlapping or too-close buildings
+    const proximityCheck = this.checkBuildingProximity(position);
+    if (!proximityCheck.canBuild) {
+      const conflictingBuilding = proximityCheck.conflictingBuilding!;
+      return {
+        success: false,
+        message: `Cannot build here - too close to existing ${conflictingBuilding.name} (${conflictingBuilding.id}). Buildings must be at least 8 units apart.`,
         duration: 2000,
       };
     }
