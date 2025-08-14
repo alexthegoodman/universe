@@ -91,6 +91,7 @@ IMPORTANT SURVIVAL RULES:
 - Choose "harvesting" when you see canHarvestNow resources and need them (specify which resource by ID)
 - Choose "exploring" to search for resources when you can't see any suitable ones
 - Use resourceSummary to quickly understand what's available nearby
+- You feel good and satisfied about your stats if they are above 30/100 (this is when you begin to consider various actions)
 
 ACTION PRIORITY:
 1. If hungry/thirsty with inventory items → eat/drink

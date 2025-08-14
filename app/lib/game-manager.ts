@@ -6,7 +6,7 @@ import { DNASystem } from "./dna-system";
 import { BreedingSystem } from "./breeding-system";
 import { animalStateManager } from "./animal-state-manager";
 import { buildingSystem } from "./building-system";
-import { RESOURCE_WEIGHTS } from "../types/weights";
+import { RESOURCE_COUNTS, RESOURCE_WEIGHTS } from "../types/weights";
 
 export interface GameConfig {
   maxAnimals: number;
@@ -133,7 +133,7 @@ export class GameManager {
     };
 
     // Generate fewer, spaced-out food sources (now harvestable)
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < RESOURCE_COUNTS.food; i++) {
       resources.push({
         id: `food_${i}`,
         type: "food" as const,
@@ -146,7 +146,7 @@ export class GameManager {
     }
 
     // Generate fewer, spaced-out water sources (now harvestable)
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < RESOURCE_COUNTS.water; i++) {
       resources.push({
         id: `water_${i}`,
         type: "water" as const,
@@ -159,7 +159,7 @@ export class GameManager {
     }
 
     // Generate berry bushes (harvestable food)
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < RESOURCE_COUNTS.berries; i++) {
       resources.push({
         id: `berries_${i}`,
         type: "berries" as const,
@@ -172,7 +172,7 @@ export class GameManager {
     }
 
     // Generate wood sources (harvestable material)
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < RESOURCE_COUNTS.wood; i++) {
       resources.push({
         id: `wood_${i}`,
         type: "wood" as const,
@@ -185,7 +185,7 @@ export class GameManager {
     }
 
     // Generate stone sources (harvestable material)
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < RESOURCE_COUNTS.stone; i++) {
       resources.push({
         id: `stone_${i}`,
         type: "stone" as const,
@@ -198,17 +198,17 @@ export class GameManager {
     }
 
     // Generate shelter locations
-    for (let i = 0; i < 4; i++) {
-      resources.push({
-        id: `shelter_${i}`,
-        type: "shelter" as const,
-        position: getValidPosition(),
-        quantity: 1,
-        harvestable: false,
-        regeneratesOverTime: false,
-        quality: 70 + Math.random() * 30,
-      });
-    }
+    // for (let i = 0; i < 4; i++) {
+    //   resources.push({
+    //     id: `shelter_${i}`,
+    //     type: "shelter" as const,
+    //     position: getValidPosition(),
+    //     quantity: 1,
+    //     harvestable: false,
+    //     regeneratesOverTime: false,
+    //     quality: 70 + Math.random() * 30,
+    //   });
+    // }
 
     return resources;
   }

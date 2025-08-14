@@ -40,8 +40,8 @@ export class HealthMonitor {
   private gameManagerRef: any = null; // Weak reference to avoid circular dependency
   // private readonly HEALTH_CHECK_INTERVAL = 30000; // 30 seconds
   // private readonly DECISION_STAGGER_RANGE = 15000; // 15 second range for staggering
-  private readonly HEALTH_CHECK_INTERVAL = 10000; // 10 seconds for testing
-  private readonly DECISION_STAGGER_RANGE = 5000; // 5 seconds for testing
+  private readonly HEALTH_CHECK_INTERVAL = 15000; // 10 seconds for testing
+  private readonly DECISION_STAGGER_RANGE = 7500; // 5 seconds for testing
 
   constructor() {
     this.actionSystem = new MXPActionSystem();
@@ -583,7 +583,10 @@ export class HealthMonitor {
     const nearbyBuildings: NearbyBuilding[] = allBuildings
       .map((building) => {
         const distance = this.getDistance(animal.position, building.position);
-        const availableActions = buildingSystem.getAvailableActions(animal, building.id);
+        const availableActions = buildingSystem.getAvailableActions(
+          animal,
+          building.id
+        );
         return {
           id: building.id,
           name: building.name,
@@ -591,15 +594,17 @@ export class HealthMonitor {
             x: building.position.x,
             y: building.position.y,
             z: building.position.z,
-            rotation: 0
+            rotation: 0,
           },
           distance: Math.round(distance * 10) / 10,
           dimensions: building.dimensions,
           stats: building.stats,
           currentOccupants: building.currentOccupants.length,
           maxOccupants: building.maxOccupants,
-          canEnter: building.currentOccupants.length < building.maxOccupants && distance <= 5,
-          availableActions: availableActions.map(action => action.type)
+          canEnter:
+            building.currentOccupants.length < building.maxOccupants &&
+            distance <= 5,
+          availableActions: availableActions.map((action) => action.type),
         };
       })
       .filter((building) => building.distance <= SIGHT_RADIUS)

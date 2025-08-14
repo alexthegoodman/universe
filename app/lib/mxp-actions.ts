@@ -74,7 +74,8 @@ export class MXPActionSystem {
       sleep: {
         energyGain: 40,
         healthGain: 15,
-        duration: 10000, // 10 seconds
+        // duration: 10000, // 10 seconds
+        duration: 1000, // 1 second for testing
       },
       work: {
         energyCost: 8,

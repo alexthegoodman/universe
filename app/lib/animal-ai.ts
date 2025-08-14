@@ -7,7 +7,17 @@ export class AnimalAI {
     this.animalId = animalId;
   }
 
-  async decideAction(animal: Animal, worldState: any): Promise<{action: AnimalAction, explorationTarget?: {x: number, z: number}, resourceId?: string, buildingAction?: string, buildingId?: string, buildingName?: string}> {
+  async decideAction(
+    animal: Animal,
+    worldState: any
+  ): Promise<{
+    action: AnimalAction;
+    explorationTarget?: { x: number; z: number };
+    resourceId?: string;
+    buildingAction?: string;
+    buildingId?: string;
+    buildingName?: string;
+  }> {
     try {
       console.log(`📡 Making API call for ${animal.name}...`);
       // Call our secure API route instead of direct OpenAI
@@ -148,60 +158,69 @@ export class AnimalAI {
         statChanges.health = Math.min(100, animal.stats.health + 5);
         statChanges.energy = Math.min(100, animal.stats.energy + 10);
         message = `${animal.name} found some food and ate heartily`;
-        duration = 8000;
+        // duration = 8000;
+        duration = 1000;
         break;
 
       case "drinking":
         statChanges.thirst = Math.max(0, animal.stats.thirst - 25);
         statChanges.health = Math.min(100, animal.stats.health + 3);
         message = `${animal.name} quenched their thirst`;
-        duration = 3000;
+        // duration = 3000;
+        duration = 1000;
         break;
 
       case "sleeping":
         statChanges.energy = Math.min(100, animal.stats.energy + 30);
         statChanges.health = Math.min(100, animal.stats.health + 10);
         message = `${animal.name} is taking a peaceful nap`;
-        duration = 15000;
+        // duration = 15000;
+        duration = 1000;
         break;
 
       case "playing":
         statChanges.happiness = Math.min(100, animal.stats.happiness + 15);
         statChanges.energy = Math.max(0, animal.stats.energy - 10);
         message = `${animal.name} is having fun playing`;
-        duration = 10000;
+        // duration = 10000;
+        duration = 1000;
         break;
 
       case "exploring":
         statChanges.happiness = Math.min(100, animal.stats.happiness + 10);
         statChanges.energy = Math.max(0, animal.stats.energy - 15);
         message = `${animal.name} is exploring their surroundings`;
-        duration = 12000;
+        // duration = 12000;
+        duration = 1000;
         break;
 
       case "socializing":
         statChanges.happiness = Math.min(100, animal.stats.happiness + 20);
         message = `${animal.name} is enjoying social interaction`;
-        duration = 8000;
+        // duration = 8000;
+        duration = 1000;
         break;
 
       case "working":
         statChanges.energy = Math.max(0, animal.stats.energy - 20);
         statChanges.happiness = Math.min(100, animal.stats.happiness + 5);
         message = `${animal.name} is working diligently`;
-        duration = 20000;
+        // duration = 20000;
+        duration = 1000;
         break;
 
       case "moving":
         statChanges.energy = Math.max(0, animal.stats.energy - 5);
         message = `${animal.name} is moving around`;
-        duration = 6000;
+        // duration = 6000;
+        duration = 1000;
         break;
 
       default:
         statChanges.energy = Math.min(100, animal.stats.energy + 2);
         message = `${animal.name} is resting idly`;
-        duration = 5000;
+        // duration = 5000;
+        duration = 1000;
     }
 
     return {
