@@ -286,21 +286,29 @@ export class MXPActionSystem {
   ): Promise<ActionResult> {
     let { comfort = 1, safety = 1 } = params;
 
-    // Check if animal is in a building for bonuses
+    // REQUIRE buildings for sleeping - animals can only sleep safely indoors
     const buildingBonus = buildingSystem.getBuildingBonus(animal);
+
+    // Check if animal is actually in a building (not just nearby)
+    if (buildingBonus.comfort <= 1) {
+      return {
+        success: false,
+        message: `${animal.name} cannot sleep outdoors - it's too dangerous! Must find or build shelter first.`,
+        duration: 2000,
+      };
+    }
+
     comfort *= buildingBonus.comfort;
     safety *= buildingBonus.safety;
 
-    const energyGain = this.config.sleep.energyGain * comfort;
+    // Significantly increased energy gain to make sleeping very rewarding
+    const energyGain = this.config.sleep.energyGain * comfort * 1.5; // 50% bonus
     const healthGain = this.config.sleep.healthGain * safety;
     const duration = this.config.sleep.duration * (2 - comfort); // Less comfortable = longer sleep needed
 
-    const sleepLocation =
-      buildingBonus.comfort > 1 ? " comfortably in their shelter" : " outdoors";
-
     return {
       success: true,
-      message: `${animal.name} is sleeping peacefully${sleepLocation}`,
+      message: `${animal.name} is sleeping peacefully and safely in their shelter`,
       statChanges: {
         energy: Math.min(100, animal.stats.energy + energyGain),
         health: Math.min(100, animal.stats.health + healthGain),
@@ -644,7 +652,11 @@ export class MXPActionSystem {
     const intelligenceMultiplier = animal.dna.intelligence / 100;
     const effectiveness = (strengthMultiplier + intelligenceMultiplier) / 2;
 
-    const energyCost = 4 + (resource.type === "stone" ? 2 : 0); // Stone is harder to harvest
+    let energyCost = 3 + (resource.type === "stone" ? 1 : 0); // Stone is harder to harvest
+
+    if (resource.type === "water") {
+      energyCost = 0; // Water harvesting is easy, in fact, a desparate animal can do it
+    }
 
     if (animal.stats.energy < energyCost) {
       // Store failure memory
@@ -740,6 +752,15 @@ export class MXPActionSystem {
         buildPosition,
         buildingName
       );
+
+      if (!result.success) {
+        this.explorationSystem.addFailureMemory(
+          animal.id,
+          animal.position,
+          "building",
+          result.message || "failed to build"
+        );
+      }
 
       if (result.success && result.materialConsumed) {
         // Consume materials from inventory

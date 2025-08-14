@@ -6,6 +6,7 @@ import { DNASystem } from "./dna-system";
 import { BreedingSystem } from "./breeding-system";
 import { animalStateManager } from "./animal-state-manager";
 import { buildingSystem } from "./building-system";
+import { clientPlanningManager } from "./client-planning-manager";
 import { RESOURCE_COUNTS, RESOURCE_WEIGHTS } from "../types/weights";
 
 export interface GameConfig {
@@ -699,5 +700,9 @@ export class GameManager {
 
   getBreedingSystem(): BreedingSystem {
     return this.breedingSystem;
+  }
+
+  getPlanningManager() {
+    return clientPlanningManager;
   }
 }

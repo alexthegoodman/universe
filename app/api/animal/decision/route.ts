@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { StringOutputParser } from "@langchain/core/output_parsers";
+import { serverPlanningHelper } from "../../../lib/server-planning-helper";
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,6 +19,26 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Check if we need a new plan and get context
+    const { existingPlan, needsNewPlan } = body; // Client passes this info
+    const shouldCreateNewPlan =
+      needsNewPlan ||
+      serverPlanningHelper.shouldCreateNewPlan(
+        animal,
+        worldState,
+        existingPlan
+      );
+    const planningContext = serverPlanningHelper.getPlanningContext(
+      animal,
+      worldState
+    );
+    const planningInsights = existingPlan
+      ? `Current plan: ${existingPlan.planType} (${
+          existingPlan.steps?.length || 0
+        } steps)`
+      : "No current plan";
+    const sleepCheck = serverPlanningHelper.canSleep(animal, worldState);
 
     // Check for API key
     const apiKey = process.env.OPENAI_API_KEY;
@@ -69,15 +90,23 @@ Current Inventory:
 World State:
 {worldState}
 
-Based on your traits, current needs, and the world around you, what should you do next?
+Based on your traits, current needs, and the world around you, what PLAN should you create for the next 3-7 turns?
 
-Please consider your recent failures so you don't repeat mistakes. For example, a full inventory indicates that you cannot harvest more items at the moment. Also if you don't have enough energy, you won't be able to do certain things, like harvest.
+You MUST create strategic multi-step plans, NOT individual actions. Think about sequences like:
+- "gather materials → build shelter → sleep to restore energy"
+- "find water → drink → explore for food → eat"
+- "harvest stone → harvest wood → create building → improve building"
 
-If you are in good health and your needs are met, consider being creative about which action to take next.
+Consider your recent failures and avoid repeating mistakes. Plan around your constraints:
+- Full inventory means you need to consume items before harvesting more
+- Low energy requires shelter building before you can sleep
+- Critical needs (thirst/hunger) should be prioritized in your plan
 
-Remember, if you are close to the middle of your lifespan, you might want to start breeding to ensure your genes are passed on.
+If you are close to the middle of your lifespan, consider breeding plans.
 
-Available actions: idle, moving, eating, drinking, sleeping, playing, exploring, socializing, working, mating, harvesting, building
+Be wise. For example, if you are in need of one or more resources, then you will want to travel nearby each resource before harvesting each resource.
+
+Available plan actions: idle, moving, eating, drinking, sleeping, playing, exploring, socializing, working, mating, harvesting, building
 
 IMPORTANT SURVIVAL RULES:
 - You can only eat/drink if you have food/water items in your inventory  
@@ -93,13 +122,20 @@ IMPORTANT SURVIVAL RULES:
 - Use resourceSummary to quickly understand what's available nearby
 - You feel good and satisfied about your stats if they are above 30/100 (this is when you begin to consider various actions)
 
-ACTION PRIORITY:
-1. If hungry/thirsty with inventory items → eat/drink
-2. If hungry/thirsty with canHarvestNow resources → harvest them
-3. If hungry/thirsty but resources are too far → explore to get closer
-4. If no suitable resources visible → explore to find new areas
-5. If you have stone/wood materials and want shelter → build
-6. If needs are met → recreational activities based on personality
+CRITICAL SLEEPING CONSTRAINT:
+{sleepConstraint}
+- Sleep provides MASSIVE energy restoration (40+ energy points) but requires shelter
+- If you need to sleep but lack shelter, prioritize building or finding buildings IMMEDIATELY
+- Energy below 30 without shelter is a CRISIS requiring urgent building action
+
+PLANNING PRIORITY:
+1. SURVIVAL PLANS: Address critical needs (thirst>70, hunger>70, energy<30, health<30) 
+2. BUILDING PLANS: If you have materials or can gather them, plan shelter construction
+3. RESOURCE GATHERING PLANS: Plan sequences to collect stone, wood, food, water
+4. EXPLORATION PLANS: Systematic exploration for resources and opportunities  
+5. SOCIAL/RECREATION PLANS: When survival needs are met, plan social activities
+
+PLAN STRUCTURE: Each step should have a clear purpose that builds toward your goals.
 
 EXPLORATION GUIDANCE:
 Your current position is: {currentPosition}
@@ -112,6 +148,15 @@ Check your memories.recentFailures before attempting actions that have recently 
 - If you failed due to being too far, move closer before attempting again
 - If you failed due to full inventory, consider eating/drinking items to make space
 - Learn from your past failures and avoid repeating the same mistakes in the same locations
+
+PLANNING SYSTEM:
+{planningInsights}
+{planGeneration}
+- You should think 3-10 turns ahead and create strategic plans
+- Consider the consequences of your current action choice
+- Balance immediate needs with longer-term goals like shelter, safety, and comfort
+- Plan building projects when you have or can gather sufficient materials
+- Remember that sleeping gives huge benefits but requires shelter - plan accordingly!
 
 BUILDING SYSTEM:
 - Buildings provide shelter, comfort, and happiness bonuses when you rest inside them
@@ -128,60 +173,115 @@ BUILDING SYSTEM:
 - Buildings help during sleep and provide protection from the elements
 
 IMPORTANT: You must respond with valid JSON in this exact format:
+
+{planGeneration}
+
+ALWAYS INCLUDE A PLAN when creating new plans. Use this format:
 {{
-  "action": "action_name",
-  "target": {{
-    "x": number,
-    "z": number
+  "plan": {{
+    "steps": [
+      {{
+        "action": "harvesting",
+        "priority": 9,
+        "turnOffset": 0,
+        "reason": "Need stone for building",
+        "parameters": {{
+          "resourceId": "stone_123"
+        }}
+      }},
+      {{
+        "action": "building", 
+        "priority": 10,
+        "turnOffset": 1,
+        "reason": "Create shelter for sleeping",
+        "parameters": {{
+          "action": "create_building",
+          "buildingName": "Survival Shelter"
+        }}
+      }},
+      {{
+        "action": "sleeping",
+        "priority": 10,
+        "turnOffset": 2, 
+        "reason": "Restore energy in safe shelter"
+      }}
+    ],
+    "planType": "building",
+    "confidence": 0.8
   }},
-  "reasoning": "brief explanation of choice"
+  "reasoning": "Low energy requires shelter construction to enable sleeping"
 }}
 
-For non-exploration actions, omit the "target" field:
-{{
-  "action": "eating",
-  "reasoning": "I'm hungry and have food in inventory"
-}}
+Plan Step Guidelines:
+- turnOffset: 0 = immediate action, 1 = next turn, 2 = turn after that, etc.
+- priority: 1-10, with 10 being highest priority
+- parameters: Action-specific details (resourceId for harvesting, building details, etc.)
+- planType: "survival", "building", "exploration", "social", or "mixed"
+- confidence: 0.1-1.0, how confident you are this plan will work
 
-For harvesting actions, include the resourceId:
+PLAN STEP EXAMPLES (these are individual steps within plans, not full responses):
+
+For harvesting steps, include resourceId in parameters:
 {{
   "action": "harvesting",
-  "resourceId": "resource_12345",
-  "reasoning": "I need water and there's a water source I can harvest now"
+  "priority": 9,
+  "turnOffset": 0,
+  "reason": "Need water for survival",
+  "parameters": {{
+    "resourceId": "resource_12345"
+  }}
 }}
 
-For exploration actions, include target coordinates (must be within 20 units):
+For exploration steps, include target coordinates in parameters:
 {{
-  "action": "exploring", 
-  "target": {{
-    "x": 15.5,
-    "z": 25.0
-  }},
-  "reasoning": "Moving towards unexplored area to the northeast"
+  "action": "exploring",
+  "priority": 7,
+  "turnOffset": 1,
+  "reason": "Search for stone deposits",
+  "parameters": {{
+    "targetX": 15.5,
+    "targetZ": 25.0
+  }}
 }}
 
-For building actions, specify the buildingAction and optionally buildingId for modifications:
+For building steps, specify buildingAction in parameters:
 {{
   "action": "building",
-  "buildingAction": "create_building",
-  "reasoning": "I have enough materials to build shelter for protection"
+  "priority": 10,
+  "turnOffset": 2,
+  "reason": "Create shelter for sleeping",
+  "parameters": {{
+    "action": "create_building",
+    "buildingName": "Survival Shelter"
+  }}
 }}
 
+For building modifications, include buildingId:
 {{
-  "action": "building", 
-  "buildingAction": "make_wider",
-  "buildingId": "building_123",
-  "reasoning": "Expanding my shelter to fit more animals"
+  "action": "building",
+  "priority": 8,
+  "turnOffset": 3,
+  "reason": "Expand shelter capacity",
+  "parameters": {{
+    "action": "make_wider",
+    "buildingId": "building_123"
+  }}
 }}
 
-Valid actions: idle, moving, eating, drinking, sleeping, playing, exploring, socializing, working, mating, harvesting, building
+For survival steps (eating/drinking/sleeping), no special parameters needed:
+{{
+  "action": "sleeping",
+  "priority": 10,
+  "turnOffset": 4,
+  "reason": "Restore energy in safe shelter"
+}}
 
 Consider:
-- Check your inventory first before choosing survival actions
-- Use the distance and direction info to understand your surroundings  
-- Prioritize closer resources when multiple options are available
-- If health/energy are low, prioritize sleeping
-- If stats are good, consider recreational activities based on personality
+- Plan sequences that solve problems efficiently
+- Account for action duration and delays between steps  
+- Build contingencies for potential failures
+- Balance immediate needs with long-term goals
+- Create plans that work toward shelter construction when possible
     `);
 
     const chain = prompt.pipe(llm).pipe(new StringOutputParser());
@@ -198,6 +298,17 @@ ${animal.inventory.items
     (item: any) => `- ${item.name} x${item.quantity} (quality: ${item.quality})`
   )
   .join("\n")}`;
+
+    const planGenerationText = shouldCreateNewPlan
+      ? `PLAN GENERATION REQUIRED: You need to create a new 3-7 step plan. Include a "plan" field in your JSON response with specific steps, priorities, and reasons.
+Context: ${JSON.stringify(planningContext, null, 2)}`
+      : `FOLLOWING EXISTING PLAN: Continue executing your current plan. Current step: ${
+          existingPlan?.steps?.[existingPlan?.currentStepIndex || 0]?.action ||
+          "unknown"
+        } - ${
+          existingPlan?.steps?.[existingPlan?.currentStepIndex || 0]?.reason ||
+          "no reason"
+        }. Do NOT create a new plan field in your response.`;
 
     const promptVariables = {
       name: animal.name,
@@ -226,6 +337,9 @@ ${animal.inventory.items
       )} z:${animal.position.z.toFixed(1)}`,
       worldState: JSON.stringify(worldState, null, 2),
       timestamp: Date.now(),
+      planningInsights: planningInsights,
+      planGeneration: planGenerationText,
+      sleepConstraint: sleepCheck.reason,
     };
 
     // Log the full prompt with variables merged
@@ -337,6 +451,32 @@ ${animal.inventory.items
       if (parsedResponse.buildingName) {
         result.buildingName = parsedResponse.buildingName;
       }
+    }
+
+    // Include plan in response for client-side storage
+    if (parsedResponse.plan && shouldCreateNewPlan) {
+      result.newPlan = {
+        animalId: animal.id,
+        steps: parsedResponse.plan.steps.map((step: any, index: number) => ({
+          id: `step_${Date.now()}_${index}`,
+          action: step.action,
+          parameters: step.parameters || {},
+          priority: step.priority || 5,
+          turnOffset: step.turnOffset || index,
+          expectedBenefit: step.expectedBenefit || 10,
+          reason: step.reason || "No reason provided",
+        })),
+        createdAt: Date.now(),
+        lastUpdated: Date.now(),
+        planHorizon: parsedResponse.plan.steps.length,
+        currentStepIndex: 0,
+        confidence: parsedResponse.plan.confidence || 0.7,
+        planType: parsedResponse.plan.planType || "mixed",
+      };
+
+      console.log(
+        `📋 Generated new plan for ${animal.name} with ${result.newPlan.steps.length} steps`
+      );
     }
 
     return NextResponse.json(result);

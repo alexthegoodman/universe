@@ -94,7 +94,8 @@ export default function Game() {
 
   useEffect(() => {
     const manager = new GameManager({
-      startingAnimals: 10,
+      startingAnimals: 2,
+      // startingAnimals: 10,
       maxAnimals: 20,
       enableWebSocket: false, // Disable for now to avoid server dependency
     });
@@ -155,7 +156,7 @@ export default function Game() {
   }, []);
 
   const handleBuildingClick = useCallback((building: Building) => {
-    console.log('Building clicked:', building.name, building);
+    console.log("Building clicked:", building.name, building);
   }, []);
 
   const spawnNewAnimal = useCallback(async () => {
@@ -213,9 +214,7 @@ export default function Game() {
                   Water Sources:{" "}
                   {resources.filter((r) => r.type === "water").length}
                 </div>
-                <div>
-                  Buildings: {buildings.length}
-                </div>
+                <div>Buildings: {buildings.length}</div>
                 <div>
                   Total Shelter Capacity:{" "}
                   {buildings.reduce((sum, b) => sum + b.maxOccupants, 0)}

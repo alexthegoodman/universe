@@ -8,13 +8,13 @@ export class ExplorationSystem {
 
   // Calculate sight radius based on animal traits
   getSightRadius(animal: Animal): number {
-    const baseRadius = 15;
+    const baseRadius = 35;
     const intelligenceBonus = (animal.dna.intelligence / 100) * 3;
     const curiosityBonus = (animal.dna.curiosity / 100) * 2;
     const ageBonus = animal.age < 0.3 ? 1 : animal.age > 0.7 ? -1 : 0; // Young animals see farther
 
     return Math.max(
-      10,
+      30,
       baseRadius + intelligenceBonus + curiosityBonus + ageBonus
     );
   }

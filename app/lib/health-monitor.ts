@@ -13,6 +13,7 @@ import { animalStateManager } from "./animal-state-manager";
 import { explorationSystem, ExplorationSystem } from "./exploration-system";
 import { actionLogger } from "./action-logger";
 import { buildingSystem } from "./building-system";
+import { clientPlanningManager, type PlanStep } from "./client-planning-manager";
 
 export const HARVEST_RADIUS = 4; // Animals can harvest within this radius
 
@@ -326,16 +327,69 @@ export class HealthMonitor {
     animal: Animal,
     healthStatus: "healthy" | "warning" | "critical" | "dying"
   ): Promise<void> {
+    // Check if animal can make a new decision (respecting plan timing)
+    if (!clientPlanningManager.canMakeNewDecision(animal.id)) {
+      const plan = clientPlanningManager.getPlan(animal.id);
+      if (clientPlanningManager.isExecutingStep(animal.id)) {
+        console.log(`⏳ ${animal.name} is still executing plan step, skipping decision`);
+      } else {
+        console.log(`⏱️ ${animal.name} waiting for plan step delay (${plan?.planType || 'unknown'} plan)`);
+      }
+      return;
+    }
+
+    // First priority: Execute current plan step if available
+    const currentStep = clientPlanningManager.getCurrentStep(animal.id);
+    if (currentStep) {
+      await this.executePlanStep(animal, currentStep);
+      return;
+    }
+
+    // Second priority: Create new plan if needed
+    const needsNewPlan = clientPlanningManager.needsNewPlan(animal.id);
+    if (needsNewPlan) {
+      console.log(`📋 ${animal.name} needs a new plan (${healthStatus})`);
+      await this.createNewPlan(animal, healthStatus);
+      
+      // After creating plan, try to execute first step
+      const firstStep = clientPlanningManager.getCurrentStep(animal.id);
+      if (firstStep) {
+        await this.executePlanStep(animal, firstStep);
+      }
+      return;
+    }
+
+    // Fallback: No plan and no immediate step - should not happen
+    console.warn(`⚠️ ${animal.name} has no plan step to execute and doesn't need new plan`);
+  }
+
+  private async executePlanStep(animal: Animal, step: PlanStep): Promise<void> {
+    console.log(`📋 Executing plan step: ${step.action} - ${step.reason}`);
+    
+    // Mark step as started
+    clientPlanningManager.startStep(animal.id, step.id);
+
+    // Build action parameters from step
+    const actionParams: any = {
+      ...step.parameters,
+    };
+
+    // Execute the step action
+    await this.executeAnimalAction(animal, step.action as any, actionParams);
+  }
+
+  private async createNewPlan(
+    animal: Animal, 
+    healthStatus: "healthy" | "warning" | "critical" | "dying"
+  ): Promise<void> {
     const statusEmoji = {
       healthy: "🤔",
-      warning: "⚠️",
+      warning: "⚠️", 
       critical: "🚨",
       dying: "💀",
     };
 
-    console.log(
-      `${statusEmoji[healthStatus]} ${animal.name} is deciding what to do... (${healthStatus})`
-    );
+    console.log(`${statusEmoji[healthStatus]} ${animal.name} is creating a new plan... (${healthStatus})`);
 
     const ai = this.aiInstances.get(animal.id);
     if (!ai) {
@@ -345,36 +399,17 @@ export class HealthMonitor {
 
     try {
       const worldState = this.getWorldStateForAnimal(animal);
-      const decision = await ai.decideAction(animal, worldState);
-
-      console.log(`🎯 ${animal.name} decided to: ${decision.action}`);
-
-      // Execute the AI's decision with any provided parameters
-      const actionParams: any = {};
-
-      if (decision.explorationTarget) {
-        actionParams.explorationTarget = decision.explorationTarget;
+      // AI will only be called for plan creation now, not individual actions
+      const result = await ai.decideAction(animal, worldState);
+      
+      if (result.newPlan) {
+        console.log(`📋 Created new plan for ${animal.name}: ${result.newPlan.steps.length} steps (${result.newPlan.planType})`);
+      } else {
+        console.warn(`⚠️ AI did not create a plan for ${animal.name}, using fallback`);
+        // Could implement emergency fallback plan here
       }
-
-      if (decision.resourceId) {
-        actionParams.resourceId = decision.resourceId;
-      }
-
-      if (decision.buildingAction) {
-        actionParams.action = decision.buildingAction;
-      }
-
-      if (decision.buildingId) {
-        actionParams.buildingId = decision.buildingId;
-      }
-
-      if (decision.buildingName) {
-        actionParams.buildingName = decision.buildingName;
-      }
-
-      await this.executeAnimalAction(animal, decision.action, actionParams);
     } catch (error) {
-      console.error(`Error getting AI decision for ${animal.name}:`, error);
+      console.error(`Error creating plan for ${animal.name}:`, error);
     }
   }
 
@@ -500,11 +535,17 @@ export class HealthMonitor {
 
       // Log the action with before/after stats
       actionLogger.logAction(animal, action, result, statsBefore, statsAfter);
+
+      // Update planning system - mark current step as completed
+      clientPlanningManager.completeCurrentStep(animal.id, result.success);
     } catch (error) {
       console.error(
         `Error executing action ${action} for ${animal.name}:`,
         error
       );
+      
+      // Mark planning step as failed
+      clientPlanningManager.completeCurrentStep(animal.id, false);
     }
   }
 

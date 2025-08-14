@@ -1,4 +1,5 @@
 import type { Animal, AnimalAction, ActionResult } from "../types/animal";
+import { clientPlanningManager } from "./client-planning-manager";
 
 export class AnimalAI {
   private animalId: string;
@@ -11,15 +12,16 @@ export class AnimalAI {
     animal: Animal,
     worldState: any
   ): Promise<{
-    action: AnimalAction;
-    explorationTarget?: { x: number; z: number };
-    resourceId?: string;
-    buildingAction?: string;
-    buildingId?: string;
-    buildingName?: string;
+    newPlan?: any; // Only returns plans now, not individual actions
+    reasoning?: string;
   }> {
     try {
       console.log(`📡 Making API call for ${animal.name}...`);
+      
+      // Get planning context from client-side manager
+      const existingPlan = clientPlanningManager.getPlan(animal.id);
+      const needsNewPlan = clientPlanningManager.needsNewPlan(animal.id);
+      
       // Call our secure API route instead of direct OpenAI
       const response = await fetch("/api/animal/decision", {
         method: "POST",
@@ -29,6 +31,8 @@ export class AnimalAI {
         body: JSON.stringify({
           animal,
           worldState,
+          existingPlan,
+          needsNewPlan,
         }),
       });
 
@@ -42,192 +46,150 @@ export class AnimalAI {
         console.warn(`AI decision warning for ${animal.name}: ${result.error}`);
       }
 
-      const action = result.action as AnimalAction;
-
-      // Validate the action
-      const validActions: AnimalAction[] = [
-        "idle",
-        "moving",
-        "eating",
-        "drinking",
-        "sleeping",
-        "playing",
-        "exploring",
-        "socializing",
-        "working",
-        "mating",
-        "harvesting",
-        "building",
-      ];
-
-      if (validActions.includes(action)) {
-        const response: any = { action };
-        if (action === "exploring" && result.explorationTarget) {
-          response.explorationTarget = result.explorationTarget;
-        }
-        if (action === "harvesting" && result.resourceId) {
-          response.resourceId = result.resourceId;
-        }
-        if (action === "building") {
-          if (result.buildingAction) {
-            response.buildingAction = result.buildingAction;
-          }
-          if (result.buildingId) {
-            response.buildingId = result.buildingId;
-          }
-          if (result.buildingName) {
-            response.buildingName = result.buildingName;
-          }
-        }
-        return response;
+      // Store new plan if provided and return it
+      if (result.newPlan) {
+        clientPlanningManager.storePlan(result.newPlan);
+        return {
+          newPlan: result.newPlan,
+          reasoning: result.reasoning || "Plan created by AI"
+        };
       }
 
-      const fallback = this.getFallbackAction(animal);
-
-      console.warn(
-        "Using fallback action due to invalid AI response:",
-        action,
-        fallback
-      );
-
-      return { action: fallback };
+      // If no plan was created, this indicates a problem
+      console.warn(`⚠️ AI did not create a plan for ${animal.name}`);
+      
+      // Return fallback plan
+      const fallbackPlan = this.createFallbackPlan(animal);
+      clientPlanningManager.storePlan(fallbackPlan);
+      
+      return {
+        newPlan: fallbackPlan,
+        reasoning: "Fallback plan due to AI failure"
+      };
     } catch (error) {
       console.error(
         `Error getting AI decision for animal ${animal.id}:`,
         error
       );
-      return { action: this.getFallbackAction(animal) };
+      
+      // Create fallback plan on error
+      const fallbackPlan = this.createFallbackPlan(animal);
+      clientPlanningManager.storePlan(fallbackPlan);
+      
+      return {
+        newPlan: fallbackPlan,
+        reasoning: "Fallback plan due to API error"
+      };
     }
   }
 
-  private getFallbackAction(animal: Animal): AnimalAction {
-    // Simple rule-based fallback when API is unavailable
-    if (animal.stats.health < 30) return "sleeping";
+  private createFallbackPlan(animal: Animal): any {
+    const urgentActions = [];
+    let planType = "survival";
 
-    // Check inventory before deciding to eat/drink
+    // Determine urgent needs
     if (animal.stats.thirst > 70) {
       const hasWater = animal.inventory.items.some(
         (item) => item.type === "water" && item.quantity > 0
       );
       if (hasWater) {
-        return "drinking";
+        urgentActions.push({
+          id: `step_${Date.now()}_0`,
+          action: "drinking",
+          priority: 10,
+          turnOffset: 0,
+          expectedBenefit: 25,
+          reason: "Urgent: quench thirst"
+        });
       } else {
-        // Need to find water - either harvest nearby or explore
-        return "exploring"; // Let the health monitor handle finding water sources
+        urgentActions.push({
+          id: `step_${Date.now()}_0`,
+          action: "exploring",
+          priority: 9,
+          turnOffset: 0,
+          expectedBenefit: 20,
+          reason: "Find water source"
+        });
       }
     }
 
     if (animal.stats.hunger > 70) {
       const hasFood = animal.inventory.items.some(
-        (item) =>
-          (item.type === "food" || item.type === "berries") && item.quantity > 0
+        (item) => (item.type === "food" || item.type === "berries") && item.quantity > 0
       );
       if (hasFood) {
-        return "eating";
+        urgentActions.push({
+          id: `step_${Date.now()}_${urgentActions.length}`,
+          action: "eating",
+          priority: 10,
+          turnOffset: urgentActions.length,
+          expectedBenefit: 25,
+          reason: "Urgent: eat food"
+        });
       } else {
-        // Need to find food - either harvest nearby or explore
-        return "exploring"; // Let the health monitor handle finding food sources
+        urgentActions.push({
+          id: `step_${Date.now()}_${urgentActions.length}`,
+          action: "exploring",
+          priority: 9,
+          turnOffset: urgentActions.length,
+          expectedBenefit: 20,
+          reason: "Find food source"
+        });
       }
     }
 
-    if (animal.stats.energy < 30) return "sleeping";
-    if (animal.stats.happiness < 30) return "playing";
+    if (animal.stats.energy < 30) {
+      // Check if has materials for building
+      const hasStone = animal.inventory.items.some(item => item.type === "stone" && item.quantity >= 2);
+      const hasWood = animal.inventory.items.some(item => item.type === "wood" && item.quantity >= 2);
+      
+      if (hasStone && hasWood) {
+        urgentActions.push({
+          id: `step_${Date.now()}_${urgentActions.length}`,
+          action: "building",
+          parameters: { action: "create_building", buildingName: "Emergency Shelter" },
+          priority: 10,
+          turnOffset: urgentActions.length,
+          expectedBenefit: 40,
+          reason: "Build shelter to enable sleeping"
+        });
+        planType = "building";
+      } else {
+        urgentActions.push({
+          id: `step_${Date.now()}_${urgentActions.length}`,
+          action: "exploring",
+          priority: 8,
+          turnOffset: urgentActions.length,
+          expectedBenefit: 15,
+          reason: "Find materials for shelter"
+        });
+      }
+    }
 
-    // Based on personality
-    if (animal.dna.personality.playful > 70) return "playing";
-    if (animal.dna.curiosity > 70) return "exploring";
-    if (animal.dna.social > 70) return "socializing";
-
-    return "idle";
-  }
-
-  async executeAction(
-    animal: Animal,
-    action: AnimalAction
-  ): Promise<ActionResult> {
-    // This will be enhanced with MXP integration
-    // For now, basic stat changes based on actions
-
-    const statChanges: Partial<typeof animal.stats> = {};
-    let message = `${animal.name} is ${action}`;
-    let duration = 5000; // 5 seconds default
-
-    switch (action) {
-      case "eating":
-        statChanges.hunger = Math.max(0, animal.stats.hunger - 20);
-        statChanges.health = Math.min(100, animal.stats.health + 5);
-        statChanges.energy = Math.min(100, animal.stats.energy + 10);
-        message = `${animal.name} found some food and ate heartily`;
-        // duration = 8000;
-        duration = 1000;
-        break;
-
-      case "drinking":
-        statChanges.thirst = Math.max(0, animal.stats.thirst - 25);
-        statChanges.health = Math.min(100, animal.stats.health + 3);
-        message = `${animal.name} quenched their thirst`;
-        // duration = 3000;
-        duration = 1000;
-        break;
-
-      case "sleeping":
-        statChanges.energy = Math.min(100, animal.stats.energy + 30);
-        statChanges.health = Math.min(100, animal.stats.health + 10);
-        message = `${animal.name} is taking a peaceful nap`;
-        // duration = 15000;
-        duration = 1000;
-        break;
-
-      case "playing":
-        statChanges.happiness = Math.min(100, animal.stats.happiness + 15);
-        statChanges.energy = Math.max(0, animal.stats.energy - 10);
-        message = `${animal.name} is having fun playing`;
-        // duration = 10000;
-        duration = 1000;
-        break;
-
-      case "exploring":
-        statChanges.happiness = Math.min(100, animal.stats.happiness + 10);
-        statChanges.energy = Math.max(0, animal.stats.energy - 15);
-        message = `${animal.name} is exploring their surroundings`;
-        // duration = 12000;
-        duration = 1000;
-        break;
-
-      case "socializing":
-        statChanges.happiness = Math.min(100, animal.stats.happiness + 20);
-        message = `${animal.name} is enjoying social interaction`;
-        // duration = 8000;
-        duration = 1000;
-        break;
-
-      case "working":
-        statChanges.energy = Math.max(0, animal.stats.energy - 20);
-        statChanges.happiness = Math.min(100, animal.stats.happiness + 5);
-        message = `${animal.name} is working diligently`;
-        // duration = 20000;
-        duration = 1000;
-        break;
-
-      case "moving":
-        statChanges.energy = Math.max(0, animal.stats.energy - 5);
-        message = `${animal.name} is moving around`;
-        // duration = 6000;
-        duration = 1000;
-        break;
-
-      default:
-        statChanges.energy = Math.min(100, animal.stats.energy + 2);
-        message = `${animal.name} is resting idly`;
-        // duration = 5000;
-        duration = 1000;
+    // If no urgent actions, add exploration
+    if (urgentActions.length === 0) {
+      urgentActions.push({
+        id: `step_${Date.now()}_0`,
+        action: "exploring",
+        priority: 5,
+        turnOffset: 0,
+        expectedBenefit: 10,
+        reason: "General exploration"
+      });
+      planType = "exploration";
     }
 
     return {
-      success: true,
-      message,
-      statChanges,
-      duration,
+      animalId: animal.id,
+      steps: urgentActions,
+      createdAt: Date.now(),
+      lastUpdated: Date.now(),
+      planHorizon: urgentActions.length,
+      currentStepIndex: 0,
+      confidence: 0.6, // Lower confidence for fallback
+      planType
     };
   }
+
+
 }
