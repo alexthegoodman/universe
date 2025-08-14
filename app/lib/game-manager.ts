@@ -1,9 +1,9 @@
-import type { Animal } from '../types/animal';
-import { AnimalLifecycle } from './animal-lifecycle';
-import { HealthMonitor } from './health-monitor';
-import { DNASystem } from './dna-system';
-import { BreedingSystem } from './breeding-system';
-import { animalStateManager } from './animal-state-manager';
+import type { Animal } from "../types/animal";
+import { AnimalLifecycle } from "./animal-lifecycle";
+import { HealthMonitor } from "./health-monitor";
+import { DNASystem } from "./dna-system";
+import { BreedingSystem } from "./breeding-system";
+import { animalStateManager } from "./animal-state-manager";
 
 export interface GameConfig {
   maxAnimals: number;
@@ -15,7 +15,14 @@ export interface GameConfig {
 
 export interface WorldResource {
   id: string;
-  type: 'food' | 'water' | 'shelter' | 'material' | 'berries' | 'wood' | 'stone';
+  type:
+    | "food"
+    | "water"
+    | "shelter"
+    | "material"
+    | "berries"
+    | "wood"
+    | "stone";
   position: { x: number; y: number; z: number };
   quantity: number;
   harvestable: boolean;
@@ -29,8 +36,8 @@ export interface WorldState {
   environment: {
     temperature: number;
     humidity: number;
-    timeOfDay: 'dawn' | 'day' | 'dusk' | 'night';
-    weather: 'clear' | 'cloudy' | 'rainy' | 'stormy';
+    timeOfDay: "dawn" | "day" | "dusk" | "night";
+    weather: "clear" | "cloudy" | "rainy" | "stormy";
   };
   events: Array<{
     id: string;
@@ -48,7 +55,7 @@ export class GameManager {
   private worldState: WorldState;
   private websocketServer: any;
   private gameRunning: boolean = false;
-  
+
   constructor(config: Partial<GameConfig> = {}) {
     this.config = {
       maxAnimals: 50,
@@ -56,24 +63,24 @@ export class GameManager {
       worldSize: { width: 100, height: 10, depth: 100 },
       enableWebSocket: true,
       webSocketPort: 8080,
-      ...config
+      ...config,
     };
-    
+
     this.healthMonitor = new HealthMonitor();
     this.healthMonitor.setGameManagerReference(this);
     this.breedingSystem = new BreedingSystem();
     this.worldState = this.initializeWorld();
-    
+
     // Subscribe to animal state updates to keep world state in sync
-    animalStateManager.subscribe('game-manager', (update) => {
+    animalStateManager.subscribe("game-manager", (update) => {
       this.handleAnimalStateUpdate(update);
     });
-    
+
     if (this.config.enableWebSocket) {
       this.setupWebSocketServer();
     }
   }
-  
+
   private initializeWorld(): WorldState {
     return {
       animals: [],
@@ -81,37 +88,41 @@ export class GameManager {
       environment: {
         temperature: 72,
         humidity: 0.6,
-        timeOfDay: 'day',
-        weather: 'clear'
+        timeOfDay: "day",
+        weather: "clear",
       },
-      events: []
+      events: [],
     };
   }
-  
+
   private generateInitialResources(): WorldResource[] {
     const resources: WorldResource[] = [];
     const { width, depth } = this.config.worldSize;
     const existingPositions: Array<{ x: number; z: number }> = [];
     const minDistance = 15; // Minimum distance between resources
-    
+
     // Helper function to ensure minimum spacing between resources
     const getValidPosition = (): { x: number; y: number; z: number } => {
       let attempts = 0;
       let position: { x: number; z: number };
-      
+
       do {
         position = {
           x: (Math.random() - 0.5) * width * 0.8, // Keep within 80% of world bounds
-          z: (Math.random() - 0.5) * depth * 0.8
+          z: (Math.random() - 0.5) * depth * 0.8,
         };
         attempts++;
       } while (
-        attempts < 50 && 
-        existingPositions.some(existing => 
-          Math.sqrt(Math.pow(existing.x - position.x, 2) + Math.pow(existing.z - position.z, 2)) < minDistance
+        attempts < 50 &&
+        existingPositions.some(
+          (existing) =>
+            Math.sqrt(
+              Math.pow(existing.x - position.x, 2) +
+                Math.pow(existing.z - position.z, 2)
+            ) < minDistance
         )
       );
-      
+
       existingPositions.push(position);
       return { x: position.x, y: 0, z: position.z };
     };
@@ -120,93 +131,95 @@ export class GameManager {
     for (let i = 0; i < 8; i++) {
       resources.push({
         id: `food_${i}`,
-        type: 'food' as const,
+        type: "food" as const,
         position: getValidPosition(),
-        quantity: 20 + Math.random() * 30, // Reduced quantity
+        quantity: 4 + Math.random() * 5, // Reduced quantity
         harvestable: true, // Now harvestable
         regeneratesOverTime: true,
-        quality: 40 + Math.random() * 40
+        quality: 40 + Math.random() * 40,
       });
     }
-    
+
     // Generate fewer, spaced-out water sources (now harvestable)
     for (let i = 0; i < 5; i++) {
       resources.push({
         id: `water_${i}`,
-        type: 'water' as const,
+        type: "water" as const,
         position: getValidPosition(),
-        quantity: 30 + Math.random() * 50, // Much reduced quantity
+        quantity: 5 + Math.random() * 6, // Much reduced quantity
         harvestable: true, // Now harvestable
         regeneratesOverTime: true,
-        quality: 60 + Math.random() * 40
+        quality: 60 + Math.random() * 40,
       });
     }
-    
+
     // Generate berry bushes (harvestable food)
     for (let i = 0; i < 10; i++) {
       resources.push({
         id: `berries_${i}`,
-        type: 'berries' as const,
+        type: "berries" as const,
         position: getValidPosition(),
-        quantity: 8 + Math.random() * 15, // Reduced quantity
+        quantity: 3 + Math.random() * 4, // Reduced quantity
         harvestable: true,
         regeneratesOverTime: true,
-        quality: 50 + Math.random() * 50
+        quality: 50 + Math.random() * 50,
       });
     }
-    
+
     // Generate wood sources (harvestable material)
     for (let i = 0; i < 8; i++) {
       resources.push({
         id: `wood_${i}`,
-        type: 'wood' as const,
+        type: "wood" as const,
         position: getValidPosition(),
-        quantity: 15 + Math.random() * 25, // Reduced quantity
+        quantity: 3 + Math.random() * 6, // Reduced quantity
         harvestable: true,
         regeneratesOverTime: false,
-        quality: 30 + Math.random() * 70
+        quality: 30 + Math.random() * 70,
       });
     }
-    
+
     // Generate stone sources (harvestable material)
     for (let i = 0; i < 6; i++) {
       resources.push({
         id: `stone_${i}`,
-        type: 'stone' as const,
+        type: "stone" as const,
         position: getValidPosition(),
-        quantity: 20 + Math.random() * 40, // Reduced quantity
+        quantity: 5 + Math.random() * 6, // Reduced quantity
         harvestable: true,
         regeneratesOverTime: false,
-        quality: 40 + Math.random() * 60
+        quality: 40 + Math.random() * 60,
       });
     }
-    
+
     // Generate shelter locations
     for (let i = 0; i < 4; i++) {
       resources.push({
         id: `shelter_${i}`,
-        type: 'shelter' as const,
+        type: "shelter" as const,
         position: getValidPosition(),
         quantity: 1,
         harvestable: false,
         regeneratesOverTime: false,
-        quality: 70 + Math.random() * 30
+        quality: 70 + Math.random() * 30,
       });
     }
-    
+
     return resources;
   }
-  
+
   private handleAnimalStateUpdate(update: any): void {
-    const animalIndex = this.worldState.animals.findIndex(a => a.id === update.animalId);
-    
-    if (update.type === 'full') {
+    const animalIndex = this.worldState.animals.findIndex(
+      (a) => a.id === update.animalId
+    );
+
+    if (update.type === "full") {
       if (animalIndex >= 0 && Object.keys(update.data).length === 0) {
         // Animal removed
         this.worldState.animals.splice(animalIndex, 1);
       } else if (animalIndex >= 0) {
         // Animal updated
-        this.worldState.animals[animalIndex] = { ...update.data as Animal };
+        this.worldState.animals[animalIndex] = { ...(update.data as Animal) };
       } else if (Object.keys(update.data).length > 0) {
         // New animal added
         this.worldState.animals.push(update.data as Animal);
@@ -215,12 +228,15 @@ export class GameManager {
       // Partial update
       this.worldState.animals[animalIndex] = {
         ...this.worldState.animals[animalIndex],
-        ...update.data
+        ...update.data,
       };
     }
-    
+
     // Broadcast position updates to WebSocket clients
-    if (this.websocketServer && (update.type === 'position' || update.type === 'action')) {
+    if (
+      this.websocketServer &&
+      (update.type === "position" || update.type === "action")
+    ) {
       const animal = animalStateManager.getAnimal(update.animalId);
       if (animal) {
         this.websocketServer.updateAnimal(animal);
@@ -231,234 +247,265 @@ export class GameManager {
   private setupWebSocketServer() {
     try {
       // Dynamic import for server-side WebSocket
-      const GameWebSocketServer = require('../../server.js');
+      const GameWebSocketServer = require("../../server.js");
       this.websocketServer = new GameWebSocketServer(this.config.webSocketPort);
       this.websocketServer.start();
-      
-      console.log(`🌐 WebSocket server started on port ${this.config.webSocketPort}`);
+
+      console.log(
+        `🌐 WebSocket server started on port ${this.config.webSocketPort}`
+      );
     } catch (error) {
-      console.warn('Could not start WebSocket server:', error);
+      console.warn("Could not start WebSocket server:", error);
     }
   }
-  
+
   async startGame(): Promise<void> {
     if (this.gameRunning) {
-      console.log('Game is already running');
+      console.log("Game is already running");
       return;
     }
-    
-    console.log('🌌 Starting Universe game...');
+
+    console.log("🌌 Starting Universe game...");
     this.gameRunning = true;
-    
+
     // Create initial animals
     for (let i = 0; i < this.config.startingAnimals; i++) {
       await this.spawnRandomAnimal();
     }
-    
+
     // Start health monitoring
     this.healthMonitor.startMonitoring();
-    
+
     // Start world simulation loops
     this.startEnvironmentUpdates();
     this.startResourceRegeneration();
     this.startBreedingCycles();
-    
-    console.log(`🎮 Universe game started with ${this.config.startingAnimals} animals!`);
-    this.addEvent('system', 'Universe game started!');
+
+    console.log(
+      `🎮 Universe game started with ${this.config.startingAnimals} animals!`
+    );
+    this.addEvent("system", "Universe game started!");
   }
-  
+
   stopGame(): void {
-    console.log('🛑 Stopping Universe game...');
+    console.log("🛑 Stopping Universe game...");
     this.gameRunning = false;
-    
+
     this.healthMonitor.stopMonitoring();
-    
+
     if (this.websocketServer) {
       this.websocketServer.stop();
     }
-    
-    this.addEvent('system', 'Universe game stopped');
+
+    this.addEvent("system", "Universe game stopped");
   }
-  
+
   async spawnRandomAnimal(): Promise<Animal | null> {
     if (animalStateManager.getAllAnimals().length >= this.config.maxAnimals) {
-      console.log('Maximum animal capacity reached');
+      console.log("Maximum animal capacity reached");
       return null;
     }
-    
+
     const name = AnimalLifecycle.generateRandomName();
     const position = this.getRandomSafePosition();
-    
+
     const animal = AnimalLifecycle.createAnimal(name, position);
-    
+
     // Register with health monitor (which will add to state manager)
     this.healthMonitor.addAnimal(animal);
-    
+
     // Broadcast to clients
     if (this.websocketServer) {
       this.websocketServer.updateAnimal(animal);
     }
-    
-    this.addEvent('birth', `${name} was born!`, animal.id);
-    console.log(`🐾 ${name} spawned at position (${position.x.toFixed(1)}, ${position.z.toFixed(1)})`);
-    
+
+    this.addEvent("birth", `${name} was born!`, animal.id);
+    console.log(
+      `🐾 ${name} spawned at position (${position.x.toFixed(
+        1
+      )}, ${position.z.toFixed(1)})`
+    );
+
     return animal;
   }
-  
-  async spawnOffspring(parent1: Animal, parent2: Animal): Promise<Animal | null> {
+
+  async spawnOffspring(
+    parent1: Animal,
+    parent2: Animal
+  ): Promise<Animal | null> {
     if (this.worldState.animals.length >= this.config.maxAnimals) {
       return null;
     }
-    
+
     const name = AnimalLifecycle.generateRandomName();
     const position = {
-      x: (parent1.position.x + parent2.position.x) / 2 + (Math.random() - 0.5) * 5,
+      x:
+        (parent1.position.x + parent2.position.x) / 2 +
+        (Math.random() - 0.5) * 5,
       y: 0,
-      z: (parent1.position.z + parent2.position.z) / 2 + (Math.random() - 0.5) * 5,
-      rotation: 0
+      z:
+        (parent1.position.z + parent2.position.z) / 2 +
+        (Math.random() - 0.5) * 5,
+      rotation: 0,
     };
-    
-    const animal = AnimalLifecycle.createAnimal(name, position, [parent1.dna, parent2.dna]);
-    
+
+    const animal = AnimalLifecycle.createAnimal(name, position, [
+      parent1.dna,
+      parent2.dna,
+    ]);
+
     this.worldState.animals.push(animal);
     this.healthMonitor.addAnimal(animal);
-    
+
     if (this.websocketServer) {
       this.websocketServer.updateAnimal(animal);
     }
-    
-    this.addEvent('birth', `${name} was born to ${parent1.name} and ${parent2.name}!`, animal.id);
+
+    this.addEvent(
+      "birth",
+      `${name} was born to ${parent1.name} and ${parent2.name}!`,
+      animal.id
+    );
     console.log(`👶 ${name} born from ${parent1.name} and ${parent2.name}!`);
-    
+
     return animal;
   }
-  
+
   removeAnimal(animalId: string): void {
-    const animalIndex = this.worldState.animals.findIndex(a => a.id === animalId);
+    const animalIndex = this.worldState.animals.findIndex(
+      (a) => a.id === animalId
+    );
     if (animalIndex === -1) return;
-    
+
     const animal = this.worldState.animals[animalIndex];
     this.worldState.animals.splice(animalIndex, 1);
-    
+
     this.healthMonitor.removeAnimal(animalId);
-    
+
     if (this.websocketServer) {
       this.websocketServer.broadcastToClients({
-        type: 'animalRemoved',
-        data: { animalId, animal }
+        type: "animalRemoved",
+        data: { animalId, animal },
       });
     }
-    
-    this.addEvent('death', `${animal.name} has passed away`, animalId);
+
+    this.addEvent("death", `${animal.name} has passed away`, animalId);
     console.log(`💀 ${animal.name} has been removed from the world`);
   }
-  
+
   private getRandomSafePosition() {
     const { width, depth } = this.config.worldSize;
     return {
       x: (Math.random() - 0.5) * width * 0.8,
       y: 0,
       z: (Math.random() - 0.5) * depth * 0.8,
-      rotation: Math.random() * Math.PI * 2
+      rotation: Math.random() * Math.PI * 2,
     };
   }
-  
+
   private startEnvironmentUpdates(): void {
     // Update environment every 5 minutes
     setInterval(() => {
       if (!this.gameRunning) return;
-      
+
       this.updateEnvironment();
     }, 5 * 60 * 1000);
   }
-  
+
   private startResourceRegeneration(): void {
     // Regenerate resources every 2 minutes
     setInterval(() => {
       if (!this.gameRunning) return;
-      
+
       this.regenerateResources();
     }, 2 * 60 * 1000);
   }
-  
+
   private startBreedingCycles(): void {
     // Check for breeding opportunities every 3 minutes
     setInterval(() => {
       if (!this.gameRunning) return;
-      
+
       this.performBreedingCycle();
     }, 3 * 60 * 1000);
   }
-  
+
   private updateEnvironment(): void {
     const env = this.worldState.environment;
-    
+
     // Simple time progression
-    const timeProgression = ['dawn', 'day', 'dusk', 'night'] as const;
+    const timeProgression = ["dawn", "day", "dusk", "night"] as const;
     const currentIndex = timeProgression.indexOf(env.timeOfDay);
-    env.timeOfDay = timeProgression[(currentIndex + 1) % timeProgression.length];
-    
+    env.timeOfDay =
+      timeProgression[(currentIndex + 1) % timeProgression.length];
+
     // Random weather changes
     if (Math.random() < 0.3) {
-      const weathers = ['clear', 'cloudy', 'rainy', 'stormy'] as const;
+      const weathers = ["clear", "cloudy", "rainy", "stormy"] as const;
       env.weather = weathers[Math.floor(Math.random() * weathers.length)];
     }
-    
+
     // Temperature and humidity variations
     env.temperature += (Math.random() - 0.5) * 10;
     env.temperature = Math.max(32, Math.min(100, env.temperature));
-    
+
     env.humidity += (Math.random() - 0.5) * 0.2;
     env.humidity = Math.max(0.1, Math.min(1.0, env.humidity));
-    
-    this.addEvent('environment', `Time changed to ${env.timeOfDay}, weather is ${env.weather}`);
-    
+
+    this.addEvent(
+      "environment",
+      `Time changed to ${env.timeOfDay}, weather is ${env.weather}`
+    );
+
     if (this.websocketServer) {
       this.websocketServer.broadcastToClients({
-        type: 'environmentUpdate',
-        data: env
-      });
-    }
-  }
-  
-  private regenerateResources(): void {
-    this.worldState.resources.forEach(resource => {
-      if (resource.regeneratesOverTime) {
-        if (resource.type === 'food' && resource.quantity < 20) {
-          resource.quantity += Math.random() * 30;
-        } else if (resource.type === 'water' && resource.quantity < 50) {
-          resource.quantity += Math.random() * 100;
-        } else if (resource.type === 'berries' && resource.quantity < 5) {
-          resource.quantity += Math.random() * 15;
-        }
-      }
-    });
-    
-    if (this.websocketServer) {
-      this.websocketServer.broadcastToClients({
-        type: 'resourcesUpdated',
-        data: this.worldState.resources
+        type: "environmentUpdate",
+        data: env,
       });
     }
   }
 
-  harvestResource(resourceId: string, amount: number = 1): { success: boolean; item?: any } {
-    const resource = this.worldState.resources.find(r => r.id === resourceId);
+  private regenerateResources(): void {
+    this.worldState.resources.forEach((resource) => {
+      if (resource.regeneratesOverTime) {
+        if (resource.type === "food" && resource.quantity < 20) {
+          resource.quantity += Math.random() * 30;
+        } else if (resource.type === "water" && resource.quantity < 50) {
+          resource.quantity += Math.random() * 100;
+        } else if (resource.type === "berries" && resource.quantity < 5) {
+          resource.quantity += Math.random() * 15;
+        }
+      }
+    });
+
+    if (this.websocketServer) {
+      this.websocketServer.broadcastToClients({
+        type: "resourcesUpdated",
+        data: this.worldState.resources,
+      });
+    }
+  }
+
+  harvestResource(
+    resourceId: string,
+    amount: number = 1
+  ): { success: boolean; item?: any } {
+    const resource = this.worldState.resources.find((r) => r.id === resourceId);
     if (!resource || !resource.harvestable || resource.quantity < amount) {
       return { success: false };
     }
-    
+
     resource.quantity -= amount;
-    
+
     const harvestedItem = {
       id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      type: resource.type === 'berries' ? 'food' : resource.type,
+      type: resource.type === "berries" ? "food" : resource.type,
       name: resource.type,
       quantity: amount,
       quality: resource.quality,
-      harvestedAt: Date.now()
+      harvestedAt: Date.now(),
     };
-    
+
     return { success: true, item: harvestedItem };
   }
 
@@ -466,15 +513,23 @@ export class GameManager {
     const animal = this.healthMonitor.getAnimal(animalId);
     if (!animal) return false;
 
-    const itemWeight = item.quantity * (item.type === 'stone' ? 3 : item.type === 'wood' ? 2 : 1);
-    
-    if (animal.inventory.currentWeight + itemWeight > animal.inventory.maxCapacity) {
+    const itemWeight =
+      item.quantity *
+      (item.type === "stone" ? 3 : item.type === "wood" ? 2 : 1);
+
+    if (
+      animal.inventory.currentWeight + itemWeight >
+      animal.inventory.maxCapacity
+    ) {
       return false;
     }
 
     // Check if we can stack with existing item
-    const existingItem = animal.inventory.items.find(i => 
-      i.type === item.type && i.name === item.name && i.quality === item.quality
+    const existingItem = animal.inventory.items.find(
+      (i) =>
+        i.type === item.type &&
+        i.name === item.name &&
+        i.quality === item.quality
     );
 
     if (existingItem) {
@@ -487,15 +542,22 @@ export class GameManager {
     return true;
   }
 
-  consumeItemFromInventory(animalId: string, itemType: string, amount: number = 1): boolean {
+  consumeItemFromInventory(
+    animalId: string,
+    itemType: string,
+    amount: number = 1
+  ): boolean {
     const animal = this.healthMonitor.getAnimal(animalId);
     if (!animal) return false;
 
-    const item = animal.inventory.items.find(i => i.type === itemType && i.quantity >= amount);
+    const item = animal.inventory.items.find(
+      (i) => i.type === itemType && i.quantity >= amount
+    );
     if (!item) return false;
 
-    const itemWeight = amount * (item.type === 'stone' ? 3 : item.type === 'wood' ? 2 : 1);
-    
+    const itemWeight =
+      amount * (item.type === "stone" ? 3 : item.type === "wood" ? 2 : 1);
+
     item.quantity -= amount;
     animal.inventory.currentWeight -= itemWeight;
 
@@ -506,111 +568,119 @@ export class GameManager {
 
     return true;
   }
-  
+
   private addEvent(type: string, message: string, animalId?: string): void {
     const event = {
       id: `event_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       type,
       message,
       timestamp: Date.now(),
-      animalId
+      animalId,
     };
-    
+
     this.worldState.events.unshift(event);
-    
+
     // Keep only last 100 events
     if (this.worldState.events.length > 100) {
       this.worldState.events = this.worldState.events.slice(0, 100);
     }
-    
+
     if (this.websocketServer) {
       this.websocketServer.broadcastToClients({
-        type: 'newEvent',
-        data: event
+        type: "newEvent",
+        data: event,
       });
     }
   }
-  
+
   getWorldState(): WorldState {
     return { ...this.worldState };
   }
-  
+
   getAnimal(animalId: string): Animal | undefined {
     // Get the most up-to-date animal from the health monitor
     return this.healthMonitor.getAnimal(animalId);
   }
-  
+
   getAllAnimals(): Animal[] {
     // Get the most up-to-date animals from the health monitor
     return this.healthMonitor.getAllAnimals();
   }
-  
+
   getAnimalsByPosition(x: number, z: number, radius: number = 10): Animal[] {
     // Use up-to-date animals from health monitor
-    return this.healthMonitor.getAllAnimals().filter(animal => {
+    return this.healthMonitor.getAllAnimals().filter((animal) => {
       const distance = Math.sqrt(
-        Math.pow(animal.position.x - x, 2) + 
-        Math.pow(animal.position.z - z, 2)
+        Math.pow(animal.position.x - x, 2) + Math.pow(animal.position.z - z, 2)
       );
       return distance <= radius;
     });
   }
-  
-  findNearestResource(position: { x: number; z: number }, resourceType: string) {
+
+  findNearestResource(
+    position: { x: number; z: number },
+    resourceType: string
+  ) {
     let nearest = null;
     let minDistance = Infinity;
-    
+
     for (const resource of this.worldState.resources) {
       if (resource.type === resourceType && resource.quantity > 0) {
         const distance = Math.sqrt(
-          Math.pow(resource.position.x - position.x, 2) + 
-          Math.pow(resource.position.z - position.z, 2)
+          Math.pow(resource.position.x - position.x, 2) +
+            Math.pow(resource.position.z - position.z, 2)
         );
-        
+
         if (distance < minDistance) {
           minDistance = distance;
           nearest = resource;
         }
       }
     }
-    
+
     return nearest;
   }
-  
+
   consumeResource(resourceId: string, amount: number = 1): boolean {
-    const resource = this.worldState.resources.find(r => r.id === resourceId);
+    const resource = this.worldState.resources.find((r) => r.id === resourceId);
     if (!resource || resource.quantity < amount) {
       return false;
     }
-    
+
     resource.quantity -= amount;
     return true;
   }
-  
+
   private performBreedingCycle(): void {
-    const breedingResults = this.breedingSystem.autoBreeding(this.worldState.animals);
-    
+    const breedingResults = this.breedingSystem.autoBreeding(
+      this.worldState.animals
+    );
+
     for (const result of breedingResults) {
       if (result.success && result.offspring) {
         // Add offspring to world
         this.worldState.animals.push(result.offspring);
         this.healthMonitor.addAnimal(result.offspring);
-        
+
         if (this.websocketServer) {
           this.websocketServer.updateAnimal(result.offspring);
         }
-        
+
         console.log(`🐣 ${result.message}`);
       }
-      
-      this.addEvent('breeding', result.message);
+
+      this.addEvent("breeding", result.message);
     }
-    
+
     if (breedingResults.length > 0) {
-      console.log(`💕 Breeding cycle completed: ${breedingResults.filter(r => r.success).length} successful births`);
+      console.log(
+        `💕 Breeding cycle completed: ${
+          breedingResults.filter((r) => r.success).length
+        } successful births`
+      );
     }
   }
-  
+
   getBreedingSystem(): BreedingSystem {
     return this.breedingSystem;
   }
