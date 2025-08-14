@@ -9,6 +9,7 @@ import type {
 import { explorationSystem, ExplorationSystem } from "./exploration-system";
 import { HARVEST_RADIUS } from "./health-monitor";
 import { buildingSystem } from "./building-system";
+import { RESOURCE_WEIGHTS } from "../types/weights";
 
 export interface MXPAction {
   name: string;
@@ -668,7 +669,11 @@ export class MXPActionSystem {
     const currentWeight = animal.inventory.currentWeight;
     const itemWeight =
       harvestAmount *
-      (resource.type === "stone" ? 3 : resource.type === "wood" ? 2 : 1);
+      (resource.type === "stone"
+        ? RESOURCE_WEIGHTS.stone
+        : resource.type === "wood"
+        ? RESOURCE_WEIGHTS.wood
+        : 0.2);
 
     if (currentWeight + itemWeight > animal.inventory.maxCapacity) {
       // Store failure memory

@@ -6,6 +6,7 @@ import { DNASystem } from "./dna-system";
 import { BreedingSystem } from "./breeding-system";
 import { animalStateManager } from "./animal-state-manager";
 import { buildingSystem } from "./building-system";
+import { RESOURCE_WEIGHTS } from "../types/weights";
 
 export interface GameConfig {
   maxAnimals: number;
@@ -519,7 +520,11 @@ export class GameManager {
 
     const itemWeight =
       item.quantity *
-      (item.type === "stone" ? 3 : item.type === "wood" ? 2 : 1);
+      (item.type === "stone"
+        ? RESOURCE_WEIGHTS.stone
+        : item.type === "wood"
+        ? RESOURCE_WEIGHTS.wood
+        : 0.2);
 
     if (
       animal.inventory.currentWeight + itemWeight >
@@ -560,7 +565,12 @@ export class GameManager {
     if (!item) return false;
 
     const itemWeight =
-      amount * (item.type === "stone" ? 3 : item.type === "wood" ? 2 : 1);
+      amount *
+      (item.type === "stone"
+        ? RESOURCE_WEIGHTS.stone
+        : item.type === "wood"
+        ? RESOURCE_WEIGHTS.wood
+        : 0.2);
 
     item.quantity -= amount;
     animal.inventory.currentWeight -= itemWeight;

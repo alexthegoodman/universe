@@ -118,11 +118,11 @@ BUILDING SYSTEM:
 - You can create new buildings or modify existing ones if you have materials
 - Building requires stone and wood from your inventory
 - Available building actions:
-  • "create_building" - Build new shelter (needs 5 stone + 10 wood)
-  • "make_wider" - Expand building width (needs 2 stone + 5 wood)  
-  • "make_taller" - Increase building height (needs 3 stone + 4 wood)
-  • "make_beautiful" - Add decorative elements (needs 1 stone + 3 wood)
-  • "add_room" - Construct additional space (needs 4 stone + 8 wood)
+  • "create_building" - Build new shelter (needs 2 stone + 2 wood)
+  • "make_wider" - Expand building width (needs 2 stone + 2 wood)  
+  • "make_taller" - Increase building height (needs 2 stone + 2 wood)
+  • "make_beautiful" - Add decorative elements (needs 1 stone + 1 wood)
+  • "add_room" - Construct additional space (needs 2 stone + 2 wood)
 - Consider building when you have collected enough materials and want long-term shelter
 - Buildings help during sleep and provide protection from the elements
 

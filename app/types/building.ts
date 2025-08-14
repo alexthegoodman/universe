@@ -23,20 +23,25 @@ export interface Building {
   dimensions: BuildingDimensions;
   materials: BuildingMaterial;
   stats: BuildingStats;
-  
+
   // Building state
   isComplete: boolean;
   createdAt: number;
   lastModifiedAt: number;
   createdBy: string; // animal ID
-  
+
   // Occupancy
   currentOccupants: string[]; // animal IDs
   maxOccupants: number;
 }
 
 export interface BuildingAction {
-  type: "make_wider" | "make_taller" | "make_beautiful" | "add_room" | "create_building";
+  type:
+    | "make_wider"
+    | "make_taller"
+    | "make_beautiful"
+    | "add_room"
+    | "create_building";
   name: string;
   description: string;
   requiredMaterials: BuildingMaterial;
@@ -64,52 +69,52 @@ export const BUILDING_ACTIONS: Record<string, BuildingAction> = {
     type: "create_building",
     name: "Create Building",
     description: "Build a basic shelter structure",
-    requiredMaterials: { stone: 5, wood: 10 },
+    requiredMaterials: { stone: 2, wood: 2 },
     effects: {
       dimensionChanges: { width: 3, height: 2, depth: 3 },
       statChanges: { durability: 60, beauty: 30, comfort: 50 },
-      capacityChange: 2
-    }
+      capacityChange: 2,
+    },
   },
   make_wider: {
     type: "make_wider",
     name: "Make Wider",
     description: "Expand the building's width to accommodate more animals",
-    requiredMaterials: { stone: 2, wood: 5 },
+    requiredMaterials: { stone: 2, wood: 2 },
     effects: {
       dimensionChanges: { width: 2 },
       statChanges: { durability: -5 },
-      capacityChange: 1
-    }
+      capacityChange: 1,
+    },
   },
   make_taller: {
-    type: "make_taller", 
+    type: "make_taller",
     name: "Make Taller",
     description: "Increase the building's height for better comfort",
-    requiredMaterials: { stone: 3, wood: 4 },
+    requiredMaterials: { stone: 2, wood: 2 },
     effects: {
       dimensionChanges: { height: 1 },
-      statChanges: { comfort: 10, beauty: 5 }
-    }
+      statChanges: { comfort: 10, beauty: 5 },
+    },
   },
   make_beautiful: {
     type: "make_beautiful",
-    name: "Make Beautiful", 
+    name: "Make Beautiful",
     description: "Add decorative elements to improve aesthetics",
-    requiredMaterials: { stone: 1, wood: 3 },
+    requiredMaterials: { stone: 1, wood: 1 },
     effects: {
-      statChanges: { beauty: 15, comfort: 5 }
-    }
+      statChanges: { beauty: 15, comfort: 5 },
+    },
   },
   add_room: {
     type: "add_room",
     name: "Add Room",
     description: "Construct an additional room for more space",
-    requiredMaterials: { stone: 4, wood: 8 },
+    requiredMaterials: { stone: 2, wood: 2 },
     effects: {
       dimensionChanges: { depth: 2, width: 1 },
       statChanges: { durability: -3 },
-      capacityChange: 2
-    }
-  }
+      capacityChange: 2,
+    },
+  },
 };
