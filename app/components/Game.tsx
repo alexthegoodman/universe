@@ -5,25 +5,31 @@ import { OrbitControls, Grid, Environment } from "@react-three/drei";
 import { Suspense, useEffect, useState, useCallback } from "react";
 import { GameManager } from "../lib/game-manager";
 import type { Animal } from "../types/animal";
+import type { Building } from "../types/building";
 import type { WorldResource } from "../lib/game-manager";
 import Animal3D from "./Animal3D";
 import AnimalInfo from "./AnimalInfo";
 import { Resource3D } from "./Resource3D";
+import Building3D from "./Building3D";
 import ActionLog, { type ActionLogEntry } from "./ActionLog";
 import { actionLogger } from "../lib/action-logger";
 
 interface SceneProps {
   animals: Animal[];
   resources: WorldResource[];
+  buildings: Building[];
   onAnimalClick: (animal: Animal) => void;
   onResourceClick?: (resource: WorldResource) => void;
+  onBuildingClick?: (building: Building) => void;
 }
 
 function Scene({
   animals,
   resources,
+  buildings,
   onAnimalClick,
   onResourceClick,
+  onBuildingClick,
 }: SceneProps) {
   return (
     <>
@@ -63,6 +69,15 @@ function Scene({
           onClick={onResourceClick}
         />
       ))}
+
+      {/* Buildings */}
+      {buildings.map((building) => (
+        <Building3D
+          key={building.id}
+          building={building}
+          onClick={onBuildingClick}
+        />
+      ))}
     </>
   );
 }
@@ -71,6 +86,7 @@ export default function Game() {
   const [gameManager, setGameManager] = useState<GameManager | null>(null);
   const [animals, setAnimals] = useState<Animal[]>([]);
   const [resources, setResources] = useState<WorldResource[]>([]);
+  const [buildings, setBuildings] = useState<Building[]>([]);
   const [selectedAnimal, setSelectedAnimal] = useState<Animal | null>(null);
   const [gameStarted, setGameStarted] = useState(false);
   const [version, setVersion] = useState(0);
@@ -110,6 +126,7 @@ export default function Game() {
 
         setAnimals([...currentAnimals]);
         setResources([...worldState.resources]);
+        setBuildings([...worldState.buildings]);
         setVersion((v) => v + 1);
 
         // Update selected animal if it still exists
@@ -137,6 +154,10 @@ export default function Game() {
     setSelectedAnimal(null);
   }, []);
 
+  const handleBuildingClick = useCallback((building: Building) => {
+    console.log('Building clicked:', building.name, building);
+  }, []);
+
   const spawnNewAnimal = useCallback(async () => {
     if (gameManager) {
       await gameManager.spawnRandomAnimal();
@@ -150,7 +171,9 @@ export default function Game() {
           <Scene
             animals={animals}
             resources={resources}
+            buildings={buildings}
             onAnimalClick={handleAnimalClick}
+            onBuildingClick={handleBuildingClick}
           />
           <OrbitControls
             enablePan={true}
@@ -189,6 +212,13 @@ export default function Game() {
                 <div>
                   Water Sources:{" "}
                   {resources.filter((r) => r.type === "water").length}
+                </div>
+                <div>
+                  Buildings: {buildings.length}
+                </div>
+                <div>
+                  Total Shelter Capacity:{" "}
+                  {buildings.reduce((sum, b) => sum + b.maxOccupants, 0)}
                 </div>
               </div>
             </div>

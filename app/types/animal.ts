@@ -90,7 +90,8 @@ export type AnimalAction =
   | "socializing"
   | "working"
   | "mating"
-  | "harvesting";
+  | "harvesting"
+  | "building";
 
 export interface ActionResult {
   success: boolean;
@@ -133,12 +134,26 @@ export interface ResourceSummary {
   needToMoveCloserTo: NearbyResource[]; // Resources visible but too far
 }
 
+export interface NearbyBuilding {
+  id: string;
+  name: string;
+  position: AnimalPosition;
+  distance: number;
+  dimensions: { width: number; height: number; depth: number };
+  stats: { durability: number; beauty: number; capacity: number; comfort: number };
+  currentOccupants: number;
+  maxOccupants: number;
+  canEnter: boolean;
+  availableActions: string[];
+}
+
 export interface SightBasedWorldState {
   myPosition: AnimalPosition;
   sightRadius: number;
   harvestRadius: number;
   nearbyAnimals: NearbyAnimal[];
   nearbyResources: NearbyResource[];
+  nearbyBuildings: NearbyBuilding[];
   environment: {
     timeOfDay: string;
     weather: string;

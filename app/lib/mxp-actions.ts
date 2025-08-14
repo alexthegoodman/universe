@@ -8,6 +8,7 @@ import type {
 } from "../types/animal";
 import { explorationSystem, ExplorationSystem } from "./exploration-system";
 import { HARVEST_RADIUS } from "./health-monitor";
+import { buildingSystem } from "./building-system";
 
 export interface MXPAction {
   name: string;
@@ -61,7 +62,7 @@ export class MXPActionSystem {
       eat: {
         nutritionGain: 25,
         hungerReduction: 20,
-        energyGain: 10,
+        energyGain: 20,
       },
       drink: {
         thirstReduction: 25,
@@ -75,13 +76,13 @@ export class MXPActionSystem {
         duration: 10000, // 10 seconds
       },
       work: {
-        energyCost: 25,
+        energyCost: 8,
         happinessGain: 10,
         productionRate: 1,
       },
       play: {
         happinessGain: 20,
-        energyCost: 15,
+        energyCost: 6,
         socialBonus: 10,
       },
     };
@@ -116,6 +117,8 @@ export class MXPActionSystem {
           return await this.executeMate(animal, parameters);
         case "harvesting":
           return await this.executeHarvest(animal, parameters);
+        case "building":
+          return await this.executeBuilding(animal, parameters);
         default:
           return await this.executeIdle(animal, parameters);
       }
@@ -279,19 +282,30 @@ export class MXPActionSystem {
     animal: Animal,
     params: any
   ): Promise<ActionResult> {
-    const { comfort = 1, safety = 1 } = params;
+    let { comfort = 1, safety = 1 } = params;
+
+    // Check if animal is in a building for bonuses
+    const buildingBonus = buildingSystem.getBuildingBonus(animal);
+    comfort *= buildingBonus.comfort;
+    safety *= buildingBonus.safety;
 
     const energyGain = this.config.sleep.energyGain * comfort;
     const healthGain = this.config.sleep.healthGain * safety;
     const duration = this.config.sleep.duration * (2 - comfort); // Less comfortable = longer sleep needed
 
+    const sleepLocation =
+      buildingBonus.comfort > 1 ? " comfortably in their shelter" : " outdoors";
+
     return {
       success: true,
-      message: `${animal.name} is sleeping peacefully`,
+      message: `${animal.name} is sleeping peacefully${sleepLocation}`,
       statChanges: {
         energy: Math.min(100, animal.stats.energy + energyGain),
         health: Math.min(100, animal.stats.health + healthGain),
-        happiness: Math.min(100, animal.stats.happiness + comfort * 5),
+        happiness: Math.min(
+          100,
+          animal.stats.happiness + comfort * 5 + buildingBonus.happiness
+        ),
       },
       duration,
     };
@@ -419,7 +433,7 @@ export class MXPActionSystem {
     );
     const energyCost = Math.max(
       5,
-      Math.min(15 + distance * 2, animal.stats.energy * 0.3)
+      Math.min(4 + distance * 2, animal.stats.energy * 0.3)
     );
     const happiness = 10 * curiosityMultiplier + (explorationTarget ? 5 : 3); // AI-driven exploration gives more happiness
 
@@ -520,7 +534,7 @@ export class MXPActionSystem {
       }`,
       statChanges: {
         happiness: Math.min(100, animal.stats.happiness + happinessGain),
-        energy: Math.max(0, animal.stats.energy - 5),
+        energy: Math.max(0, animal.stats.energy - 2),
       },
       duration: 6000 + companions.length * 2000,
     };
@@ -628,7 +642,7 @@ export class MXPActionSystem {
     const intelligenceMultiplier = animal.dna.intelligence / 100;
     const effectiveness = (strengthMultiplier + intelligenceMultiplier) / 2;
 
-    const energyCost = 15 + (resource.type === "stone" ? 10 : 0); // Stone is harder to harvest
+    const energyCost = 4 + (resource.type === "stone" ? 2 : 0); // Stone is harder to harvest
 
     if (animal.stats.energy < energyCost) {
       // Store failure memory
@@ -692,6 +706,71 @@ export class MXPActionSystem {
       resourceId: resourceId,
       duration: 3000 + harvestAmount * 1000,
     };
+  }
+
+  private async executeBuilding(
+    animal: Animal,
+    params: any
+  ): Promise<ActionResult> {
+    const {
+      action = "create_building",
+      buildingId,
+      position,
+      buildingName,
+    } = params;
+
+    let result;
+
+    if (action === "create_building") {
+      // Create a new building
+      const buildPosition = position || {
+        x: animal.position.x + (Math.random() - 0.5) * 10,
+        y: 0,
+        z: animal.position.z + (Math.random() - 0.5) * 10,
+      };
+
+      result = buildingSystem.createBuilding(
+        animal,
+        buildPosition,
+        buildingName
+      );
+
+      if (result.success && result.materialConsumed) {
+        // Consume materials from inventory
+        buildingSystem.consumeMaterials(animal, result.materialConsumed);
+      }
+    } else {
+      // Modify existing building
+      if (!buildingId) {
+        return {
+          success: false,
+          message: `${animal.name} needs to specify which building to modify`,
+          duration: 1000,
+        };
+      }
+
+      result = buildingSystem.modifyBuilding(animal, buildingId, action);
+
+      if (result.success && result.materialConsumed) {
+        // Consume materials from inventory
+        buildingSystem.consumeMaterials(animal, result.materialConsumed);
+      }
+    }
+
+    // Convert building result to action result format
+    const actionResult: ActionResult = {
+      success: result.success,
+      message: result.message,
+      duration: result.duration,
+      statChanges: {
+        happiness: result.success
+          ? Math.min(100, animal.stats.happiness + 15)
+          : animal.stats.happiness,
+        energy: Math.max(0, animal.stats.energy - 8), // Building is tiring work
+      },
+    };
+
+    return actionResult;
   }
 
   private async executeIdle(

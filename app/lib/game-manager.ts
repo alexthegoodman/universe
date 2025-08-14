@@ -1,9 +1,11 @@
 import type { Animal } from "../types/animal";
+import type { Building } from "../types/building";
 import { AnimalLifecycle } from "./animal-lifecycle";
 import { HealthMonitor } from "./health-monitor";
 import { DNASystem } from "./dna-system";
 import { BreedingSystem } from "./breeding-system";
 import { animalStateManager } from "./animal-state-manager";
+import { buildingSystem } from "./building-system";
 
 export interface GameConfig {
   maxAnimals: number;
@@ -33,6 +35,7 @@ export interface WorldResource {
 export interface WorldState {
   animals: Animal[];
   resources: WorldResource[];
+  buildings: Building[];
   environment: {
     temperature: number;
     humidity: number;
@@ -85,6 +88,7 @@ export class GameManager {
     return {
       animals: [],
       resources: this.generateInitialResources(),
+      buildings: [],
       environment: {
         temperature: 72,
         humidity: 0.6,
@@ -172,7 +176,7 @@ export class GameManager {
         id: `wood_${i}`,
         type: "wood" as const,
         position: getValidPosition(),
-        quantity: 3 + Math.random() * 6, // Reduced quantity
+        quantity: 10 + Math.random() * 6, // Reduced quantity
         harvestable: true,
         regeneratesOverTime: false,
         quality: 30 + Math.random() * 70,
@@ -185,7 +189,7 @@ export class GameManager {
         id: `stone_${i}`,
         type: "stone" as const,
         position: getValidPosition(),
-        quantity: 5 + Math.random() * 6, // Reduced quantity
+        quantity: 10 + Math.random() * 6, // Reduced quantity
         harvestable: true,
         regeneratesOverTime: false,
         quality: 40 + Math.random() * 60,
@@ -594,6 +598,8 @@ export class GameManager {
   }
 
   getWorldState(): WorldState {
+    // Sync buildings from building system
+    this.worldState.buildings = buildingSystem.getAllBuildings();
     return { ...this.worldState };
   }
 

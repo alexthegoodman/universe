@@ -77,7 +77,7 @@ If you are in good health and your needs are met, consider being creative about 
 
 Remember, if you are close to the middle of your lifespan, you might want to start breeding to ensure your genes are passed on.
 
-Available actions: idle, moving, eating, drinking, sleeping, playing, exploring, socializing, working, mating, harvesting
+Available actions: idle, moving, eating, drinking, sleeping, playing, exploring, socializing, working, mating, harvesting, building
 
 IMPORTANT SURVIVAL RULES:
 - You can only eat/drink if you have food/water items in your inventory  
@@ -97,7 +97,8 @@ ACTION PRIORITY:
 2. If hungry/thirsty with canHarvestNow resources → harvest them
 3. If hungry/thirsty but resources are too far → explore to get closer
 4. If no suitable resources visible → explore to find new areas
-5. If needs are met → recreational activities based on personality
+5. If you have stone/wood materials and want shelter → build
+6. If needs are met → recreational activities based on personality
 
 EXPLORATION GUIDANCE:
 Your current position is: {currentPosition}
@@ -110,6 +111,20 @@ Check your memories.recentFailures before attempting actions that have recently 
 - If you failed due to being too far, move closer before attempting again
 - If you failed due to full inventory, consider eating/drinking items to make space
 - Learn from your past failures and avoid repeating the same mistakes in the same locations
+
+BUILDING SYSTEM:
+- Buildings provide shelter, comfort, and happiness bonuses when you rest inside them
+- Check nearbyBuildings to see structures you can interact with or enter
+- You can create new buildings or modify existing ones if you have materials
+- Building requires stone and wood from your inventory
+- Available building actions:
+  • "create_building" - Build new shelter (needs 5 stone + 10 wood)
+  • "make_wider" - Expand building width (needs 2 stone + 5 wood)  
+  • "make_taller" - Increase building height (needs 3 stone + 4 wood)
+  • "make_beautiful" - Add decorative elements (needs 1 stone + 3 wood)
+  • "add_room" - Construct additional space (needs 4 stone + 8 wood)
+- Consider building when you have collected enough materials and want long-term shelter
+- Buildings help during sleep and provide protection from the elements
 
 IMPORTANT: You must respond with valid JSON in this exact format:
 {{
@@ -144,7 +159,21 @@ For exploration actions, include target coordinates (must be within 20 units):
   "reasoning": "Moving towards unexplored area to the northeast"
 }}
 
-Valid actions: idle, moving, eating, drinking, sleeping, playing, exploring, socializing, working, mating, harvesting
+For building actions, specify the buildingAction and optionally buildingId for modifications:
+{{
+  "action": "building",
+  "buildingAction": "create_building",
+  "reasoning": "I have enough materials to build shelter for protection"
+}}
+
+{{
+  "action": "building", 
+  "buildingAction": "make_wider",
+  "buildingId": "building_123",
+  "reasoning": "Expanding my shelter to fit more animals"
+}}
+
+Valid actions: idle, moving, eating, drinking, sleeping, playing, exploring, socializing, working, mating, harvesting, building
 
 Consider:
 - Check your inventory first before choosing survival actions
@@ -200,12 +229,12 @@ ${animal.inventory.items
 
     // Log the full prompt with variables merged
     const formattedPrompt = await prompt.format(promptVariables);
-    console.log(`🔍 Full AI Prompt for ${animal.name}:`, formattedPrompt);
+    // console.log(`🔍 Full AI Prompt for ${animal.name}:`, formattedPrompt);
 
     const response = await chain.invoke(promptVariables);
 
     // Log the full AI response
-    console.log(`🤖 AI Response for ${animal.name}:`, response);
+    // console.log(`🤖 AI Response for ${animal.name}:`, response);
 
     // Parse JSON response
     let parsedResponse;
@@ -225,6 +254,7 @@ ${animal.inventory.items
         "working",
         "mating",
         "harvesting",
+        "building",
         "idle",
       ];
       const action =
@@ -249,6 +279,7 @@ ${animal.inventory.items
       "working",
       "mating",
       "harvesting",
+      "building",
       "idle",
     ];
 
@@ -293,6 +324,18 @@ ${animal.inventory.items
 
     if (finalAction === "harvesting" && parsedResponse.resourceId) {
       result.resourceId = parsedResponse.resourceId;
+    }
+
+    if (finalAction === "building") {
+      if (parsedResponse.buildingAction) {
+        result.buildingAction = parsedResponse.buildingAction;
+      }
+      if (parsedResponse.buildingId) {
+        result.buildingId = parsedResponse.buildingId;
+      }
+      if (parsedResponse.buildingName) {
+        result.buildingName = parsedResponse.buildingName;
+      }
     }
 
     return NextResponse.json(result);
@@ -342,6 +385,15 @@ function getFallbackAction(animal: any) {
 
   if (animal.stats?.energy < 30) return "sleeping";
   if (animal.stats?.happiness < 30) return "playing";
+
+  // Check if animal has building materials and might want shelter
+  const hasStone = animal.inventory?.items?.some(
+    (item: any) => item.type === "stone" && item.quantity >= 5
+  );
+  const hasWood = animal.inventory?.items?.some(
+    (item: any) => item.type === "wood" && item.quantity >= 10
+  );
+  if (hasStone && hasWood) return "building";
 
   // Based on personality
   if (animal.dna?.personality?.playful > 70) return "playing";

@@ -3,6 +3,7 @@ import type {
   SightBasedWorldState,
   NearbyResource,
   NearbyAnimal,
+  NearbyBuilding,
   ResourceSummary,
 } from "../types/animal";
 import { AnimalLifecycle } from "./animal-lifecycle";
@@ -11,6 +12,7 @@ import { MXPActionSystem } from "./mxp-actions";
 import { animalStateManager } from "./animal-state-manager";
 import { explorationSystem, ExplorationSystem } from "./exploration-system";
 import { actionLogger } from "./action-logger";
+import { buildingSystem } from "./building-system";
 
 export const HARVEST_RADIUS = 4; // Animals can harvest within this radius
 
@@ -358,6 +360,18 @@ export class HealthMonitor {
         actionParams.resourceId = decision.resourceId;
       }
 
+      if (decision.buildingAction) {
+        actionParams.action = decision.buildingAction;
+      }
+
+      if (decision.buildingId) {
+        actionParams.buildingId = decision.buildingId;
+      }
+
+      if (decision.buildingName) {
+        actionParams.buildingName = decision.buildingName;
+      }
+
       await this.executeAnimalAction(animal, decision.action, actionParams);
     } catch (error) {
       console.error(`Error getting AI decision for ${animal.name}:`, error);
@@ -564,6 +578,33 @@ export class HealthMonitor {
       )
       .sort((a, b) => a.distance - b.distance);
 
+    // Calculate nearby buildings with distances and actionable information
+    const allBuildings = buildingSystem.getAllBuildings();
+    const nearbyBuildings: NearbyBuilding[] = allBuildings
+      .map((building) => {
+        const distance = this.getDistance(animal.position, building.position);
+        const availableActions = buildingSystem.getAvailableActions(animal, building.id);
+        return {
+          id: building.id,
+          name: building.name,
+          position: {
+            x: building.position.x,
+            y: building.position.y,
+            z: building.position.z,
+            rotation: 0
+          },
+          distance: Math.round(distance * 10) / 10,
+          dimensions: building.dimensions,
+          stats: building.stats,
+          currentOccupants: building.currentOccupants.length,
+          maxOccupants: building.maxOccupants,
+          canEnter: building.currentOccupants.length < building.maxOccupants && distance <= 5,
+          availableActions: availableActions.map(action => action.type)
+        };
+      })
+      .filter((building) => building.distance <= SIGHT_RADIUS)
+      .sort((a, b) => a.distance - b.distance);
+
     const resourceSummary: ResourceSummary = {
       foodSources: nearbyResources.filter(
         (r) => r.type === "food" || r.type === "berries"
@@ -604,6 +645,7 @@ export class HealthMonitor {
       harvestRadius: HARVEST_RADIUS,
       nearbyAnimals,
       nearbyResources,
+      nearbyBuildings,
       environment,
       resourceSummary,
       memories: {
