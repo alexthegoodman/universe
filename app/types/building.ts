@@ -62,6 +62,7 @@ export interface BuildingActionResult {
     capacity?: number;
   };
   duration: number;
+  areaBonus?: number; // Happiness bonus for larger house area
 }
 
 export const BUILDING_ACTIONS: Record<string, BuildingAction> = {

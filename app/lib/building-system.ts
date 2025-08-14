@@ -18,6 +18,22 @@ export class BuildingSystem {
     this.buildingActions = BUILDING_ACTIONS;
   }
 
+  // Calculate total building area (used for size-based rewards)
+  private calculateBuildingArea(dimensions: BuildingDimensions): number {
+    return dimensions.width * dimensions.height * dimensions.depth;
+  }
+
+  // Calculate area-based happiness bonus for larger houses
+  private calculateAreaBonus(area: number): number {
+    // Base bonus starts at area 20 (starting house is 3*2*3 = 18)
+    // +1 happiness per 2 additional area units, capped at +20
+    const baseArea = 20;
+    if (area <= baseArea) return 0;
+    
+    const extraArea = area - baseArea;
+    return Math.min(20, Math.floor(extraArea / 2));
+  }
+
   // Create a new building
   createBuilding(
     animal: Animal,
@@ -63,6 +79,10 @@ export class BuildingSystem {
 
     this.buildings.set(building.id, building);
 
+    // Calculate area bonus for the new building
+    const currentArea = this.calculateBuildingArea(building.dimensions);
+    const areaBonus = this.calculateAreaBonus(currentArea);
+
     return {
       success: true,
       message: `${animal.name} successfully built ${name}!`,
@@ -73,6 +93,7 @@ export class BuildingSystem {
         capacity: building.maxOccupants,
       },
       duration: 15000, // 15 seconds to build
+      areaBonus: areaBonus,
     };
   }
 
@@ -166,6 +187,10 @@ export class BuildingSystem {
     building.materials.wood += action.requiredMaterials.wood;
     building.lastModifiedAt = Date.now();
 
+    // Calculate area bonus for larger houses
+    const currentArea = this.calculateBuildingArea(building.dimensions);
+    const areaBonus = this.calculateAreaBonus(currentArea);
+
     return {
       success: true,
       message: `${animal.name} successfully improved the building with "${action.name}"!`,
@@ -175,6 +200,7 @@ export class BuildingSystem {
         8000 +
         action.requiredMaterials.stone * 1000 +
         action.requiredMaterials.wood * 500,
+      areaBonus: areaBonus,
     };
   }
 

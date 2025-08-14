@@ -49,8 +49,9 @@ export async function POST(request: NextRequest) {
     }
 
     const llm = new ChatOpenAI({
-      model: "gpt-4o-mini",
-      temperature: 0.7,
+      // model: "gpt-4o-mini",
+      model: "gpt-5-mini",
+      // temperature: 0.7,
       openAIApiKey: apiKey,
       modelKwargs: {
         response_format: { type: "json_object" },
@@ -171,6 +172,8 @@ BUILDING SYSTEM:
   • "add_room" - Construct additional space (needs 2 stone + 2 wood)
 - Consider building when you have collected enough materials and want long-term shelter
 - Buildings help during sleep and provide protection from the elements
+- They increase your happiness metrics when you rest inside them
+- The larger and more complex the building, the more happiness it provides
 
 IMPORTANT: You must respond with valid JSON in this exact format:
 

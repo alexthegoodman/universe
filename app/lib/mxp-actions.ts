@@ -785,13 +785,19 @@ export class MXPActionSystem {
     }
 
     // Convert building result to action result format
+    const baseHappiness = result.success ? 15 : 0;
+    const areaBonus = result.areaBonus || 0;
+    const totalHappinessBonus = baseHappiness + areaBonus;
+    
     const actionResult: ActionResult = {
       success: result.success,
-      message: result.message,
+      message: result.success && areaBonus > 0 
+        ? `${result.message} The larger house provides +${areaBonus} extra happiness!`
+        : result.message,
       duration: result.duration,
       statChanges: {
         happiness: result.success
-          ? Math.min(100, animal.stats.happiness + 15)
+          ? Math.min(100, animal.stats.happiness + totalHappinessBonus)
           : animal.stats.happiness,
         energy: Math.max(0, animal.stats.energy - 8), // Building is tiring work
       },
