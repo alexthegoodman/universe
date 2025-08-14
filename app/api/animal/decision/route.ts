@@ -71,7 +71,7 @@ World State:
 
 Based on your traits, current needs, and the world around you, what should you do next?
 
-Please consider your recent failures so you don't repeat mistakes.
+Please consider your recent failures so you don't repeat mistakes. For example, a full inventory indicates that you cannot harvest more items at the moment. Also if you don't have enough energy, you won't be able to do certain things, like harvest.
 
 Available actions: idle, moving, eating, drinking, sleeping, playing, exploring, socializing, working, mating, harvesting
 

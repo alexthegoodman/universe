@@ -27,6 +27,8 @@ export interface MXPActionConfig {
   drink: {
     thirstReduction: number;
     healthGain: number;
+    energyGain: number;
+    happinessGain: number;
   };
   sleep: {
     energyGain: number;
@@ -63,6 +65,8 @@ export class MXPActionSystem {
       drink: {
         thirstReduction: 25,
         healthGain: 5,
+        energyGain: 5,
+        happinessGain: 2,
       },
       sleep: {
         energyGain: 40,
@@ -242,6 +246,8 @@ export class MXPActionSystem {
     const actualQuality = waterItem.quality / 100;
     const thirstReduction = this.config.drink.thirstReduction * actualQuality;
     const healthGain = this.config.drink.healthGain * actualQuality;
+    const energyGain = this.config.drink.energyGain * actualQuality;
+    const happinessGain = this.config.drink.happinessGain * actualQuality;
 
     return {
       success: true,
@@ -249,6 +255,9 @@ export class MXPActionSystem {
       statChanges: {
         thirst: Math.max(0, animal.stats.thirst - thirstReduction),
         health: Math.min(100, animal.stats.health + healthGain),
+        // energy and happiness are not affected by drinking by not as much as eating
+        energy: Math.min(100, animal.stats.energy + energyGain),
+        happiness: Math.min(100, animal.stats.happiness + happinessGain),
       },
       consumedItem: {
         id: waterItem.id,
