@@ -94,7 +94,7 @@ export default function Game() {
 
   useEffect(() => {
     const manager = new GameManager({
-      startingAnimals: 2,
+      startingAnimals: 4,
       // startingAnimals: 10,
       maxAnimals: 20,
       enableWebSocket: false, // Disable for now to avoid server dependency

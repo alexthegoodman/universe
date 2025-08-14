@@ -356,9 +356,15 @@ export class BuildingSystem {
   } {
     const bonus = { comfort: 1, happiness: 0, safety: 1 };
 
-    // Find building the animal is in
+    // Find building the animal is in (check by distance)
     for (const building of this.buildings.values()) {
-      if (building.currentOccupants.includes(animal.id)) {
+      const distance = Math.sqrt(
+        Math.pow(building.position.x - animal.position.x, 2) +
+        Math.pow(building.position.z - animal.position.z, 2)
+      );
+      
+      // If animal is within building radius, apply bonuses
+      if (distance <= 5) {
         bonus.comfort = Math.min(2, 1 + building.stats.comfort / 100);
         bonus.happiness = building.stats.beauty / 5; // Beauty adds happiness
         bonus.safety = Math.min(2, 1 + building.stats.durability / 100);

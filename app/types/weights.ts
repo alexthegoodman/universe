@@ -7,9 +7,9 @@ export const RESOURCE_WEIGHTS = {
 };
 
 export const RESOURCE_COUNTS = {
-  wood: 40,
-  stone: 40,
-  food: 12,
-  water: 24,
-  berries: 12,
+  wood: 80,
+  stone: 80,
+  food: 16,
+  water: 32,
+  berries: 16,
 };
