@@ -1,3 +1,4 @@
+import { Micro_5 } from "next/font/google";
 import type {
   Animal,
   AnimalAction,
@@ -147,9 +148,12 @@ export class MXPActionSystem {
         Math.pow(targetZ - animal.position.z, 2)
     );
 
-    const energyCost = Math.min(
-      this.config.move.energyCost * (distance / 10) * animal.dna.size,
-      animal.stats.energy
+    const energyCost = Math.max(
+      5,
+      Math.min(
+        this.config.move.energyCost * (distance / 10) * animal.dna.size,
+        animal.stats.energy
+      )
     );
 
     if (animal.stats.energy < energyCost) {
@@ -413,7 +417,10 @@ export class MXPActionSystem {
       Math.pow(newPosition.x - animal.position.x, 2) +
         Math.pow(newPosition.z - animal.position.z, 2)
     );
-    const energyCost = Math.min(15 + distance * 2, animal.stats.energy * 0.3);
+    const energyCost = Math.max(
+      5,
+      Math.min(15 + distance * 2, animal.stats.energy * 0.3)
+    );
     const happiness = 10 * curiosityMultiplier + (explorationTarget ? 5 : 3); // AI-driven exploration gives more happiness
 
     // Check for discoveries based on world state and exploration goal

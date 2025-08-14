@@ -12,7 +12,7 @@ import { animalStateManager } from "./animal-state-manager";
 import { explorationSystem, ExplorationSystem } from "./exploration-system";
 import { actionLogger } from "./action-logger";
 
-export const HARVEST_RADIUS = 6; // Animals can harvest within 6 units
+export const HARVEST_RADIUS = 4; // Animals can harvest within this radius
 
 export interface HealthAlert {
   animalId: string;
@@ -483,14 +483,7 @@ export class HealthMonitor {
       const statsAfter = { ...updatedAnimal.stats };
 
       // Log the action with before/after stats
-      actionLogger.logAction(
-        animal,
-        action,
-        result,
-        statsBefore,
-        statsAfter
-      );
-
+      actionLogger.logAction(animal, action, result, statsBefore, statsAfter);
     } catch (error) {
       console.error(
         `Error executing action ${action} for ${animal.name}:`,

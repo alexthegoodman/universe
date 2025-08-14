@@ -78,7 +78,7 @@ export default function Game() {
 
   useEffect(() => {
     const manager = new GameManager({
-      startingAnimals: 3,
+      startingAnimals: 10,
       maxAnimals: 20,
       enableWebSocket: false, // Disable for now to avoid server dependency
     });
@@ -142,7 +142,6 @@ export default function Game() {
       await gameManager.spawnRandomAnimal();
     }
   }, [gameManager]);
-
 
   return (
     <div className="w-full h-screen relative">
