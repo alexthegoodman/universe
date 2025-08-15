@@ -206,13 +206,13 @@ export default function Game() {
                   Food Sources:{" "}
                   {
                     resources.filter(
-                      (r) => r.type === "food" || r.type === "berries"
+                      (r) => r.category === "edible_plants"
                     ).length
                   }
                 </div>
                 <div>
-                  Water Sources:{" "}
-                  {resources.filter((r) => r.type === "water").length}
+                  Materials:{" "}
+                  {resources.filter((r) => r.category === "minerals_stones" || r.category === "organic_materials").length}
                 </div>
                 <div>Buildings: {buildings.length}</div>
                 <div>

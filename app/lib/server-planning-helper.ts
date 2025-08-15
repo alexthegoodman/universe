@@ -52,8 +52,8 @@ export class ServerPlanningHelper {
 
     // Count available resources in inventory
     const availableResources = {
-      stone: animal.inventory.items.find(item => item.type === "stone")?.quantity || 0,
-      wood: animal.inventory.items.find(item => item.type === "wood")?.quantity || 0,
+      stone: animal.inventory.items.filter(item => item.type === "material" && item.name.includes("stone")).reduce((sum, item) => sum + item.quantity, 0),
+      wood: animal.inventory.items.filter(item => item.type === "material" && item.name.includes("wood")).reduce((sum, item) => sum + item.quantity, 0),
       food: animal.inventory.items.find(item => item.type === "food")?.quantity || 0,
       water: animal.inventory.items.find(item => item.type === "water")?.quantity || 0,
     };

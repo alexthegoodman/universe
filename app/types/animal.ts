@@ -44,11 +44,13 @@ export interface AnimalPosition {
 
 export interface InventoryItem {
   id: string;
-  type: "food" | "water" | "material" | "tool" | "stone" | "wood" | "berries";
+  type: "food" | "water" | "material" | "tool" | "medicinal" | "spice" | "rare";
   name: string;
   quantity: number;
   quality: number; // 0-100
   harvestedAt: number; // timestamp
+  rarity?: "common" | "uncommon" | "rare" | "epic" | "legendary";
+  traits?: Record<string, number>; // Resource traits with scores 0-100
 }
 
 export interface Inventory {

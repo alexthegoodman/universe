@@ -244,8 +244,8 @@ export class BuildingSystem {
   ): { success: boolean; message?: string } {
     const inventory = animal.inventory.items;
 
-    const stoneItems = inventory.filter((item) => item.type === "stone");
-    const woodItems = inventory.filter((item) => item.type === "wood");
+    const stoneItems = inventory.filter((item) => item.type === "material" && item.name.includes("stone"));
+    const woodItems = inventory.filter((item) => item.type === "material" && item.name.includes("wood"));
 
     const totalStone = stoneItems.reduce((sum, item) => sum + item.quantity, 0);
     const totalWood = woodItems.reduce((sum, item) => sum + item.quantity, 0);
@@ -275,7 +275,7 @@ export class BuildingSystem {
     let stoneNeeded = materials.stone;
     for (let i = inventory.length - 1; i >= 0 && stoneNeeded > 0; i--) {
       const item = inventory[i];
-      if (item.type === "stone") {
+      if (item.type === "material" && item.name.includes("stone")) {
         const consumed = Math.min(item.quantity, stoneNeeded);
         item.quantity -= consumed;
         stoneNeeded -= consumed;
@@ -293,7 +293,7 @@ export class BuildingSystem {
     let woodNeeded = materials.wood;
     for (let i = inventory.length - 1; i >= 0 && woodNeeded > 0; i--) {
       const item = inventory[i];
-      if (item.type === "wood") {
+      if (item.type === "material" && item.name.includes("wood")) {
         const consumed = Math.min(item.quantity, woodNeeded);
         item.quantity -= consumed;
         woodNeeded -= consumed;

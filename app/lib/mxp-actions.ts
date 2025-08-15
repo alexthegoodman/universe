@@ -192,12 +192,30 @@ export class MXPActionSystem {
   }
 
   private async executeEat(animal: Animal, params: any): Promise<ActionResult> {
-    const { foodType = "unknown", quality = 1 } = params;
+    const { resourceId, itemType, foodType = "unknown", quality = 1 } = params;
 
-    // Only allow eating from inventory
-    const foodItem = animal.inventory.items.find(
-      (item) => item.type === "food" && item.quantity > 0
-    );
+    let foodItem;
+
+    // Try to find specific item by resourceId first
+    if (resourceId) {
+      foodItem = animal.inventory.items.find(
+        (item) => item.id === resourceId && item.quantity > 0
+      );
+    }
+    
+    // Fallback to finding by type if no specific ID provided
+    if (!foodItem && itemType) {
+      foodItem = animal.inventory.items.find(
+        (item) => item.type === itemType && item.quantity > 0
+      );
+    }
+    
+    // Final fallback to any food item
+    if (!foodItem) {
+      foodItem = animal.inventory.items.find(
+        (item) => item.type === "food" && item.quantity > 0
+      );
+    }
 
     if (!foodItem) {
       return {
@@ -208,18 +226,62 @@ export class MXPActionSystem {
     }
 
     const actualQuality = foodItem.quality / 100;
-    const hungerReduction = this.config.eat.hungerReduction * actualQuality;
-    const energyGain = this.config.eat.energyGain * actualQuality;
-    const healthGain = actualQuality > 1 ? 5 : 2;
+    let hungerReduction = this.config.eat.hungerReduction * actualQuality;
+    let energyGain = this.config.eat.energyGain * actualQuality;
+    let healthGain = actualQuality > 1 ? 5 : 2;
+    let happinessGain = 5;
+
+    // Apply trait bonuses if the item has traits
+    if (foodItem.traits) {
+      // Nutritious trait increases hunger reduction
+      if (foodItem.traits.nutritious) {
+        hungerReduction += (foodItem.traits.nutritious / 100) * 10;
+      }
+      
+      // Energizing trait increases energy gain
+      if (foodItem.traits.energizing) {
+        energyGain += (foodItem.traits.energizing / 100) * 15;
+      }
+      
+      // Healing trait increases health gain
+      if (foodItem.traits.healing) {
+        healthGain += (foodItem.traits.healing / 100) * 8;
+      }
+      
+      // Sweet trait increases happiness
+      if (foodItem.traits.sweet) {
+        happinessGain += (foodItem.traits.sweet / 100) * 8;
+      }
+      
+      // Beautiful trait increases happiness
+      if (foodItem.traits.beautiful) {
+        happinessGain += (foodItem.traits.beautiful / 100) * 5;
+      }
+      
+      // Calming trait provides extra happiness and slight energy
+      if (foodItem.traits.calming) {
+        happinessGain += (foodItem.traits.calming / 100) * 6;
+        energyGain += (foodItem.traits.calming / 100) * 3;
+      }
+      
+      // Bitter trait reduces happiness but might increase health
+      if (foodItem.traits.bitter) {
+        happinessGain -= (foodItem.traits.bitter / 100) * 4;
+        healthGain += (foodItem.traits.bitter / 100) * 3; // bitter herbs often medicinal
+      }
+    }
+
+    const traitBonuses = foodItem.traits ? 
+      ` (${Object.entries(foodItem.traits).filter(([_, value]) => value > 50).map(([trait]) => trait).join(', ')})` : '';
 
     return {
       success: true,
-      message: `${animal.name} enjoyed eating ${foodItem.name} from their inventory`,
+      message: `${animal.name} enjoyed eating ${foodItem.name} from their inventory${traitBonuses}`,
       statChanges: {
         hunger: Math.max(0, animal.stats.hunger - hungerReduction),
         energy: Math.min(100, animal.stats.energy + energyGain),
         health: Math.min(100, animal.stats.health + healthGain),
-        happiness: Math.min(100, animal.stats.happiness + 5),
+        happiness: Math.min(100, animal.stats.happiness + happinessGain),
       },
       consumedItem: {
         id: foodItem.id,
@@ -228,6 +290,7 @@ export class MXPActionSystem {
         quantity: 1,
         quality: foodItem.quality,
         harvestedAt: foodItem.harvestedAt,
+        traits: foodItem.traits,
       },
       duration: 5000 + actualQuality * 2000,
     };

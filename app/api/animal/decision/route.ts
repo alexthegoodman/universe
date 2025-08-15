@@ -116,7 +116,7 @@ IMPORTANT SURVIVAL RULES:
 - Check nearbyResources for what you can see around you
 - Look for resources marked as "canHarvestNow: true" to harvest immediately
 - Resources marked as "tooFarToHarvest: true" need you to move closer first
-- Only choose "eating" if you have food/berries in inventory
+- Only choose "eating" if you have food items in inventory (specify which item by ID or type)
 - Only choose "drinking" if you have water in inventory
 - Choose "harvesting" when you see canHarvestNow resources and need them (specify which resource by ID)
 - Choose "exploring" to search for resources when you can't see any suitable ones
@@ -271,7 +271,18 @@ For building modifications, include buildingId:
   }}
 }}
 
-For survival steps (eating/drinking/sleeping), no special parameters needed:
+For eating steps, include resourceId or itemType in parameters:
+{{
+  "action": "eating",
+  "priority": 9,
+  "turnOffset": 0,
+  "reason": "Satisfy hunger with berries",
+  "parameters": {{
+    "resourceId": "item_12345"
+  }}
+}}
+
+For survival steps (drinking/sleeping), no special parameters needed:
 {{
   "action": "sleeping",
   "priority": 10,
@@ -441,6 +452,10 @@ Context: ${JSON.stringify(planningContext, null, 2)}`
     }
 
     if (finalAction === "harvesting" && parsedResponse.resourceId) {
+      result.resourceId = parsedResponse.resourceId;
+    }
+
+    if (finalAction === "eating" && parsedResponse.resourceId) {
       result.resourceId = parsedResponse.resourceId;
     }
 

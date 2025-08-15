@@ -115,7 +115,7 @@ export class AnimalAI {
 
     if (animal.stats.hunger > 70) {
       const hasFood = animal.inventory.items.some(
-        (item) => (item.type === "food" || item.type === "berries") && item.quantity > 0
+        (item) => item.type === "food" && item.quantity > 0
       );
       if (hasFood) {
         urgentActions.push({
@@ -140,8 +140,8 @@ export class AnimalAI {
 
     if (animal.stats.energy < 30) {
       // Check if has materials for building
-      const hasStone = animal.inventory.items.some(item => item.type === "stone" && item.quantity >= 2);
-      const hasWood = animal.inventory.items.some(item => item.type === "wood" && item.quantity >= 2);
+      const hasStone = animal.inventory.items.some(item => item.type === "material" && item.name.includes("stone") && item.quantity >= 2);
+      const hasWood = animal.inventory.items.some(item => item.type === "material" && item.name.includes("wood") && item.quantity >= 2);
       
       if (hasStone && hasWood) {
         urgentActions.push({
