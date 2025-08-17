@@ -80,6 +80,7 @@ Personality:
 - Playful: {playful}/100
 - Cautious: {cautious}/100
 - Nurturing: {nurturing}/100
+- Religious: 90/100
 
 Current Stats:
 - Health: {health}/100
