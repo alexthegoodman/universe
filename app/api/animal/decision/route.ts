@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ChatOpenAI } from "@langchain/openai";
-import { ChatPromptTemplate } from "@langchain/core/prompts";
-import { StringOutputParser } from "@langchain/core/output_parsers";
 import { serverPlanningHelper } from "../../../lib/server-planning-helper";
+import OpenAI from "openai";
+
+const openai = new OpenAI({
+  apiKey: process.env["OPENAI_API_KEY"], // This is the default and can be omitted
+});
 
 export async function POST(request: NextRequest) {
   try {
@@ -29,15 +31,7 @@ export async function POST(request: NextRequest) {
         worldState,
         existingPlan
       );
-    const planningContext = serverPlanningHelper.getPlanningContext(
-      animal,
-      worldState
-    );
-    const planningInsights = existingPlan
-      ? `Current plan: ${existingPlan.planType} (${
-          existingPlan.steps?.length || 0
-        } steps)`
-      : "No current plan";
+
     const sleepCheck = serverPlanningHelper.canSleep(animal, worldState);
 
     // Check for API key
@@ -52,19 +46,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const llm = new ChatOpenAI({
-      // model: "gpt-4o-mini",
-      // model: "gpt-5-mini",
-      model: "gpt-5-nano",
-      // temperature: 0.7,
-      openAIApiKey: apiKey,
-      modelKwargs: {
-        response_format: { type: "json_object" },
-      },
-    });
-
-    // TODO: add system message for LLM
-    const prompt = ChatPromptTemplate.fromTemplate(`
+    let systemPrompt = `
 You are an intelligent virtual animal named {name} (and the timestamp is {timestamp}) with the following characteristics:
 
 DNA Traits:
@@ -91,7 +73,9 @@ Current Stats:
 
 Current Age: {age}% of lifespan
 Current Action: {currentAction}
+`;
 
+    let userPrompt = `
 Current Inventory:
 {inventory}
 
@@ -268,6 +252,7 @@ For building steps, specify buildingAction in parameters:
 }}
 
 For building modifications, include buildingId:
+Make Wider...
 {{
   "action": "building",
   "priority": 8,
@@ -275,6 +260,28 @@ For building modifications, include buildingId:
   "reason": "Expand shelter capacity",
   "parameters": {{
     "action": "make_wider",
+    "buildingId": "building_123"
+  }}
+}}
+Make Taller...
+{{
+  "action": "building",
+  "priority": 8,
+  "turnOffset": 3,
+  "reason": "Increase shelter height for better protection",
+  "parameters": {{
+    "action": "make_taller",
+    "buildingId": "building_123"
+  }}
+}}
+Make Beautiful...
+{{
+  "action": "building",
+  "priority": 8,
+  "turnOffset": 3,
+  "reason": "Add decorative elements to improve happiness",
+  "parameters": {{
+    "action": "make_beautiful",
     "buildingId": "building_123"
   }}
 }}
@@ -304,9 +311,7 @@ Consider:
 - Build contingencies for potential failures
 - Balance immediate needs with long-term goals
 - Create plans that work toward shelter construction when possible
-    `);
-
-    const chain = prompt.pipe(llm).pipe(new StringOutputParser());
+`;
 
     // Format inventory for the prompt
     const inventoryDescription =
@@ -337,65 +342,114 @@ ${animal.specialMemories
 
 Consider these memories as inspiration for your personality, goals, and decision-making.`;
 
-    const planGenerationText = shouldCreateNewPlan
-      ? `PLAN GENERATION REQUIRED: You need to create a new 3-7 step plan. Include a "plan" field in your JSON response with specific steps, priorities, and reasons.
-Context: ${JSON.stringify(planningContext, null, 2)}`
-      : `FOLLOWING EXISTING PLAN: Continue executing your current plan. Current step: ${
-          existingPlan?.steps?.[existingPlan?.currentStepIndex || 0]?.action ||
-          "unknown"
-        } - ${
-          existingPlan?.steps?.[existingPlan?.currentStepIndex || 0]?.reason ||
-          "no reason"
-        }. Do NOT create a new plan field in your response.`;
+    // Format the user prompt with variables
+    systemPrompt = systemPrompt
+      .replace("{name}", animal.name)
+      .replace("{timestamp}", Date.now().toString())
+      .replace("{intelligence}", animal.dna.intelligence.toString())
+      .replace("{agility}", animal.dna.agility.toString())
+      .replace("{strength}", animal.dna.strength.toString())
+      .replace("{social}", animal.dna.social.toString())
+      .replace("{curiosity}", animal.dna.curiosity.toString())
+      .replace("{resilience}", animal.dna.resilience.toString())
+      .replace("{aggressive}", animal.dna.personality.aggressive.toString())
+      .replace("{playful}", animal.dna.personality.playful.toString())
+      .replace("{cautious}", animal.dna.personality.cautious.toString())
+      .replace("{nurturing}", animal.dna.personality.nurturing.toString())
+      .replace("{health}", animal.stats.health.toString())
+      .replace("{hunger}", animal.stats.hunger.toString())
+      .replace("{energy}", animal.stats.energy.toString())
+      .replace("{happiness}", animal.stats.happiness.toString())
+      .replace("{thirst}", animal.stats.thirst.toString())
+      .replace("{age}", Math.round(animal.age * 100).toString())
+      .replace("{currentAction}", animal.currentAction)
+      .replace("{inventory}", inventoryDescription)
+      .replace("{specialMemories}", specialMemoriesDescription)
+      .replace("{sightRadius}", worldState.sightRadius.toString())
+      .replace("{harvestRadius}", worldState.harvestRadius.toString())
+      .replace(
+        "{currentPosition}",
+        `x:${animal.position.x.toFixed(1)} z:${animal.position.z.toFixed(1)}`
+      )
+      .replace("{worldState}", JSON.stringify(worldState, null, 2))
+      .replace("{sleepConstraint}", sleepCheck.reason);
 
-    const promptVariables = {
-      name: animal.name,
-      intelligence: animal.dna.intelligence,
-      agility: animal.dna.agility,
-      strength: animal.dna.strength,
-      social: animal.dna.social,
-      curiosity: animal.dna.curiosity,
-      resilience: animal.dna.resilience,
-      aggressive: animal.dna.personality.aggressive,
-      playful: animal.dna.personality.playful,
-      cautious: animal.dna.personality.cautious,
-      nurturing: animal.dna.personality.nurturing,
-      health: animal.stats.health,
-      hunger: animal.stats.hunger,
-      energy: animal.stats.energy,
-      happiness: animal.stats.happiness,
-      thirst: animal.stats.thirst,
-      age: Math.round(animal.age * 100),
-      currentAction: animal.currentAction,
-      inventory: inventoryDescription,
-      specialMemories: specialMemoriesDescription,
-      sightRadius: worldState.sightRadius,
-      harvestRadius: worldState.harvestRadius,
-      currentPosition: `x:${animal.position.x.toFixed(
-        1
-      )} z:${animal.position.z.toFixed(1)}`,
-      worldState: JSON.stringify(worldState, null, 2),
-      timestamp: Date.now(),
-      planningInsights: planningInsights,
-      planGeneration: planGenerationText,
-      sleepConstraint: sleepCheck.reason,
-    };
+    userPrompt = userPrompt
+      .replace("{inventory}", inventoryDescription)
+      .replace("{specialMemories}", specialMemoriesDescription)
+      .replace("{worldState}", JSON.stringify(worldState, null, 2))
+      .replace("{sightRadius}", worldState.sightRadius.toString())
+      .replace("{harvestRadius}", worldState.harvestRadius.toString())
+      .replace(
+        "{currentPosition}",
+        `x:${animal.position.x.toFixed(1)} z:${animal.position.z.toFixed(1)}`
+      )
+      .replace("{sleepConstraint}", sleepCheck.reason);
 
-    // Log the full prompt with variables merged
-    const formattedPrompt = await prompt.format(promptVariables);
-    // console.log(`🔍 Full AI Prompt for ${animal.name}:`, formattedPrompt);
+    // Call OpenAI API directly
+    // const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    //   method: "POST",
+    //   headers: {
+    //     "Content-Type": "application/json",
+    //     Authorization: `Bearer ${apiKey}`,
+    //   },
+    //   body: JSON.stringify({
+    //     model: "gpt-5-nano",
+    //     messages: [
+    //       {
+    //         role: "system",
+    //         content: systemPrompt,
+    //       },
+    //       {
+    //         role: "user",
+    //         content: userPrompt,
+    //       },
+    //     ],
+    //     response_format: { type: "json_object" },
+    //     temperature: 0.7,
+    //     max_tokens: 4000,
+    //   }),
+    // });
 
-    const response = await chain.invoke(promptVariables);
+    const response = await openai.chat.completions.create({
+      model: "gpt-5-nano",
+      messages: [
+        {
+          role: "system",
+          content: systemPrompt,
+        },
+        {
+          role: "user",
+          content: userPrompt,
+        },
+      ],
+      response_format: { type: "json_object" },
+      // temperature: 0.7,
+      // max_completion_tokens: 6000,
+    });
+
+    // if (!response.ok) {
+    //   throw new Error(`OpenAI API error: ${response.status}`);
+    // }
+
+    // const responseData = await response.json();
+    const responseData = response;
+
+    const responseText = responseData.choices[0].message.content;
+
+    if (!responseText) {
+      throw new Error("Empty response from AI");
+    }
 
     // Log the full AI response
-    // console.log(`🤖 AI Response for ${animal.name}:`, response);
+    // console.log(`🤖 AI Response for ${animal.name}:`, responseText);
 
     // Parse JSON response
     let parsedResponse;
     try {
-      parsedResponse = JSON.parse(response);
+      parsedResponse = JSON.parse(responseText);
     } catch (error) {
-      console.error("Failed to parse AI JSON response:", response);
+      console.error("Failed to parse AI JSON response:", responseText);
       // Fallback: try to extract action from response text
       const validActions = [
         "moving",
@@ -413,7 +467,7 @@ Context: ${JSON.stringify(planningContext, null, 2)}`
       ];
       const action =
         validActions.find((action) =>
-          response.toLowerCase().includes(action)
+          responseText.toLowerCase().includes(action)
         ) || "idle";
       return NextResponse.json({ action });
     }
