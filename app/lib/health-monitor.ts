@@ -201,22 +201,46 @@ export class HealthMonitor {
       lastHealthCheck: Date.now(),
     };
 
+    // Update death counters based on current stats
+    const deathCounters = this.updateDeathCounters(animalWithDegradedStats);
+    const updatedAnimalWithCounters = {
+      ...animalWithDegradedStats,
+      deathCounters,
+    };
+
+    // Check if animal should die from prolonged critical conditions
+    if (this.shouldDieFromCriticalCondition(updatedAnimalWithCounters)) {
+      updatedAnimalWithCounters.isAlive = false;
+      console.log(`💀 ${animal.name} died from prolonged critical health/energy conditions`);
+      
+      // Schedule removal of dead animal
+      this.scheduleAnimalRemoval(animal.id);
+    }
+
     // Update age and stats in state manager
     animalStateManager.updateAge(
       animal.id,
       updatedAnimal.age,
-      updatedAnimal.isAlive
+      updatedAnimalWithCounters.isAlive
     );
+    
+    // Schedule removal if animal died of old age
+    if (updatedAnimal.age >= 1 && !updatedAnimalWithCounters.isAlive) {
+      this.scheduleAnimalRemoval(animal.id);
+    }
     animalStateManager.updateStats(animal.id, degradedStats, "health-monitor");
+    
+    // Update death counters in state manager
+    animalStateManager.setAnimal(updatedAnimalWithCounters);
 
     // Check for health issues
     const { isHealthy, criticalStats } = AnimalLifecycle.checkHealth(
-      animalWithDegradedStats
+      updatedAnimalWithCounters
     );
     const alerts: HealthAlert[] = [];
 
     // Generate alerts based on stats
-    if (animalWithDegradedStats.stats.health < 10) {
+    if (updatedAnimalWithCounters.stats.health < 10) {
       alerts.push({
         animalId: animal.id,
         severity: "critical",
@@ -224,7 +248,7 @@ export class HealthMonitor {
         timestamp: Date.now(),
         suggestedActions: ["find medicine", "rest", "seek shelter"],
       });
-    } else if (animalWithDegradedStats.stats.health < 30) {
+    } else if (updatedAnimalWithCounters.stats.health < 30) {
       alerts.push({
         animalId: animal.id,
         severity: "high",
@@ -234,7 +258,7 @@ export class HealthMonitor {
       });
     }
 
-    if (animalWithDegradedStats.stats.hunger > 90) {
+    if (updatedAnimalWithCounters.stats.hunger > 90) {
       alerts.push({
         animalId: animal.id,
         severity: "critical",
@@ -242,7 +266,7 @@ export class HealthMonitor {
         timestamp: Date.now(),
         suggestedActions: ["find food immediately", "hunt", "forage"],
       });
-    } else if (animalWithDegradedStats.stats.hunger > 70) {
+    } else if (updatedAnimalWithCounters.stats.hunger > 70) {
       alerts.push({
         animalId: animal.id,
         severity: "high",
@@ -252,7 +276,7 @@ export class HealthMonitor {
       });
     }
 
-    if (animalWithDegradedStats.stats.thirst > 90) {
+    if (updatedAnimalWithCounters.stats.thirst > 90) {
       alerts.push({
         animalId: animal.id,
         severity: "critical",
@@ -260,7 +284,7 @@ export class HealthMonitor {
         timestamp: Date.now(),
         suggestedActions: ["find water immediately", "drink"],
       });
-    } else if (animalWithDegradedStats.stats.thirst > 70) {
+    } else if (updatedAnimalWithCounters.stats.thirst > 70) {
       alerts.push({
         animalId: animal.id,
         severity: "high",
@@ -270,7 +294,7 @@ export class HealthMonitor {
       });
     }
 
-    if (animalWithDegradedStats.stats.energy < 10) {
+    if (updatedAnimalWithCounters.stats.energy < 10) {
       alerts.push({
         animalId: animal.id,
         severity: "high",
@@ -280,7 +304,7 @@ export class HealthMonitor {
       });
     }
 
-    if (animalWithDegradedStats.stats.happiness < 20) {
+    if (updatedAnimalWithCounters.stats.happiness < 20) {
       alerts.push({
         animalId: animal.id,
         severity: "medium",
@@ -290,12 +314,16 @@ export class HealthMonitor {
       });
     }
 
-    // Check if animal died of old age
-    if (!animalWithDegradedStats.isAlive) {
+    // Check if animal died of old age or critical conditions
+    if (!updatedAnimalWithCounters.isAlive) {
+      const deathMessage = updatedAnimal.age >= 1 
+        ? `${animal.name} has reached the end of their natural lifespan`
+        : `${animal.name} died from prolonged critical conditions (health: ${updatedAnimalWithCounters.deathCounters.healthAtZero} periods, energy: ${updatedAnimalWithCounters.deathCounters.energyAtZero} periods)`;
+      
       alerts.push({
         animalId: animal.id,
         severity: "critical",
-        message: `${animal.name} has reached the end of their natural lifespan`,
+        message: deathMessage,
         timestamp: Date.now(),
         suggestedActions: ["memorial", "offspring care"],
       });
@@ -304,7 +332,7 @@ export class HealthMonitor {
     // Determine overall status
     let overallStatus: HealthReport["overallStatus"] = "healthy";
 
-    if (!animalWithDegradedStats.isAlive) {
+    if (!updatedAnimalWithCounters.isAlive) {
       overallStatus = "dying";
     } else if (alerts.some((alert) => alert.severity === "critical")) {
       overallStatus = "critical";
@@ -314,28 +342,28 @@ export class HealthMonitor {
 
     // Get AI recommendation for next action
     const survivalPriority = AnimalLifecycle.calculateSurvivalPriority(
-      animalWithDegradedStats
+      updatedAnimalWithCounters
     );
     let nextActionRecommendation = "idle";
 
     if (survivalPriority > 50) {
       // Critical survival needs
-      if (animalWithDegradedStats.stats.health < 30)
+      if (updatedAnimalWithCounters.stats.health < 30)
         nextActionRecommendation = "sleeping";
-      else if (animalWithDegradedStats.stats.thirst > 70)
+      else if (updatedAnimalWithCounters.stats.thirst > 70)
         nextActionRecommendation = "drinking";
-      else if (animalWithDegradedStats.stats.hunger > 70)
+      else if (updatedAnimalWithCounters.stats.hunger > 70)
         nextActionRecommendation = "eating";
-      else if (animalWithDegradedStats.stats.energy < 30)
+      else if (updatedAnimalWithCounters.stats.energy < 30)
         nextActionRecommendation = "sleeping";
     } else {
       // Recreational activities
-      const lifeStage = AnimalLifecycle.getLifeStage(animalWithDegradedStats);
+      const lifeStage = AnimalLifecycle.getLifeStage(updatedAnimalWithCounters);
       if (lifeStage === "baby" || lifeStage === "young") {
         nextActionRecommendation = "playing";
-      } else if (animalWithDegradedStats.dna.curiosity > 70) {
+      } else if (updatedAnimalWithCounters.dna.curiosity > 70) {
         nextActionRecommendation = "exploring";
-      } else if (animalWithDegradedStats.dna.social > 70) {
+      } else if (updatedAnimalWithCounters.dna.social > 70) {
         nextActionRecommendation = "socializing";
       } else {
         nextActionRecommendation = "idle";
@@ -343,11 +371,37 @@ export class HealthMonitor {
     }
 
     return {
-      animal: animalWithDegradedStats,
+      animal: updatedAnimalWithCounters,
       alerts,
       nextActionRecommendation,
       overallStatus,
     };
+  }
+
+  private updateDeathCounters(animal: Animal): { healthAtZero: number; energyAtZero: number } {
+    const currentCounters = animal.deathCounters || { healthAtZero: 0, energyAtZero: 0 };
+    
+    return {
+      healthAtZero: animal.stats.health <= 0 ? currentCounters.healthAtZero + 1 : 0,
+      energyAtZero: animal.stats.energy <= 0 ? currentCounters.energyAtZero + 1 : 0,
+    };
+  }
+
+  private shouldDieFromCriticalCondition(animal: Animal): boolean {
+    const deathCounters = animal.deathCounters;
+    if (!deathCounters) return false;
+    
+    // Animal dies if health or energy has been at 0 for more than 3 consecutive health checks
+    return deathCounters.healthAtZero > 3 || deathCounters.energyAtZero > 3;
+  }
+
+  private scheduleAnimalRemoval(animalId: string): void {
+    // Wait a short time to allow for death alerts and final processing
+    setTimeout(() => {
+      if (this.gameManagerRef) {
+        this.gameManagerRef.removeAnimal(animalId);
+      }
+    }, 5000); // 5 second delay to allow for final alerts/notifications
   }
 
   // NOTE: handleAnimalDecision method is now replaced by Global Plan Queue

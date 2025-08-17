@@ -77,6 +77,12 @@ export interface Animal {
   lastHealthCheck: number;
   isAlive: boolean;
 
+  // Death tracking
+  deathCounters: {
+    healthAtZero: number; // Number of consecutive decisions/plans with health at 0
+    energyAtZero: number; // Number of consecutive decisions/plans with energy at 0
+  };
+
   // AI Chain reference
   chainId?: string;
 }

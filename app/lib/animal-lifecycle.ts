@@ -33,6 +33,10 @@ export class AnimalLifecycle {
       currentAction: "idle",
       lastHealthCheck: now,
       isAlive: true,
+      deathCounters: {
+        healthAtZero: 0,
+        energyAtZero: 0,
+      },
     };
   }
 

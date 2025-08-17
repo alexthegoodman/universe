@@ -1263,7 +1263,7 @@ export class GameManager {
       (i) =>
         i.type === item.type &&
         i.name === item.name &&
-        i.quality === item.quality &&
+        // i.quality === item.quality && // quality need not match for stacking
         JSON.stringify(i.traits || {}) === JSON.stringify(item.traits || {})
     );
 
