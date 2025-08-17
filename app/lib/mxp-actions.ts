@@ -825,10 +825,7 @@ export class MXPActionSystem {
         );
       }
 
-      if (result.success && result.materialConsumed) {
-        // Consume materials from inventory
-        buildingSystem.consumeMaterials(animal, result.materialConsumed);
-      }
+      // Materials are now consumed automatically by the building system
     } else {
       // Modify existing building
       if (!buildingId) {
@@ -841,10 +838,7 @@ export class MXPActionSystem {
 
       result = buildingSystem.modifyBuilding(animal, buildingId, action);
 
-      if (result.success && result.materialConsumed) {
-        // Consume materials from inventory
-        buildingSystem.consumeMaterials(animal, result.materialConsumed);
-      }
+      // Materials are now consumed automatically by the building system
     }
 
     // Convert building result to action result format

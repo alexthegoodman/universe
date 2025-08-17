@@ -4,11 +4,14 @@ import type {
   BuildingActionResult,
   BuildingDimensions,
   BuildingMaterial,
+  BuildingMaterialsUsed,
   BuildingStats,
 } from "../types/building";
 import { BUILDING_ACTIONS } from "../types/building";
 import type { Animal, InventoryItem } from "../types/animal";
 import { RESOURCE_WEIGHTS } from "../types/weights";
+import type { ResourceType, ResourceTraits } from "./game-manager";
+import { RESOURCE_TRAIT_MAP } from "./game-manager";
 
 export class BuildingSystem {
   private buildings: Map<string, Building> = new Map();
@@ -85,6 +88,16 @@ export class BuildingSystem {
       };
     }
 
+    // Consume materials from animal's inventory
+    const consumeResult = this.consumeMaterials(animal, action.requiredMaterials);
+    if (!consumeResult.success) {
+      return {
+        success: false,
+        message: `${animal.name} failed to gather the required materials for building`,
+        duration: 2000,
+      };
+    }
+
     // Create the building
     const building: Building = {
       id: `building_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -95,7 +108,7 @@ export class BuildingSystem {
         height: action.effects.dimensionChanges?.height || 2,
         depth: action.effects.dimensionChanges?.depth || 3,
       },
-      materials: { ...action.requiredMaterials },
+      materials: consumeResult.materialsUsed,
       stats: {
         durability: action.effects.statChanges?.durability || 60,
         beauty: action.effects.statChanges?.beauty || 30,
@@ -119,7 +132,7 @@ export class BuildingSystem {
     return {
       success: true,
       message: `${animal.name} successfully built ${name}!`,
-      materialConsumed: action.requiredMaterials,
+      materialConsumed: consumeResult.materialsUsed,
       buildingChanges: {
         dimensions: building.dimensions,
         stats: building.stats,
@@ -179,6 +192,16 @@ export class BuildingSystem {
       };
     }
 
+    // Consume materials from animal's inventory
+    const consumeResult = this.consumeMaterials(animal, action.requiredMaterials);
+    if (!consumeResult.success) {
+      return {
+        success: false,
+        message: `${animal.name} failed to gather the required materials for building modification`,
+        duration: 2000,
+      };
+    }
+
     // Apply modifications
     const changes: any = {};
 
@@ -215,9 +238,10 @@ export class BuildingSystem {
       changes.capacity = building.maxOccupants;
     }
 
-    // Update building materials used
-    building.materials.stone += action.requiredMaterials.stone;
-    building.materials.wood += action.requiredMaterials.wood;
+    // Update building materials used (add to existing materials)
+    Object.keys(consumeResult.materialsUsed).forEach((resourceName) => {
+      building.materials[resourceName] = (building.materials[resourceName] || 0) + consumeResult.materialsUsed[resourceName];
+    });
     building.lastModifiedAt = Date.now();
 
     // Calculate area bonus for larger houses
@@ -227,12 +251,9 @@ export class BuildingSystem {
     return {
       success: true,
       message: `${animal.name} successfully improved the building with "${action.name}"!`,
-      materialConsumed: action.requiredMaterials,
+      materialConsumed: consumeResult.materialsUsed,
       buildingChanges: changes,
-      duration:
-        8000 +
-        action.requiredMaterials.stone * 1000 +
-        action.requiredMaterials.wood * 500,
+      duration: 8000 + action.requiredMaterials.requiredQuantity * 1000,
       areaBonus: areaBonus,
     };
   }
@@ -243,24 +264,30 @@ export class BuildingSystem {
     required: BuildingMaterial
   ): { success: boolean; message?: string } {
     const inventory = animal.inventory.items;
+    const minScore = required.minTraitScore || 50;
 
-    const stoneItems = inventory.filter((item) => item.type === "material" && item.name.includes("stone"));
-    const woodItems = inventory.filter((item) => item.type === "material" && item.name.includes("wood"));
+    // Find items that have all required traits with sufficient scores
+    const suitableItems = inventory.filter((item) => {
+      if (item.type !== "material") return false;
 
-    const totalStone = stoneItems.reduce((sum, item) => sum + item.quantity, 0);
-    const totalWood = woodItems.reduce((sum, item) => sum + item.quantity, 0);
+      // Get the resource traits for this item
+      const resourceTraits = RESOURCE_TRAIT_MAP[item.name as ResourceType];
+      if (!resourceTraits) return false;
 
-    if (totalStone < required.stone) {
+      // Check if this resource has all required traits with sufficient scores
+      return required.suitableTraits.every((trait) => {
+        const score = resourceTraits[trait as keyof ResourceTraits];
+        return score !== undefined && score >= minScore;
+      });
+    });
+
+    const totalSuitableMaterials = suitableItems.reduce((sum, item) => sum + item.quantity, 0);
+
+    if (totalSuitableMaterials < required.requiredQuantity) {
+      const traitList = required.suitableTraits.join(", ");
       return {
         success: false,
-        message: `${animal.name} needs ${required.stone} stone but only has ${totalStone}`,
-      };
-    }
-
-    if (totalWood < required.wood) {
-      return {
-        success: false,
-        message: `${animal.name} needs ${required.wood} wood but only has ${totalWood}`,
+        message: `${animal.name} needs ${required.requiredQuantity} materials with traits [${traitList}] (min score: ${minScore}) but only has ${totalSuitableMaterials}`,
       };
     }
 
@@ -268,20 +295,44 @@ export class BuildingSystem {
   }
 
   // Consume materials from animal's inventory
-  consumeMaterials(animal: Animal, materials: BuildingMaterial): boolean {
+  consumeMaterials(animal: Animal, materials: BuildingMaterial): { success: boolean; materialsUsed: BuildingMaterialsUsed } {
     const inventory = animal.inventory.items;
+    const minScore = materials.minTraitScore || 50;
 
-    // Consume stone
-    let stoneNeeded = materials.stone;
-    for (let i = inventory.length - 1; i >= 0 && stoneNeeded > 0; i--) {
+    // Find items that have all required traits with sufficient scores
+    const suitableItems = inventory.filter((item) => {
+      if (item.type !== "material") return false;
+
+      // Get the resource traits for this item
+      const resourceTraits = RESOURCE_TRAIT_MAP[item.name as ResourceType];
+      if (!resourceTraits) return false;
+
+      // Check if this resource has all required traits with sufficient scores
+      return materials.suitableTraits.every((trait) => {
+        const score = resourceTraits[trait as keyof ResourceTraits];
+        return score !== undefined && score >= minScore;
+      });
+    });
+
+    // Consume materials and track what was used
+    let materialsNeeded = materials.requiredQuantity;
+    const materialsUsed: BuildingMaterialsUsed = {};
+
+    for (let i = inventory.length - 1; i >= 0 && materialsNeeded > 0; i--) {
       const item = inventory[i];
-      if (item.type === "material" && item.name.includes("stone")) {
-        const consumed = Math.min(item.quantity, stoneNeeded);
+      
+      // Check if this item is suitable
+      if (suitableItems.includes(item)) {
+        const consumed = Math.min(item.quantity, materialsNeeded);
         item.quantity -= consumed;
-        stoneNeeded -= consumed;
+        materialsNeeded -= consumed;
 
-        // Update weight
-        animal.inventory.currentWeight -= consumed * RESOURCE_WEIGHTS.stone; // Stone weighs 3 units each
+        // Track what was consumed
+        materialsUsed[item.name] = (materialsUsed[item.name] || 0) + consumed;
+
+        // Update weight using the appropriate resource weight
+        const resourceWeight = RESOURCE_WEIGHTS[item.name as keyof typeof RESOURCE_WEIGHTS] || 1;
+        animal.inventory.currentWeight -= consumed * resourceWeight;
 
         if (item.quantity <= 0) {
           inventory.splice(i, 1);
@@ -289,25 +340,10 @@ export class BuildingSystem {
       }
     }
 
-    // Consume wood
-    let woodNeeded = materials.wood;
-    for (let i = inventory.length - 1; i >= 0 && woodNeeded > 0; i--) {
-      const item = inventory[i];
-      if (item.type === "material" && item.name.includes("wood")) {
-        const consumed = Math.min(item.quantity, woodNeeded);
-        item.quantity -= consumed;
-        woodNeeded -= consumed;
-
-        // Update weight
-        animal.inventory.currentWeight -= consumed * RESOURCE_WEIGHTS.wood; // Wood weighs 2 units each
-
-        if (item.quantity <= 0) {
-          inventory.splice(i, 1);
-        }
-      }
-    }
-
-    return stoneNeeded === 0 && woodNeeded === 0;
+    return {
+      success: materialsNeeded === 0,
+      materialsUsed: materialsUsed
+    };
   }
 
   // Get all buildings

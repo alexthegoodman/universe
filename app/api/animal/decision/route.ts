@@ -63,6 +63,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // TODO: add system message for LLM
     const prompt = ChatPromptTemplate.fromTemplate(`
 You are an intelligent virtual animal named {name} (and the timestamp is {timestamp}) with the following characteristics:
 
@@ -101,7 +102,8 @@ Based on your traits, current needs, and the world around you, what PLAN should 
 You MUST create strategic multi-step plans, NOT individual actions. Think about sequences like:
 - "gather materials → build shelter → sleep to restore energy"
 - "find water → drink → explore for food → eat"
-- "harvest stone → harvest wood → create building → improve building"
+- "harvest granite → harvest oak_wood → create building → improve building"
+- "harvest marble → harvest diamond → make building beautiful"
 
 Consider your recent failures and avoid repeating mistakes. Plan around your constraints:
 - Full inventory means you need to consume items before harvesting more
@@ -137,7 +139,7 @@ CRITICAL SLEEPING CONSTRAINT:
 PLANNING PRIORITY:
 1. SURVIVAL PLANS: Address critical needs (thirst>70, hunger>70, energy<30, health<30) 
 2. BUILDING PLANS: If you have materials or can gather them, plan shelter construction
-3. RESOURCE GATHERING PLANS: Plan sequences to collect stone, wood, food, water
+3. RESOURCE GATHERING PLANS: Plan sequences to collect materials (some are durable including granite, oak_wood, etc., some are beautiful including marble, diamond, etc., and some are consumable including berries, water, etc.)
 4. EXPLORATION PLANS: Systematic exploration for resources and opportunities  
 5. SOCIAL/RECREATION PLANS: When survival needs are met, plan social activities
 
@@ -165,15 +167,17 @@ PLANNING SYSTEM:
 BUILDING SYSTEM:
 - Buildings provide shelter, comfort, and happiness bonuses when you rest inside them
 - Check nearbyBuildings to see structures you can interact with or enter
-- You can create new buildings or modify existing ones if you have materials
-- Building requires stone and wood from your inventory
+- You can create new buildings or modify existing ones if you have suitable materials
+- Building accepts ANY material with appropriate traits - not just stone and wood!
 - Available building actions:
-  • "create_building" - Build new shelter (needs 2 stone + 2 wood)
-  • "make_wider" - Expand building width (needs 2 stone + 2 wood)  
-  • "make_taller" - Increase building height (needs 2 stone + 2 wood)
-  • "make_beautiful" - Add decorative elements (needs 1 stone + 1 wood)
-  • "add_room" - Construct additional space (needs 2 stone + 2 wood)
-- Consider building when you have collected enough materials and want long-term shelter
+  • "create_building" - Build new shelter (needs 4 durable materials, trait score ≥50)
+  • "make_wider" - Expand building width (needs 4 durable materials, trait score ≥50)  
+  • "make_taller" - Increase building height (needs 4 durable materials, trait score ≥50)
+  • "make_beautiful" - Add decorative elements (needs 2 beautiful materials, trait score ≥60)
+  • "add_room" - Construct additional space (needs 4 durable materials, trait score ≥50)
+- DURABLE materials include: granite, limestone, marble, oak_wood, cedar_wood, iron_ore, etc.
+- BEAUTIFUL materials include: marble, diamond, ruby, emerald, amethyst, silk, etc.
+- Consider building when you have collected enough suitable materials and want long-term shelter
 - Buildings help during sleep and provide protection from the elements
 - They increase your happiness metrics when you rest inside them
 - The larger and more complex the building, the more happiness it provides
@@ -186,9 +190,9 @@ ALWAYS INCLUDE A JSON PLAN when creating new plans. Use this format and always r
         "action": "harvesting",
         "priority": 9,
         "turnOffset": 0,
-        "reason": "Need stone for building",
+        "reason": "Need granite for building",
         "parameters": {{
-          "resourceId": "stone_123"
+          "resourceId": "granite_123"
         }}
       }},
       {{
@@ -240,7 +244,7 @@ For exploration steps, include target coordinates in parameters:
   "action": "exploring",
   "priority": 7,
   "turnOffset": 1,
-  "reason": "Search for stone and wood resources",
+  "reason": "Search for durable materials like granite and oak_wood",
   "parameters": {{
     "targetX": 15.5,
     "targetZ": 25.0

@@ -19,7 +19,7 @@ import {
 } from "./client-planning-manager";
 import { GlobalPlanQueue } from "./global-plan-queue";
 
-export const HARVEST_RADIUS = 4; // Animals can harvest within this radius
+export const HARVEST_RADIUS = 10; // Animals can harvest within this radius
 
 export interface HealthAlert {
   animalId: string;

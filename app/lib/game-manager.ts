@@ -220,7 +220,7 @@ export interface WorldState {
 }
 
 // Resource scored trait definitions by type (0-100 for each trait)
-const RESOURCE_TRAIT_MAP: Record<ResourceType, ResourceTraits> = {
+export const RESOURCE_TRAIT_MAP: Record<ResourceType, ResourceTraits> = {
   // Minerals & Stones
   granite: { durable: 90, waterproof: 70 },
   limestone: { durable: 75, absorbent: 80 },
