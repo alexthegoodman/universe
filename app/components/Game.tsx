@@ -98,7 +98,7 @@ export default function Game() {
     const manager = new GameManager({
       startingAnimals: 16, // 1 for testing smollm3
       // startingAnimals: 10,
-      maxAnimals: 20,
+      maxAnimals: 50,
       enableWebSocket: false, // Disable for now to avoid server dependency
     });
 
