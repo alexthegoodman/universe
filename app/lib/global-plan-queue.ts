@@ -22,6 +22,7 @@ export class GlobalPlanQueue {
   private gameManager: GameManager | null = null;
   private activeDecisionCalls: Set<string> = new Set(); // Track animals with in-flight decision API calls
 
+  private readonly MAX_CONCURRENT_DECISIONS = 3; // Maximum concurrent decision tasks
   private readonly DECISION_PROCESSING_DELAY = 500; // 500ms between decisions
   private readonly PLAN_EXECUTION_INTERVAL = 2000; // 2s for plan step execution
   private readonly MAX_RETRIES = 3;
@@ -123,30 +124,53 @@ export class GlobalPlanQueue {
     if (this.processing) return;
 
     this.processing = true;
-    console.log("🎯 Starting Global Plan Queue processing");
+    console.log("🎯 Starting Global Plan Queue processing with up to 3 concurrent tasks");
 
-    while (this.queue.length > 0) {
-      const entry = this.queue.shift()!;
+    const processingTasks = new Map<string, Promise<void>>();
 
-      try {
-        const success = await this.processAnimalDecision(entry);
-
-        if (!success && entry.retryCount < this.MAX_RETRIES) {
-          entry.retryCount++;
-          entry.queuedAt = Date.now() + entry.retryCount * 1000; // Increasing delay
-          this.queue.push(entry);
-          this.sortQueue();
-        }
-      } catch (error) {
-        console.error(`❌ Error processing animal ${entry.animalId}:`, error);
+    while (this.queue.length > 0 || processingTasks.size > 0) {
+      // Start new concurrent tasks up to the limit
+      while (
+        this.queue.length > 0 && 
+        processingTasks.size < this.MAX_CONCURRENT_DECISIONS
+      ) {
+        const entry = this.queue.shift()!;
+        console.log(`🚀 Starting concurrent decision task for animal ${entry.animalId} (${processingTasks.size + 1}/${this.MAX_CONCURRENT_DECISIONS})`);
+        
+        const promise = this.processAnimalDecisionConcurrent(entry)
+          .finally(() => {
+            processingTasks.delete(entry.animalId);
+          });
+        
+        processingTasks.set(entry.animalId, promise);
       }
 
-      // Delay between processing animals
+      // Wait for at least one task to complete if we have any running
+      if (processingTasks.size > 0) {
+        await Promise.race(processingTasks.values());
+      }
+
+      // Small delay to prevent tight loop
       await this.delay(this.DECISION_PROCESSING_DELAY);
     }
 
     this.processing = false;
     console.log("✅ Global Plan Queue processing complete");
+  }
+
+  private async processAnimalDecisionConcurrent(entry: QueueEntry): Promise<void> {
+    try {
+      const success = await this.processAnimalDecision(entry);
+
+      if (!success && entry.retryCount < this.MAX_RETRIES) {
+        entry.retryCount++;
+        entry.queuedAt = Date.now() + entry.retryCount * 1000; // Increasing delay
+        this.queue.push(entry);
+        this.sortQueue();
+      }
+    } catch (error) {
+      console.error(`❌ Error processing animal ${entry.animalId}:`, error);
+    }
   }
 
   private async processAnimalDecision(entry: QueueEntry): Promise<boolean> {
@@ -314,11 +338,15 @@ export class GlobalPlanQueue {
     length: number;
     processing: boolean;
     entries: QueueEntry[];
+    activeDecisions: number;
+    maxConcurrent: number;
   } {
     return {
       length: this.queue.length,
       processing: this.processing,
       entries: [...this.queue],
+      activeDecisions: this.activeDecisionCalls.size,
+      maxConcurrent: this.MAX_CONCURRENT_DECISIONS,
     };
   }
 

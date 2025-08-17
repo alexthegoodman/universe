@@ -59,6 +59,13 @@ export interface Inventory {
   currentWeight: number;
 }
 
+export interface SpecialMemory {
+  id: string;
+  content: string;
+  createdAt: number; // timestamp
+  tags?: string[];
+}
+
 export interface Animal {
   id: string;
   name: string;
@@ -85,6 +92,9 @@ export interface Animal {
 
   // AI Chain reference
   chainId?: string;
+
+  // Player-added memories and notes
+  specialMemories?: SpecialMemory[];
 }
 
 export type AnimalAction =

@@ -148,13 +148,22 @@ export class MXPActionSystem {
     const halfWidth = worldBounds.width / 2;
     const halfDepth = worldBounds.depth / 2;
 
-    if (targetX < -halfWidth || targetX > halfWidth || targetZ < -halfDepth || targetZ > halfDepth) {
+    if (
+      targetX < -halfWidth ||
+      targetX > halfWidth ||
+      targetZ < -halfDepth ||
+      targetZ > halfDepth
+    ) {
       // Store failure memory when attempting to move outside bounds
       this.explorationSystem.addFailureMemory(
         animal.id,
         animal.position,
         "move",
-        `attempted to move outside map bounds (${targetX.toFixed(1)}, ${targetZ.toFixed(1)}) - world is ${worldBounds.width}x${worldBounds.depth}`
+        `attempted to move outside map bounds (${targetX.toFixed(
+          1
+        )}, ${targetZ.toFixed(1)}) - world is ${worldBounds.width}x${
+          worldBounds.depth
+        }`
       );
 
       return {
@@ -223,14 +232,14 @@ export class MXPActionSystem {
         (item) => item.id === resourceId && item.quantity > 0
       );
     }
-    
+
     // Fallback to finding by type if no specific ID provided
     if (!foodItem && itemType) {
       foodItem = animal.inventory.items.find(
         (item) => item.type === itemType && item.quantity > 0
       );
     }
-    
+
     // Final fallback to any food item
     if (!foodItem) {
       foodItem = animal.inventory.items.find(
@@ -258,33 +267,33 @@ export class MXPActionSystem {
       if (foodItem.traits.nutritious) {
         hungerReduction += (foodItem.traits.nutritious / 100) * 10;
       }
-      
+
       // Energizing trait increases energy gain
       if (foodItem.traits.energizing) {
         energyGain += (foodItem.traits.energizing / 100) * 15;
       }
-      
+
       // Healing trait increases health gain
       if (foodItem.traits.healing) {
         healthGain += (foodItem.traits.healing / 100) * 8;
       }
-      
+
       // Sweet trait increases happiness
       if (foodItem.traits.sweet) {
         happinessGain += (foodItem.traits.sweet / 100) * 8;
       }
-      
+
       // Beautiful trait increases happiness
       if (foodItem.traits.beautiful) {
         happinessGain += (foodItem.traits.beautiful / 100) * 5;
       }
-      
+
       // Calming trait provides extra happiness and slight energy
       if (foodItem.traits.calming) {
         happinessGain += (foodItem.traits.calming / 100) * 6;
         energyGain += (foodItem.traits.calming / 100) * 3;
       }
-      
+
       // Bitter trait reduces happiness but might increase health
       if (foodItem.traits.bitter) {
         happinessGain -= (foodItem.traits.bitter / 100) * 4;
@@ -292,8 +301,12 @@ export class MXPActionSystem {
       }
     }
 
-    const traitBonuses = foodItem.traits ? 
-      ` (${Object.entries(foodItem.traits).filter(([_, value]) => value > 50).map(([trait]) => trait).join(', ')})` : '';
+    const traitBonuses = foodItem.traits
+      ? ` (${Object.entries(foodItem.traits)
+          .filter(([_, value]) => value > 50)
+          .map(([trait]) => trait)
+          .join(", ")})`
+      : "";
 
     return {
       success: true,
@@ -525,14 +538,29 @@ export class MXPActionSystem {
     const halfWidth = worldBounds.width / 2;
     const halfDepth = worldBounds.depth / 2;
 
-    if (newPosition.x < -halfWidth || newPosition.x > halfWidth || 
-        newPosition.z < -halfDepth || newPosition.z > halfDepth) {
+    console.info(
+      "Exploring new position",
+      animal.name,
+      newPosition,
+      worldBounds
+    );
+
+    if (
+      newPosition.x < -halfWidth ||
+      newPosition.x > halfWidth ||
+      newPosition.z < -halfDepth ||
+      newPosition.z > halfDepth
+    ) {
       // Store failure memory when attempting to explore outside bounds
       this.explorationSystem.addFailureMemory(
         animal.id,
         animal.position,
         "explore",
-        `attempted to explore outside map bounds (${newPosition.x.toFixed(1)}, ${newPosition.z.toFixed(1)}) - world is ${worldBounds.width}x${worldBounds.depth}`
+        `attempted to explore outside map bounds (${newPosition.x.toFixed(
+          1
+        )}, ${newPosition.z.toFixed(1)}) - world is ${worldBounds.width}x${
+          worldBounds.depth
+        }`
       );
 
       return {
@@ -888,12 +916,13 @@ export class MXPActionSystem {
     const baseHappiness = result.success ? 15 : 0;
     const areaBonus = result.areaBonus || 0;
     const totalHappinessBonus = baseHappiness + areaBonus;
-    
+
     const actionResult: ActionResult = {
       success: result.success,
-      message: result.success && areaBonus > 0 
-        ? `${result.message} The larger house provides +${areaBonus} extra happiness!`
-        : result.message,
+      message:
+        result.success && areaBonus > 0
+          ? `${result.message} The larger house provides +${areaBonus} extra happiness!`
+          : result.message,
       duration: result.duration,
       statChanges: {
         happiness: result.success

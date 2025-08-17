@@ -160,6 +160,28 @@ export class AnimalStateManager {
     return true;
   }
 
+  // Update animal special memories
+  updateSpecialMemories(animalId: string, specialMemories: Animal['specialMemories'], source: string = 'player'): boolean {
+    const animal = this.animals.get(animalId);
+    if (!animal) return false;
+
+    const updatedAnimal = {
+      ...animal,
+      specialMemories: specialMemories ? [...specialMemories] : undefined
+    };
+
+    this.animals.set(animalId, updatedAnimal);
+    this.queueUpdate({
+      animalId,
+      type: 'full',
+      data: { specialMemories: updatedAnimal.specialMemories },
+      source,
+      timestamp: Date.now()
+    });
+
+    return true;
+  }
+
   // Update animal age
   updateAge(animalId: string, age: number, isAlive: boolean): boolean {
     const animal = this.animals.get(animalId);

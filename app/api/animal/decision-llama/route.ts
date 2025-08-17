@@ -256,6 +256,17 @@ ${animal.inventory.items
   )
   .join("\n")}`;
 
+    // Format special memories for the prompt
+    const specialMemoriesDescription =
+      !animal.specialMemories || animal.specialMemories.length === 0
+        ? "No special memories or player notes yet."
+        : `Player has noted the following about your character:
+${animal.specialMemories
+  .map((memory: any) => `- ${memory.content} (noted on ${new Date(memory.createdAt).toLocaleDateString()})`)
+  .join("\n")}
+
+Consider these memories as inspiration for your personality, goals, and decision-making. Let them guide your character development and behavior choices.`;
+
     // Construct the prompt for plan generation
     const prompt = `
 You are an intelligent virtual animal named ${
@@ -289,6 +300,9 @@ Position: x:${animal.position.x.toFixed(1)} z:${animal.position.z.toFixed(1)}
 
 Inventory:
 ${inventoryDescription}
+
+Special Memories (player notes about your character and inspiration):
+${specialMemoriesDescription}
 
 WORLD STATE:
 ${JSON.stringify(worldState, null, 2)}

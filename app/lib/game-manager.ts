@@ -476,8 +476,8 @@ export class GameManager {
 
       do {
         position = {
-          x: (Math.random() - 0.5) * width * 0.8,
-          z: (Math.random() - 0.5) * depth * 0.8,
+          x: (Math.random() - 0.5) * width * 1.0,
+          z: (Math.random() - 0.5) * depth * 1.0,
         };
         attempts++;
       } while (
@@ -542,7 +542,7 @@ export class GameManager {
     ];
 
     commonStones.forEach((stone, i) => {
-      for (let j = 0; j < 3; j++) {
+      for (let j = 0; j < 4; j++) {
         resources.push(
           createResource(
             `${stone}_${i}_${j}`,
@@ -557,7 +557,7 @@ export class GameManager {
     });
 
     uncommonStones.forEach((stone, i) => {
-      for (let j = 0; j < 2; j++) {
+      for (let j = 0; j < 3; j++) {
         resources.push(
           createResource(
             `${stone}_${i}_${j}`,
@@ -610,7 +610,7 @@ export class GameManager {
     const rareOrganics: ResourceType[] = ["honeycomb", "beeswax"];
 
     commonOrganics.forEach((organic, i) => {
-      for (let j = 0; j < 2; j++) {
+      for (let j = 0; j < 3; j++) {
         resources.push(
           createResource(
             `${organic}_${i}_${j}`,
@@ -681,7 +681,7 @@ export class GameManager {
     const rareEdibles: ResourceType[] = ["chestnuts", "pine_nuts"];
 
     commonEdibles.forEach((edible, i) => {
-      for (let j = 0; j < 2; j++) {
+      for (let j = 0; j < 4; j++) {
         resources.push(
           createResource(
             `${edible}_${i}_${j}`,
@@ -897,19 +897,6 @@ export class GameManager {
         );
       }
     });
-
-    // Generate shelter locations
-    // for (let i = 0; i < 4; i++) {
-    //   resources.push({
-    //     id: `shelter_${i}`,
-    //     type: "shelter" as const,
-    //     position: getValidPosition(),
-    //     quantity: 1,
-    //     harvestable: false,
-    //     regeneratesOverTime: false,
-    //     quality: 70 + Math.random() * 30,
-    //   });
-    // }
 
     return resources;
   }

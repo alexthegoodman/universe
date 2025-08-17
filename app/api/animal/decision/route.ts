@@ -94,6 +94,9 @@ Current Action: {currentAction}
 Current Inventory:
 {inventory}
 
+Special Memories (mysterious memories from an unknown source):
+{specialMemories}
+
 World State:
 {worldState}
 
@@ -317,6 +320,22 @@ ${animal.inventory.items
   )
   .join("\n")}`;
 
+    // Format special memories for the prompt
+    const specialMemoriesDescription =
+      !animal.specialMemories || animal.specialMemories.length === 0
+        ? "No special memories or player notes yet."
+        : `Player has noted the following about your character:
+${animal.specialMemories
+  .map(
+    (memory: any) =>
+      `- ${memory.content} (noted on ${new Date(
+        memory.createdAt
+      ).toLocaleDateString()})`
+  )
+  .join("\n")}
+
+Consider these memories as inspiration for your personality, goals, and decision-making.`;
+
     const planGenerationText = shouldCreateNewPlan
       ? `PLAN GENERATION REQUIRED: You need to create a new 3-7 step plan. Include a "plan" field in your JSON response with specific steps, priorities, and reasons.
 Context: ${JSON.stringify(planningContext, null, 2)}`
@@ -348,6 +367,7 @@ Context: ${JSON.stringify(planningContext, null, 2)}`
       age: Math.round(animal.age * 100),
       currentAction: animal.currentAction,
       inventory: inventoryDescription,
+      specialMemories: specialMemoriesDescription,
       sightRadius: worldState.sightRadius,
       harvestRadius: worldState.harvestRadius,
       currentPosition: `x:${animal.position.x.toFixed(

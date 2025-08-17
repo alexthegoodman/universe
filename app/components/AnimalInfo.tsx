@@ -1,6 +1,6 @@
 "use client";
 
-import type { Animal } from "../types/animal";
+import type { Animal, SpecialMemory } from "../types/animal";
 import { animalStateManager } from "../lib/animal-state-manager";
 import { useState } from "react";
 
@@ -70,12 +70,43 @@ function StatWithControls({ label, value, onChange }: StatWithControlsProps) {
 export default function AnimalInfo({ animal, onClose }: AnimalInfoProps) {
   if (!animal) return null;
 
+  const [newMemoryText, setNewMemoryText] = useState("");
+  const [showAddMemory, setShowAddMemory] = useState(false);
+
   const updateStat = (statName: keyof Animal['stats'], value: number) => {
     const clampedValue = Math.max(0, Math.min(100, value));
     animalStateManager.updateStats(
       animal.id,
       { [statName]: clampedValue },
       'manual-adjustment'
+    );
+  };
+
+  const addSpecialMemory = () => {
+    if (!newMemoryText.trim()) return;
+    
+    const newMemory: SpecialMemory = {
+      id: `memory-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      content: newMemoryText.trim(),
+      createdAt: Date.now()
+    };
+
+    const currentMemories = animal.specialMemories || [];
+    const updatedMemories = [...currentMemories, newMemory];
+    
+    animalStateManager.updateSpecialMemories(animal.id, updatedMemories, 'player-add-memory');
+    setNewMemoryText("");
+    setShowAddMemory(false);
+  };
+
+  const deleteSpecialMemory = (memoryId: string) => {
+    const currentMemories = animal.specialMemories || [];
+    const updatedMemories = currentMemories.filter(memory => memory.id !== memoryId);
+    
+    animalStateManager.updateSpecialMemories(
+      animal.id, 
+      updatedMemories.length > 0 ? updatedMemories : undefined, 
+      'player-delete-memory'
     );
   };
 
@@ -218,6 +249,74 @@ export default function AnimalInfo({ animal, onClose }: AnimalInfoProps) {
                       <span>×{item.quantity}</span>
                       <span>Q{item.quality}</span>
                     </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <span className="font-semibold">Special Memories</span>
+            <button
+              onClick={() => setShowAddMemory(!showAddMemory)}
+              className="text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
+            >
+              {showAddMemory ? "Cancel" : "Add"}
+            </button>
+          </div>
+          
+          {showAddMemory && (
+            <div className="mb-2 p-2 bg-gray-50 rounded">
+              <textarea
+                value={newMemoryText}
+                onChange={(e) => setNewMemoryText(e.target.value)}
+                placeholder="Add a special memory, idea, or thought about this animal..."
+                className="w-full text-xs p-2 border rounded resize-none"
+                rows={2}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && e.ctrlKey) {
+                    addSpecialMemory();
+                  }
+                }}
+              />
+              <div className="flex gap-2 mt-1">
+                <button
+                  onClick={addSpecialMemory}
+                  disabled={!newMemoryText.trim()}
+                  className="text-xs bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600 disabled:bg-gray-300"
+                >
+                  Save
+                </button>
+                <span className="text-xs text-gray-500 self-center">Ctrl+Enter to save</span>
+              </div>
+            </div>
+          )}
+
+          <div className="text-sm max-h-32 overflow-y-auto">
+            {!animal.specialMemories || animal.specialMemories.length === 0 ? (
+              <div className="text-gray-500 italic text-xs">No special memories yet</div>
+            ) : (
+              <div className="space-y-2">
+                {animal.specialMemories.map((memory) => (
+                  <div
+                    key={memory.id}
+                    className="p-2 bg-yellow-50 rounded text-xs border-l-2 border-yellow-400"
+                  >
+                    <div className="flex justify-between items-start mb-1">
+                      <span className="text-gray-500 text-xs">
+                        {new Date(memory.createdAt).toLocaleDateString()}
+                      </span>
+                      <button
+                        onClick={() => deleteSpecialMemory(memory.id)}
+                        className="text-red-500 hover:text-red-700 text-xs"
+                        title="Delete memory"
+                      >
+                        ×
+                      </button>
+                    </div>
+                    <div className="text-gray-800">{memory.content}</div>
                   </div>
                 ))}
               </div>
