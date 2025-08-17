@@ -1,0 +1,60 @@
+{
+  "info": {
+    "name": "Decision Llama API",
+    "description": "Test collection for the animal decision-llama endpoint",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Animal Decision - Llama",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"animal\": {\n    \"id\": \"test-animal-123\",\n    \"name\": \"TestBear\",\n    \"dna\": {\n      \"id\": \"dna-123\",\n      \"intelligence\": 75,\n      \"agility\": 60,\n      \"strength\": 85,\n      \"social\": 40,\n      \"curiosity\": 80,\n      \"resilience\": 70,\n      \"size\": 1.2,\n      \"color\": {\n        \"primary\": \"#8B4513\",\n        \"secondary\": \"#D2691E\"\n      },\n      \"personality\": {\n        \"aggressive\": 30,\n        \"playful\": 60,\n        \"cautious\": 70,\n        \"nurturing\": 45\n      },\n      \"generation\": 1\n    },\n    \"stats\": {\n      \"health\": 85,\n      \"hunger\": 60,\n      \"energy\": 40,\n      \"happiness\": 75,\n      \"thirst\": 80\n    },\n    \"position\": {\n      \"x\": 10.5,\n      \"y\": 0,\n      \"z\": 15.2,\n      \"rotation\": 90\n    },\n    \"inventory\": {\n      \"items\": [\n        {\n          \"id\": \"berries-1\",\n          \"type\": \"food\",\n          \"name\": \"Sweet Berries\",\n          \"quantity\": 3,\n          \"quality\": 85,\n          \"harvestedAt\": 1692345678000,\n          \"rarity\": \"common\"\n        },\n        {\n          \"id\": \"stone-1\",\n          \"type\": \"material\",\n          \"name\": \"Stone\",\n          \"quantity\": 2,\n          \"quality\": 60,\n          \"harvestedAt\": 1692345600000,\n          \"rarity\": \"common\"\n        }\n      ],\n      \"maxCapacity\": 20,\n      \"currentWeight\": 5\n    },\n    \"birthTime\": 1692300000000,\n    \"lifespan\": 86400000,\n    \"age\": 0.15,\n    \"currentAction\": \"idle\",\n    \"lastHealthCheck\": 1692345678000,\n    \"isAlive\": true\n  },\n  \"worldState\": {\n    \"sightRadius\": 10,\n    \"harvestRadius\": 3,\n    \"nearbyResources\": [\n      {\n        \"id\": \"water-source-1\",\n        \"type\": \"water\",\n        \"position\": { \"x\": 12, \"z\": 18 },\n        \"canHarvestNow\": true,\n        \"tooFarToHarvest\": false,\n        \"quantity\": 50,\n        \"quality\": 90\n      },\n      {\n        \"id\": \"berry-bush-1\",\n        \"type\": \"berries\",\n        \"position\": { \"x\": 8, \"z\": 12 },\n        \"canHarvestNow\": true,\n        \"tooFarToHarvest\": false,\n        \"quantity\": 8,\n        \"quality\": 75\n      },\n      {\n        \"id\": \"wood-tree-1\",\n        \"type\": \"wood\",\n        \"position\": { \"x\": 15, \"z\": 20 },\n        \"canHarvestNow\": false,\n        \"tooFarToHarvest\": true,\n        \"quantity\": 15,\n        \"quality\": 80\n      }\n    ],\n    \"nearbyBuildings\": [\n      {\n        \"id\": \"shelter-1\",\n        \"type\": \"basic_shelter\",\n        \"position\": { \"x\": 9, \"z\": 14 },\n        \"ownerId\": \"test-animal-123\",\n        \"capacity\": 4\n      }\n    ],\n    \"nearbyAnimals\": [\n      {\n        \"id\": \"other-animal-456\",\n        \"name\": \"FriendlyRabbit\",\n        \"position\": { \"x\": 13, \"z\": 16 },\n        \"currentAction\": \"eating\",\n        \"relationship\": \"neutral\"\n      }\n    ],\n    \"weatherCondition\": \"sunny\",\n    \"timeOfDay\": \"afternoon\",\n    \"temperature\": 22\n  },\n  \"existingPlan\": null,\n  \"needsNewPlan\": true\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/animal/decision-llama",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "animal", "decision-llama"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Animal Decision - With Existing Plan",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"animal\": {\n    \"id\": \"test-animal-123\",\n    \"name\": \"TestBear\",\n    \"dna\": {\n      \"id\": \"dna-123\",\n      \"intelligence\": 75,\n      \"agility\": 60,\n      \"strength\": 85,\n      \"social\": 40,\n      \"curiosity\": 80,\n      \"resilience\": 70,\n      \"size\": 1.2,\n      \"color\": {\n        \"primary\": \"#8B4513\",\n        \"secondary\": \"#D2691E\"\n      },\n      \"personality\": {\n        \"aggressive\": 30,\n        \"playful\": 60,\n        \"cautious\": 70,\n        \"nurturing\": 45\n      },\n      \"generation\": 1\n    },\n    \"stats\": {\n      \"health\": 85,\n      \"hunger\": 30,\n      \"energy\": 90,\n      \"happiness\": 75,\n      \"thirst\": 20\n    },\n    \"position\": {\n      \"x\": 10.5,\n      \"y\": 0,\n      \"z\": 15.2,\n      \"rotation\": 90\n    },\n    \"inventory\": {\n      \"items\": [\n        {\n          \"id\": \"water-1\",\n          \"type\": \"water\",\n          \"name\": \"Fresh Water\",\n          \"quantity\": 5,\n          \"quality\": 90,\n          \"harvestedAt\": 1692345678000,\n          \"rarity\": \"common\"\n        }\n      ],\n      \"maxCapacity\": 20,\n      \"currentWeight\": 5\n    },\n    \"birthTime\": 1692300000000,\n    \"lifespan\": 86400000,\n    \"age\": 0.15,\n    \"currentAction\": \"idle\",\n    \"lastHealthCheck\": 1692345678000,\n    \"isAlive\": true\n  },\n  \"worldState\": {\n    \"sightRadius\": 10,\n    \"harvestRadius\": 3,\n    \"nearbyResources\": [],\n    \"nearbyBuildings\": [],\n    \"nearbyAnimals\": [],\n    \"weatherCondition\": \"sunny\",\n    \"timeOfDay\": \"morning\",\n    \"temperature\": 18\n  },\n  \"existingPlan\": {\n    \"animalId\": \"test-animal-123\",\n    \"steps\": [\n      {\n        \"id\": \"step_1692345678000_0\",\n        \"action\": \"drinking\",\n        \"parameters\": { \"itemType\": \"water\" },\n        \"priority\": 9,\n        \"turnOffset\": 0,\n        \"expectedBenefit\": 10,\n        \"reason\": \"High thirst needs immediate attention\"\n      },\n      {\n        \"id\": \"step_1692345678000_1\",\n        \"action\": \"exploring\",\n        \"parameters\": { \"targetX\": 20, \"targetZ\": 25 },\n        \"priority\": 5,\n        \"turnOffset\": 1,\n        \"expectedBenefit\": 10,\n        \"reason\": \"Search for new resources after drinking\"\n      }\n    ],\n    \"createdAt\": 1692345678000,\n    \"lastUpdated\": 1692345678000,\n    \"planHorizon\": 2,\n    \"currentStepIndex\": 0,\n    \"confidence\": 0.8,\n    \"planType\": \"survival\"\n  },\n  \"needsNewPlan\": false\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/animal/decision-llama",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "animal", "decision-llama"]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    }
+  ]
+}

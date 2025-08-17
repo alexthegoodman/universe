@@ -94,7 +94,7 @@ export default function Game() {
 
   useEffect(() => {
     const manager = new GameManager({
-      startingAnimals: 6,
+      startingAnimals: 3, // 1 for testing smollm3
       // startingAnimals: 10,
       maxAnimals: 20,
       enableWebSocket: false, // Disable for now to avoid server dependency
@@ -205,14 +205,19 @@ export default function Game() {
                 <div>
                   Food Sources:{" "}
                   {
-                    resources.filter(
-                      (r) => r.category === "edible_plants"
-                    ).length
+                    resources.filter((r) => r.category === "edible_plants")
+                      .length
                   }
                 </div>
                 <div>
                   Materials:{" "}
-                  {resources.filter((r) => r.category === "minerals_stones" || r.category === "organic_materials").length}
+                  {
+                    resources.filter(
+                      (r) =>
+                        r.category === "minerals_stones" ||
+                        r.category === "organic_materials"
+                    ).length
+                  }
                 </div>
                 <div>Buildings: {buildings.length}</div>
                 <div>

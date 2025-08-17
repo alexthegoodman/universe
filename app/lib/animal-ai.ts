@@ -17,11 +17,11 @@ export class AnimalAI {
   }> {
     try {
       console.log(`📡 Making API call for ${animal.name}...`);
-      
+
       // Get planning context from client-side manager
       const existingPlan = clientPlanningManager.getPlan(animal.id);
       const needsNewPlan = clientPlanningManager.needsNewPlan(animal.id);
-      
+
       // Call our secure API route instead of direct OpenAI
       const response = await fetch("/api/animal/decision", {
         method: "POST",
@@ -51,34 +51,34 @@ export class AnimalAI {
         clientPlanningManager.storePlan(result.newPlan);
         return {
           newPlan: result.newPlan,
-          reasoning: result.reasoning || "Plan created by AI"
+          reasoning: result.reasoning || "Plan created by AI",
         };
       }
 
       // If no plan was created, this indicates a problem
       console.warn(`⚠️ AI did not create a plan for ${animal.name}`);
-      
+
       // Return fallback plan
       const fallbackPlan = this.createFallbackPlan(animal);
       clientPlanningManager.storePlan(fallbackPlan);
-      
+
       return {
         newPlan: fallbackPlan,
-        reasoning: "Fallback plan due to AI failure"
+        reasoning: "Fallback plan due to AI failure",
       };
     } catch (error) {
       console.error(
         `Error getting AI decision for animal ${animal.id}:`,
         error
       );
-      
+
       // Create fallback plan on error
       const fallbackPlan = this.createFallbackPlan(animal);
       clientPlanningManager.storePlan(fallbackPlan);
-      
+
       return {
         newPlan: fallbackPlan,
-        reasoning: "Fallback plan due to API error"
+        reasoning: "Fallback plan due to API error",
       };
     }
   }
@@ -99,7 +99,7 @@ export class AnimalAI {
           priority: 10,
           turnOffset: 0,
           expectedBenefit: 25,
-          reason: "Urgent: quench thirst"
+          reason: "Urgent: quench thirst",
         });
       } else {
         urgentActions.push({
@@ -108,7 +108,7 @@ export class AnimalAI {
           priority: 9,
           turnOffset: 0,
           expectedBenefit: 20,
-          reason: "Find water source"
+          reason: "Find water source",
         });
       }
     }
@@ -124,7 +124,7 @@ export class AnimalAI {
           priority: 10,
           turnOffset: urgentActions.length,
           expectedBenefit: 25,
-          reason: "Urgent: eat food"
+          reason: "Urgent: eat food",
         });
       } else {
         urgentActions.push({
@@ -133,25 +133,38 @@ export class AnimalAI {
           priority: 9,
           turnOffset: urgentActions.length,
           expectedBenefit: 20,
-          reason: "Find food source"
+          reason: "Find food source",
         });
       }
     }
 
     if (animal.stats.energy < 30) {
       // Check if has materials for building
-      const hasStone = animal.inventory.items.some(item => item.type === "material" && item.name.includes("stone") && item.quantity >= 2);
-      const hasWood = animal.inventory.items.some(item => item.type === "material" && item.name.includes("wood") && item.quantity >= 2);
-      
+      const hasStone = animal.inventory.items.some(
+        (item) =>
+          item.type === "material" &&
+          item.name.includes("stone") &&
+          item.quantity >= 2
+      );
+      const hasWood = animal.inventory.items.some(
+        (item) =>
+          item.type === "material" &&
+          item.name.includes("wood") &&
+          item.quantity >= 2
+      );
+
       if (hasStone && hasWood) {
         urgentActions.push({
           id: `step_${Date.now()}_${urgentActions.length}`,
           action: "building",
-          parameters: { action: "create_building", buildingName: "Emergency Shelter" },
+          parameters: {
+            action: "create_building",
+            buildingName: "Emergency Shelter",
+          },
           priority: 10,
           turnOffset: urgentActions.length,
           expectedBenefit: 40,
-          reason: "Build shelter to enable sleeping"
+          reason: "Build shelter to enable sleeping",
         });
         planType = "building";
       } else {
@@ -161,7 +174,7 @@ export class AnimalAI {
           priority: 8,
           turnOffset: urgentActions.length,
           expectedBenefit: 15,
-          reason: "Find materials for shelter"
+          reason: "Find materials for shelter",
         });
       }
     }
@@ -174,7 +187,7 @@ export class AnimalAI {
         priority: 5,
         turnOffset: 0,
         expectedBenefit: 10,
-        reason: "General exploration"
+        reason: "General exploration",
       });
       planType = "exploration";
     }
@@ -187,9 +200,7 @@ export class AnimalAI {
       planHorizon: urgentActions.length,
       currentStepIndex: 0,
       confidence: 0.6, // Lower confidence for fallback
-      planType
+      planType,
     };
   }
-
-
 }

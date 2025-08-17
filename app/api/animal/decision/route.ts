@@ -50,7 +50,8 @@ export async function POST(request: NextRequest) {
 
     const llm = new ChatOpenAI({
       // model: "gpt-4o-mini",
-      model: "gpt-5-mini",
+      // model: "gpt-5-mini",
+      model: "gpt-5-nano",
       // temperature: 0.7,
       openAIApiKey: apiKey,
       modelKwargs: {

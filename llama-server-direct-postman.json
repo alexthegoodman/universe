@@ -1,0 +1,60 @@
+{
+  "info": {
+    "name": "Llama Server Direct API",
+    "description": "Direct test collection for the llama-server /v1/chat/completions endpoint",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Chat Completions with Tool Call",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"model\": \"SmolLM3\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"/no_think\"\n    },\n    {\n      \"role\": \"system\",\n      \"content\": \"You are an intelligent virtual animal AI that creates strategic multi-step plans. You must use the create_plan tool to respond with a sequence of actions.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"\\nYou are an intelligent virtual animal named TestBear planning your next actions.\\n\\nCURRENT STATE:\\nDNA Traits:\\n- Intelligence: 75/100\\n- Agility: 60/100  \\n- Strength: 85/100\\n- Social: 40/100\\n- Curiosity: 80/100\\n- Resilience: 70/100\\n\\nPersonality:\\n- Aggressive: 30/100\\n- Playful: 60/100\\n- Cautious: 70/100\\n- Nurturing: 45/100\\n\\nVital Stats:\\n- Health: 85/100\\n- Hunger: 75/100\\n- Energy: 25/100\\n- Happiness: 75/100\\n- Thirst: 85/100\\n\\nAge: 15% of lifespan\\nPosition: x:10.5 z:15.2\\n\\nInventory:\\n2 items (5/20 weight):\\n- Sweet Berries (type: food) x3 (quality: 85)\\n- Stone (type: material) x2 (quality: 60)\\n\\nWORLD STATE:\\n{\\n  \\\"sightRadius\\\": 10,\\n  \\\"harvestRadius\\\": 3,\\n  \\\"nearbyResources\\\": [\\n    {\\n      \\\"id\\\": \\\"water-source-1\\\",\\n      \\\"type\\\": \\\"water\\\",\\n      \\\"position\\\": { \\\"x\\\": 12, \\\"z\\\": 18 },\\n      \\\"canHarvestNow\\\": true,\\n      \\\"tooFarToHarvest\\\": false,\\n      \\\"quantity\\\": 50,\\n      \\\"quality\\\": 90\\n    },\\n    {\\n      \\\"id\\\": \\\"berry-bush-1\\\",\\n      \\\"type\\\": \\\"berries\\\",\\n      \\\"position\\\": { \\\"x\\\": 8, \\\"z\\\": 12 },\\n      \\\"canHarvestNow\\\": true,\\n      \\\"tooFarToHarvest\\\": false,\\n      \\\"quantity\\\": 8,\\n      \\\"quality\\\": 75\\n    }\\n  ],\\n  \\\"nearbyBuildings\\\": [\\n    {\\n      \\\"id\\\": \\\"shelter-1\\\",\\n      \\\"type\\\": \\\"basic_shelter\\\",\\n      \\\"position\\\": { \\\"x\\\": 9, \\\"z\\\": 14 },\\n      \\\"ownerId\\\": \\\"test-animal-123\\\",\\n      \\\"capacity\\\": 4\\n    }\\n  ],\\n  \\\"nearbyAnimals\\\": [],\\n  \\\"weatherCondition\\\": \\\"sunny\\\",\\n  \\\"timeOfDay\\\": \\\"afternoon\\\",\\n  \\\"temperature\\\": 22\\n}\\n\\nCONTEXT:\\n- Planning Context: {\\\"urgentNeeds\\\":[\\\"energy\\\",\\\"food\\\",\\\"water\\\"],\\\"availableResources\\\":[\\\"water\\\",\\\"berries\\\"],\\\"canSleep\\\":true,\\\"hasBuilding\\\":true}\\n- Sleep Constraint: Safe to sleep in building - will restore 40+ energy points\\n- Sight Radius: 10 units\\n- Harvest Radius: 3 units\\n\\nCRITICAL SURVIVAL RULES:\\n1. You can only eat if you have food items in inventory (berries, food)\\n2. You can only drink if you have water in inventory\\n3. You can only harvest resources marked as \\\"canHarvestNow: true\\\"\\n4. Sleeping requires shelter if energy < 30\\n5. Building requires stone and wood (2 of each for most actions)\\n6. Resources marked \\\"tooFarToHarvest\\\" require moving closer first\\n\\nPLAN CREATION GUIDELINES:\\nCreate a strategic 3-7 step plan considering:\\n- Critical needs first (thirst>70, hunger>70, energy<30, health<30)\\n- Resource gathering sequences (move to resource → harvest → use/store)\\n- Building projects when materials available\\n- Exploration when resources are scarce\\n- Social activities when survival needs are met\\n\\nExample plan sequences:\\n- \\\"move to water → harvest water → drink → explore for food\\\"\\n- \\\"harvest stone → harvest wood → create building → sleep in shelter\\\"\\n- \\\"eat berries → explore new area → harvest resources → return to base\\\"\\n\\nFor each step, consider:\\n- turnOffset: 0=immediate, 1=next turn, 2=turn after, etc.\\n- priority: 1-10 where 10 is most critical\\n- parameters: Include specific IDs, coordinates, or action details\\n\\nRemember: You're creating a COMPLETE PLAN, not a single action. Think strategically about the sequence of actions needed to achieve your goals.\\n\\nUse the create_plan tool to generate your multi-step plan.\"\n    }\n  ],\n  \"tools\": [\n    {\n      \"type\": \"function\",\n      \"function\": {\n        \"name\": \"create_plan\",\n        \"description\": \"Create a strategic multi-step plan for the virtual animal\",\n        \"parameters\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"plan\": {\n              \"type\": \"object\",\n              \"properties\": {\n                \"steps\": {\n                  \"type\": \"array\",\n                  \"minItems\": 3,\n                  \"maxItems\": 10,\n                  \"items\": {\n                    \"type\": \"object\",\n                    \"properties\": {\n                      \"action\": {\n                        \"type\": \"string\",\n                        \"enum\": [\n                          \"idle\",\n                          \"moving\",\n                          \"eating\",\n                          \"drinking\",\n                          \"sleeping\",\n                          \"playing\",\n                          \"exploring\",\n                          \"socializing\",\n                          \"working\",\n                          \"mating\",\n                          \"harvesting\",\n                          \"building\"\n                        ],\n                        \"description\": \"The action to take in this step\"\n                      },\n                      \"priority\": {\n                        \"type\": \"number\",\n                        \"minimum\": 1,\n                        \"maximum\": 10,\n                        \"description\": \"Priority of this step (10 = highest)\"\n                      },\n                      \"turnOffset\": {\n                        \"type\": \"number\",\n                        \"minimum\": 0,\n                        \"maximum\": 10,\n                        \"description\": \"When to execute (0 = immediate, 1 = next turn, etc)\"\n                      },\n                      \"reason\": {\n                        \"type\": \"string\",\n                        \"description\": \"Why this step is important\"\n                      },\n                      \"parameters\": {\n                        \"type\": \"object\",\n                        \"properties\": {\n                          \"resourceId\": {\n                            \"type\": \"string\",\n                            \"description\": \"ID of resource to interact with\"\n                          },\n                          \"targetX\": {\n                            \"type\": \"number\",\n                            \"description\": \"X coordinate for exploration\"\n                          },\n                          \"targetZ\": {\n                            \"type\": \"number\",\n                            \"description\": \"Z coordinate for exploration\"\n                          },\n                          \"action\": {\n                            \"type\": \"string\",\n                            \"enum\": [\n                              \"create_building\",\n                              \"make_wider\",\n                              \"make_taller\",\n                              \"make_beautiful\",\n                              \"add_room\"\n                            ],\n                            \"description\": \"Specific building action\"\n                          },\n                          \"buildingId\": {\n                            \"type\": \"string\",\n                            \"description\": \"ID of building to modify\"\n                          },\n                          \"buildingName\": {\n                            \"type\": \"string\",\n                            \"description\": \"Name for new building\"\n                          },\n                          \"itemType\": {\n                            \"type\": \"string\",\n                            \"description\": \"Type of item to consume\"\n                          }\n                        },\n                        \"description\": \"Action-specific parameters\"\n                      }\n                    },\n                    \"required\": [\"action\", \"priority\", \"turnOffset\", \"reason\"]\n                  }\n                },\n                \"planType\": {\n                  \"type\": \"string\",\n                  \"enum\": [\"survival\", \"building\", \"exploration\", \"social\", \"mixed\"],\n                  \"description\": \"Overall type/theme of the plan\"\n                },\n                \"confidence\": {\n                  \"type\": \"number\",\n                  \"minimum\": 0.1,\n                  \"maximum\": 1.0,\n                  \"description\": \"Confidence that this plan will succeed\"\n                }\n              },\n              \"required\": [\"steps\", \"planType\", \"confidence\"]\n            },\n            \"reasoning\": {\n              \"type\": \"string\",\n              \"description\": \"Overall reasoning for why this plan was created\"\n            }\n          },\n          \"required\": [\"plan\", \"reasoning\"]\n        }\n      }\n    }\n  ],\n  \"tool_choice\": \"auto\",\n  \"temperature\": 0.7,\n  \"max_tokens\": 1500\n}"
+        },
+        "url": {
+          "raw": "{{llamaServerUrl}}/v1/chat/completions",
+          "host": ["{{llamaServerUrl}}"],
+          "path": ["v1", "chat", "completions"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Simple Chat Test",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"model\": \"SmolLM3\",\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"Hello, can you tell me what 2+2 equals?\"\n    }\n  ],\n  \"temperature\": 0.7,\n  \"max_tokens\": 100\n}"
+        },
+        "url": {
+          "raw": "{{llamaServerUrl}}/v1/chat/completions",
+          "host": ["{{llamaServerUrl}}"],
+          "path": ["v1", "chat", "completions"]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "llamaServerUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    }
+  ]
+}

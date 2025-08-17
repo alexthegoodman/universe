@@ -65,6 +65,8 @@ Universe is a groundbreaking Three.js game where you breed and nurture highly in
 
 ### Installation
 
+- `llama-server -hf ggml-org/SmolLM3-3B-GGUF:Q8_0 --port 8080 --jinja`
+
 1. **Clone the repository**
 
    ```bash
