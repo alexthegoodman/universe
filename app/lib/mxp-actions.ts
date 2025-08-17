@@ -667,8 +667,20 @@ export class MXPActionSystem {
     };
   }
 
-  private tryAutoBreedFromSocializing(animal: Animal, companions: string[]): { success: boolean; message: string; happiness: number; offspring?: Animal } {
-    if (!this.breedingSystem || !this.getAllAnimals || companions.length === 0) {
+  private tryAutoBreedFromSocializing(
+    animal: Animal,
+    companions: string[]
+  ): {
+    success: boolean;
+    message: string;
+    happiness: number;
+    offspring?: Animal;
+  } {
+    if (
+      !this.breedingSystem ||
+      !this.getAllAnimals ||
+      companions.length === 0
+    ) {
       return { success: false, message: "", happiness: 0 };
     }
 
@@ -679,18 +691,23 @@ export class MXPActionSystem {
 
     // Get all animals to find companions
     const allAnimals = this.getAllAnimals();
-    const companionAnimals = allAnimals.filter(a => companions.includes(a.id));
+    const companionAnimals = allAnimals.filter((a) =>
+      companions.includes(a.id)
+    );
 
     // Try to find a compatible mate from companions
     for (const companion of companionAnimals) {
       if (this.breedingSystem.canBreed(companion).canBreed) {
-        const breedingResult = this.breedingSystem.attemptBreeding(animal, companion);
+        const breedingResult = this.breedingSystem.attemptBreeding(
+          animal,
+          companion
+        );
         if (breedingResult.success) {
           return {
             success: true,
             message: " The social interaction led to romance and breeding!",
             happiness: 15,
-            offspring: breedingResult.offspring
+            offspring: breedingResult.offspring,
           };
         }
       }
@@ -700,7 +717,7 @@ export class MXPActionSystem {
     return {
       success: false,
       message: " The social interaction sparked romantic interest!",
-      happiness: 5
+      happiness: 5,
     };
   }
 
@@ -718,8 +735,11 @@ export class MXPActionSystem {
     let offspring = undefined;
 
     // 25% chance of auto-breeding when socializing with companions
-    if (companions.length > 0 && Math.random() < 0.25) {
-      const breedingResult = this.tryAutoBreedFromSocializing(animal, companions);
+    if (companions.length > 0 && Math.random() < 0.5) {
+      const breedingResult = this.tryAutoBreedFromSocializing(
+        animal,
+        companions
+      );
       breedingMessage = breedingResult.message;
       additionalHappiness = breedingResult.happiness;
       offspring = breedingResult.offspring;
@@ -731,7 +751,10 @@ export class MXPActionSystem {
         companions.length > 0 ? ` with ${companions.length} companions` : ""
       }${breedingMessage}`,
       statChanges: {
-        happiness: Math.min(100, animal.stats.happiness + happinessGain + additionalHappiness),
+        happiness: Math.min(
+          100,
+          animal.stats.happiness + happinessGain + additionalHappiness
+        ),
         energy: Math.max(0, animal.stats.energy - 2),
       },
       duration: 6000 + companions.length * 2000,
