@@ -1,14 +1,83 @@
 "use client";
 
 import type { Animal } from "../types/animal";
+import { animalStateManager } from "../lib/animal-state-manager";
+import { useState } from "react";
 
 interface AnimalInfoProps {
   animal: Animal | null;
   onClose: () => void;
 }
 
+interface StatWithControlsProps {
+  label: string;
+  value: number;
+  onChange: (value: number) => void;
+}
+
+function StatWithControls({ label, value, onChange }: StatWithControlsProps) {
+  const [editMode, setEditMode] = useState(false);
+  const [inputValue, setInputValue] = useState(value.toString());
+
+  const handleSubmit = () => {
+    const newValue = Math.max(0, Math.min(100, parseFloat(inputValue) || 0));
+    onChange(newValue);
+    setEditMode(false);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSubmit();
+    } else if (e.key === 'Escape') {
+      setInputValue(value.toString());
+      setEditMode(false);
+    }
+  };
+
+  if (editMode) {
+    return (
+      <div className="flex items-center justify-between">
+        <span>{label}:</span>
+        <input
+          type="number"
+          min="0"
+          max="100"
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onBlur={handleSubmit}
+          onKeyDown={handleKeyDown}
+          className="w-16 px-1 py-0.5 text-xs border rounded"
+          autoFocus
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div 
+      className="flex items-center justify-between cursor-pointer hover:bg-gray-100 px-1 rounded"
+      onClick={() => {
+        setInputValue(value.toString());
+        setEditMode(true);
+      }}
+    >
+      <span>{label}:</span>
+      <span>{value.toFixed(0)}/100</span>
+    </div>
+  );
+}
+
 export default function AnimalInfo({ animal, onClose }: AnimalInfoProps) {
   if (!animal) return null;
+
+  const updateStat = (statName: keyof Animal['stats'], value: number) => {
+    const clampedValue = Math.max(0, Math.min(100, value));
+    animalStateManager.updateStats(
+      animal.id,
+      { [statName]: clampedValue },
+      'manual-adjustment'
+    );
+  };
 
   const getLifeStage = () => {
     if (animal.age < 0.15) return "Baby";
@@ -65,11 +134,31 @@ export default function AnimalInfo({ animal, onClose }: AnimalInfoProps) {
         <div className="grid grid-cols-2 gap-2 text-sm">
           <div>
             <div className="font-semibold mb-1">Stats</div>
-            <div>Health: {animal.stats.health.toFixed(0)}/100</div>
-            <div>Hunger: {animal.stats.hunger.toFixed(0)}/100</div>
-            <div>Thirst: {animal.stats.thirst.toFixed(0)}/100</div>
-            <div>Energy: {animal.stats.energy.toFixed(0)}/100</div>
-            <div>Happiness: {animal.stats.happiness.toFixed(0)}/100</div>
+            <StatWithControls 
+              label="Health" 
+              value={animal.stats.health} 
+              onChange={(value) => updateStat('health', value)}
+            />
+            <StatWithControls 
+              label="Hunger" 
+              value={animal.stats.hunger} 
+              onChange={(value) => updateStat('hunger', value)}
+            />
+            <StatWithControls 
+              label="Thirst" 
+              value={animal.stats.thirst} 
+              onChange={(value) => updateStat('thirst', value)}
+            />
+            <StatWithControls 
+              label="Energy" 
+              value={animal.stats.energy} 
+              onChange={(value) => updateStat('energy', value)}
+            />
+            <StatWithControls 
+              label="Happiness" 
+              value={animal.stats.happiness} 
+              onChange={(value) => updateStat('happiness', value)}
+            />
           </div>
 
           <div>
