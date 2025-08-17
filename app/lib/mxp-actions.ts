@@ -143,6 +143,27 @@ export class MXPActionSystem {
   ): Promise<ActionResult> {
     const { targetX = 0, targetZ = 0, speed = 1 } = params;
 
+    // World bounds check - prevent movement outside map bounds
+    const worldBounds = { width: 100, height: 10, depth: 100 }; // Match game-manager.ts config
+    const halfWidth = worldBounds.width / 2;
+    const halfDepth = worldBounds.depth / 2;
+
+    if (targetX < -halfWidth || targetX > halfWidth || targetZ < -halfDepth || targetZ > halfDepth) {
+      // Store failure memory when attempting to move outside bounds
+      this.explorationSystem.addFailureMemory(
+        animal.id,
+        animal.position,
+        "move",
+        `attempted to move outside map bounds (${targetX.toFixed(1)}, ${targetZ.toFixed(1)}) - world is ${worldBounds.width}x${worldBounds.depth}`
+      );
+
+      return {
+        success: false,
+        message: `${animal.name} cannot venture beyond the known world boundaries`,
+        duration: 1000,
+      };
+    }
+
     // Calculate movement based on agility
     const agilityMultiplier = animal.dna.agility / 100;
     const actualSpeed = speed * agilityMultiplier;
@@ -497,6 +518,28 @@ export class MXPActionSystem {
         explorationGoal
       );
       goalReason = explorationGoal.reason;
+    }
+
+    // World bounds check - prevent exploration outside map bounds
+    const worldBounds = { width: 100, height: 10, depth: 100 }; // Match game-manager.ts config
+    const halfWidth = worldBounds.width / 2;
+    const halfDepth = worldBounds.depth / 2;
+
+    if (newPosition.x < -halfWidth || newPosition.x > halfWidth || 
+        newPosition.z < -halfDepth || newPosition.z > halfDepth) {
+      // Store failure memory when attempting to explore outside bounds
+      this.explorationSystem.addFailureMemory(
+        animal.id,
+        animal.position,
+        "explore",
+        `attempted to explore outside map bounds (${newPosition.x.toFixed(1)}, ${newPosition.z.toFixed(1)}) - world is ${worldBounds.width}x${worldBounds.depth}`
+      );
+
+      return {
+        success: false,
+        message: `${animal.name} senses the edge of the known world and turns back`,
+        duration: 2000,
+      };
     }
 
     // Calculate energy cost and happiness gain

@@ -177,6 +177,13 @@ export class ExplorationSystem {
     animal: Animal,
     goal: ExplorationGoal
   ): AnimalPosition {
+    // World bounds to ensure exploration stays within map
+    const worldBounds = { width: 100, height: 10, depth: 100 }; // Match game-manager.ts config
+    const halfWidth = worldBounds.width / 2;
+    const halfDepth = worldBounds.depth / 2;
+
+    let newPosition: AnimalPosition;
+
     if (goal.type === "targeted" && goal.targetPosition) {
       // Move towards target, but not exactly to it
       const distance = this.calculateDistance(
@@ -190,24 +197,30 @@ export class ExplorationSystem {
         z: (goal.targetPosition.z - animal.position.z) / distance,
       };
 
-      return {
+      newPosition = {
         x: animal.position.x + direction.x * moveDistance,
         y: animal.position.y,
         z: animal.position.z + direction.z * moveDistance,
         rotation: Math.atan2(direction.z, direction.x),
       };
+    } else {
+      // Random exploration with some intelligence
+      const range = this.getExplorationRange(animal);
+      const angle = Math.random() * Math.PI * 2;
+
+      newPosition = {
+        x: animal.position.x + Math.cos(angle) * range * Math.random(),
+        y: animal.position.y,
+        z: animal.position.z + Math.sin(angle) * range * Math.random(),
+        rotation: angle,
+      };
     }
 
-    // Random exploration with some intelligence
-    const range = this.getExplorationRange(animal);
-    const angle = Math.random() * Math.PI * 2;
+    // Clamp position to world bounds
+    newPosition.x = Math.max(-halfWidth, Math.min(halfWidth, newPosition.x));
+    newPosition.z = Math.max(-halfDepth, Math.min(halfDepth, newPosition.z));
 
-    return {
-      x: animal.position.x + Math.cos(angle) * range * Math.random(),
-      y: animal.position.y,
-      z: animal.position.z + Math.sin(angle) * range * Math.random(),
-      rotation: angle,
-    };
+    return newPosition;
   }
 
   // Store a discovery in memory
@@ -349,12 +362,25 @@ export class ExplorationSystem {
     const range = this.getExplorationRange(animal);
     const angle = Math.random() * Math.PI * 2;
 
+    // World bounds to ensure exploration goals stay within map
+    const worldBounds = { width: 100, height: 10, depth: 100 }; // Match game-manager.ts config
+    const halfWidth = worldBounds.width / 2;
+    const halfDepth = worldBounds.depth / 2;
+
+    // Calculate target position
+    let targetX = animal.position.x + Math.cos(angle) * range;
+    let targetZ = animal.position.z + Math.sin(angle) * range;
+
+    // Clamp target position to world bounds
+    targetX = Math.max(-halfWidth, Math.min(halfWidth, targetX));
+    targetZ = Math.max(-halfDepth, Math.min(halfDepth, targetZ));
+
     return {
       type: "random",
       targetPosition: {
-        x: animal.position.x + Math.cos(angle) * range,
+        x: targetX,
         y: animal.position.y,
-        z: animal.position.z + Math.sin(angle) * range,
+        z: targetZ,
       },
       reason: "Random exploration to satisfy curiosity",
       priority: 3,
