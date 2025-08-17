@@ -75,7 +75,11 @@ export const BUILDING_ACTIONS: Record<string, BuildingAction> = {
     type: "create_building",
     name: "Create Building",
     description: "Build a basic shelter structure",
-    requiredMaterials: { requiredQuantity: 4, suitableTraits: ["durable"], minTraitScore: 50 },
+    requiredMaterials: {
+      requiredQuantity: 4,
+      suitableTraits: ["durable"],
+      minTraitScore: 50,
+    },
     effects: {
       dimensionChanges: { width: 3, height: 2, depth: 3 },
       statChanges: { durability: 60, beauty: 30, comfort: 50 },
@@ -86,7 +90,11 @@ export const BUILDING_ACTIONS: Record<string, BuildingAction> = {
     type: "make_wider",
     name: "Make Wider",
     description: "Expand the building's width to accommodate more animals",
-    requiredMaterials: { requiredQuantity: 4, suitableTraits: ["durable"], minTraitScore: 50 },
+    requiredMaterials: {
+      requiredQuantity: 2,
+      suitableTraits: ["durable"],
+      minTraitScore: 50,
+    },
     effects: {
       dimensionChanges: { width: 2 },
       statChanges: { durability: -5 },
@@ -97,7 +105,11 @@ export const BUILDING_ACTIONS: Record<string, BuildingAction> = {
     type: "make_taller",
     name: "Make Taller",
     description: "Increase the building's height for better comfort",
-    requiredMaterials: { requiredQuantity: 4, suitableTraits: ["durable"], minTraitScore: 50 },
+    requiredMaterials: {
+      requiredQuantity: 2,
+      suitableTraits: ["durable"],
+      minTraitScore: 50,
+    },
     effects: {
       dimensionChanges: { height: 1 },
       statChanges: { comfort: 10, beauty: 5 },
@@ -107,7 +119,11 @@ export const BUILDING_ACTIONS: Record<string, BuildingAction> = {
     type: "make_beautiful",
     name: "Make Beautiful",
     description: "Add decorative elements to improve aesthetics",
-    requiredMaterials: { requiredQuantity: 2, suitableTraits: ["beautiful"], minTraitScore: 60 },
+    requiredMaterials: {
+      requiredQuantity: 2,
+      suitableTraits: ["beautiful"],
+      minTraitScore: 60,
+    },
     effects: {
       statChanges: { beauty: 15, comfort: 5 },
     },
@@ -116,7 +132,11 @@ export const BUILDING_ACTIONS: Record<string, BuildingAction> = {
     type: "add_room",
     name: "Add Room",
     description: "Construct an additional room for more space",
-    requiredMaterials: { requiredQuantity: 4, suitableTraits: ["durable"], minTraitScore: 50 },
+    requiredMaterials: {
+      requiredQuantity: 2,
+      suitableTraits: ["durable"],
+      minTraitScore: 50,
+    },
     effects: {
       dimensionChanges: { depth: 2, width: 1 },
       statChanges: { durability: -3 },

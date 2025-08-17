@@ -174,10 +174,10 @@ BUILDING SYSTEM:
 - Building accepts ANY material with appropriate traits - not just stone and wood!
 - Available building actions:
   • "create_building" - Build new shelter (needs 4 durable materials, trait score ≥50)
-  • "make_wider" - Expand building width (needs 4 durable materials, trait score ≥50)  
-  • "make_taller" - Increase building height (needs 4 durable materials, trait score ≥50)
+  • "make_wider" - Expand building width (needs 2 durable materials, trait score ≥50)  
+  • "make_taller" - Increase building height (needs 2 durable materials, trait score ≥50)
   • "make_beautiful" - Add decorative elements (needs 2 beautiful materials, trait score ≥60)
-  • "add_room" - Construct additional space (needs 4 durable materials, trait score ≥50)
+  • "add_room" - Construct additional space (needs 2 durable materials, trait score ≥50)
 - DURABLE materials include: granite, limestone, marble, oak_wood, cedar_wood, iron_ore, etc.
 - BEAUTIFUL materials include: marble, diamond, ruby, emerald, amethyst, silk, etc.
 - Consider building when you have collected enough suitable materials and want long-term shelter

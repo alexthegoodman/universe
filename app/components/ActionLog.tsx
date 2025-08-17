@@ -36,20 +36,34 @@ function getHealthImplication(
 
   const implications = [];
 
-  if (healthChange > 0) implications.push(`+${healthChange} health (improved wellbeing)`);
-  else if (healthChange < 0) implications.push(`${healthChange} health (concerning decline)`);
+  if (healthChange > 0)
+    implications.push(`+${healthChange} health (improved wellbeing)`);
+  else if (healthChange < 0)
+    implications.push(`${healthChange} health (concerning decline)`);
 
-  if (energyChange > 0) implications.push(`+${energyChange} energy (more vitality)`);
-  else if (energyChange < 0) implications.push(`${energyChange} energy (fatigue setting in)`);
+  if (energyChange > 0)
+    implications.push(`+${energyChange} energy (more vitality)`);
+  else if (energyChange < 0)
+    implications.push(`${energyChange} energy (fatigue setting in)`);
 
-  if (hungerChange < 0) implications.push(`${Math.abs(hungerChange)} less hunger (nutritional needs met)`);
-  else if (hungerChange > 0) implications.push(`+${hungerChange} hunger (growing nutritional deficit)`);
+  if (hungerChange < 0)
+    implications.push(
+      `${Math.abs(hungerChange)} less hunger (nutritional needs met)`
+    );
+  else if (hungerChange > 0)
+    implications.push(`+${hungerChange} hunger (growing nutritional deficit)`);
 
-  if (thirstChange < 0) implications.push(`${Math.abs(thirstChange)} less thirst (hydration improved)`);
-  else if (thirstChange > 0) implications.push(`+${thirstChange} thirst (dehydration risk)`);
+  if (thirstChange < 0)
+    implications.push(
+      `${Math.abs(thirstChange)} less thirst (hydration improved)`
+    );
+  else if (thirstChange > 0)
+    implications.push(`+${thirstChange} thirst (dehydration risk)`);
 
-  if (happinessChange > 0) implications.push(`+${happinessChange} happiness (mental wellbeing boost)`);
-  else if (happinessChange < 0) implications.push(`${happinessChange} happiness (emotional distress)`);
+  if (happinessChange > 0)
+    implications.push(`+${happinessChange} happiness (mental wellbeing boost)`);
+  else if (happinessChange < 0)
+    implications.push(`${happinessChange} happiness (emotional distress)`);
 
   if (implications.length === 0) {
     return "No significant health impact";
@@ -65,41 +79,41 @@ function getActionReasoning(action: string, result: ActionResult): string {
 
   switch (action) {
     case "eating":
-      return result.consumedItem 
+      return result.consumedItem
         ? `Consumed ${result.consumedItem.name} to address hunger and restore energy`
         : "Attempted to eat but had no food available";
-    
+
     case "drinking":
       return result.consumedItem
         ? `Drank ${result.consumedItem.name} to quench thirst and maintain hydration`
         : "Attempted to drink but had no water available";
-    
+
     case "sleeping":
       return "Rested to recover energy and restore health through natural recuperation";
-    
+
     case "harvesting":
       return result.harvestedItem
         ? `Harvested ${result.harvestedItem.quantity} ${result.harvestedItem.name} to build inventory for future survival needs`
         : "Attempted to harvest resources but was unsuccessful";
-    
+
     case "exploring":
       return "Ventured into unknown territory to discover resources and expand territorial knowledge";
-    
+
     case "playing":
       return "Engaged in playful behavior to boost mental wellbeing and social bonds";
-    
+
     case "socializing":
       return "Interacted with other animals to strengthen social connections and community";
-    
+
     case "working":
       return "Performed productive activities to contribute to survival and gain satisfaction";
-    
+
     case "moving":
       return "Changed location to access better resources or avoid threats";
-    
+
     case "idle":
       return "Conserved energy while observing surroundings and recovering";
-    
+
     default:
       return `Performed ${action} based on current needs and environmental conditions`;
   }
@@ -115,7 +129,7 @@ function formatDuration(ms: number): string {
 
 function getActionColor(action: string, success: boolean): string {
   if (!success) return "text-red-600";
-  
+
   switch (action) {
     case "eating":
     case "drinking":
@@ -139,14 +153,17 @@ function getActionColor(action: string, success: boolean): string {
 export default function ActionLog({ entries }: ActionLogProps) {
   const [filter, setFilter] = useState<string>("all");
 
-  const filteredEntries = entries.filter(entry => {
-    const matchesFilter = filter === "all" || 
-      entry.action === filter || 
-      (filter === "success" && entry.result.success) ||
-      (filter === "failed" && !entry.result.success);
+  const filteredEntries = entries
+    .filter((entry) => {
+      const matchesFilter =
+        filter === "all" ||
+        entry.action === filter ||
+        (filter === "success" && entry.result.success) ||
+        (filter === "failed" && !entry.result.success);
 
-    return matchesFilter;
-  }).slice(0, 10); // Show only the 10 most recent entries
+      return matchesFilter;
+    })
+    .slice(0, 10); // Show only the 10 most recent entries
 
   return (
     <div className="fixed bottom-4 right-4 w-80 h-96 bg-white/95 backdrop-blur-sm border border-gray-300 rounded-lg shadow-lg flex flex-col z-40">
@@ -177,21 +194,32 @@ export default function ActionLog({ entries }: ActionLogProps) {
           </div>
         ) : (
           filteredEntries.map((entry) => {
-            const reasoning = entry.reasoning || getActionReasoning(entry.action, entry.result);
-            const healthImplications = entry.healthImplications || 
-              getHealthImplication(entry.action, entry.statsBefore, entry.statsAfter, entry.result);
+            const reasoning =
+              entry.reasoning || getActionReasoning(entry.action, entry.result);
+            const healthImplications =
+              entry.healthImplications ||
+              getHealthImplication(
+                entry.action,
+                entry.statsBefore,
+                entry.statsAfter,
+                entry.result
+              );
 
             return (
               <div
                 key={entry.id}
                 className={`border rounded p-2 text-xs ${
-                  entry.result.success ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"
+                  entry.result.success
+                    ? "border-green-200 bg-green-50"
+                    : "border-red-200 bg-red-50"
                 }`}
               >
                 {/* Header row */}
                 <div className="flex items-center justify-between mb-1">
                   <div className="flex items-center gap-1">
-                    <span className="font-medium text-gray-900">{entry.animalName}</span>
+                    <span className="font-medium text-gray-900">
+                      {entry.animalName}
+                    </span>
                     <span
                       className={`px-1 py-0.5 rounded text-xs ${getActionColor(
                         entry.action,
@@ -207,30 +235,52 @@ export default function ActionLog({ entries }: ActionLogProps) {
                 </div>
 
                 {/* Message */}
-                <div className="text-xs text-gray-700 mb-1 truncate" title={entry.result.message}>
+                <div
+                  className="text-xs text-gray-700 mb-1"
+                  title={entry.result.message}
+                >
                   {entry.result.message}
                 </div>
 
                 {/* Health implications - condensed */}
-                <div className="text-xs text-gray-600 truncate" title={healthImplications}>
+                <div
+                  className="text-xs text-gray-600 truncate"
+                  title={healthImplications}
+                >
                   {healthImplications}
                 </div>
 
                 {/* Condensed stats if available */}
                 {entry.statsBefore && entry.statsAfter && (
                   <div className="flex gap-1 mt-1 text-xs">
-                    {(['health', 'energy', 'hunger', 'thirst', 'happiness'] as const).map((stat) => {
+                    {(
+                      [
+                        "health",
+                        "energy",
+                        "hunger",
+                        "thirst",
+                        "happiness",
+                      ] as const
+                    ).map((stat) => {
                       const before = entry.statsBefore![stat];
                       const after = entry.statsAfter![stat];
                       const change = after - before;
                       if (change === 0) return null;
                       return (
-                        <span 
-                          key={stat} 
-                          className={`px-1 rounded ${change > 0 ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}
-                          title={`${stat}: ${before.toFixed(0)} → ${after.toFixed(0)}`}
+                        <span
+                          key={stat}
+                          className={`px-1 rounded ${
+                            change > 0
+                              ? "bg-green-100 text-green-700"
+                              : "bg-red-100 text-red-700"
+                          }`}
+                          title={`${stat}: ${before.toFixed(
+                            0
+                          )} → ${after.toFixed(0)}`}
                         >
-                          {stat.charAt(0).toUpperCase()}{change > 0 ? "+" : ""}{change.toFixed(0)}
+                          {stat.charAt(0).toUpperCase()}
+                          {change > 0 ? "+" : ""}
+                          {change.toFixed(0)}
                         </span>
                       );
                     })}
