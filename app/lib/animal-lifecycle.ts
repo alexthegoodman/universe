@@ -115,16 +115,26 @@ export class AnimalLifecycle {
     const minutesElapsed = timeSinceLastCheck / (1000 * 60);
 
     // Degradation rates per minute
+    // const degradationRates = {
+    //   hunger: 1.5,
+    //   thirst: 2.0,
+    //   energy: 0.8,
+    //   happiness: 0.5,
+    //   health: 0.1,
+    // };
+
+    // Slower degradation rates for testing
     const degradationRates = {
-      hunger: 1.5,
-      thirst: 2.0,
-      energy: 0.8,
-      happiness: 0.5,
-      health: 0.1,
+      hunger: 0.3,
+      thirst: 0.4,
+      energy: 0.2,
+      happiness: 0.1,
+      health: 0.05,
     };
 
     // Age affects degradation (older animals degrade faster)
-    const ageMultiplier = 1 + animal.age * 0.5;
+    // const ageMultiplier = 1 + animal.age * 0.5;
+    const ageMultiplier = 1; // Disable age effect for testing
 
     // DNA resilience affects degradation
     const resilienceMultiplier = 1 - (animal.dna.resilience / 100) * 0.3;
