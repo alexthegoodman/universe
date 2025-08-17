@@ -490,6 +490,14 @@ export class HealthMonitor {
         };
       }
 
+      if (action === "socializing" && !params.companions) {
+        // Automatically populate companions with only the nearest animal
+        const worldState = this.getWorldStateForAnimal(animal);
+        params.companions = worldState.nearbyAnimals.length > 0 
+          ? [worldState.nearbyAnimals[0].id] 
+          : [];
+      }
+
       const result = await this.actionSystem.executeAction(
         animal,
         action,

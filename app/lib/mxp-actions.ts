@@ -735,7 +735,7 @@ export class MXPActionSystem {
     let offspring = undefined;
 
     // 25% chance of auto-breeding when socializing with companions
-    if (companions.length > 0 && Math.random() < 0.5) {
+    if (companions.length > 0 && Math.random() < 0.75) {
       const breedingResult = this.tryAutoBreedFromSocializing(
         animal,
         companions

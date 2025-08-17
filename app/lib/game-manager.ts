@@ -972,7 +972,7 @@ export class GameManager {
     // Start world simulation loops
     this.startEnvironmentUpdates();
     this.startResourceRegeneration();
-    this.startBreedingCycles();
+    // this.startBreedingCycles();
 
     console.log(
       `🎮 Universe game started with ${this.config.startingAnimals} animals!`

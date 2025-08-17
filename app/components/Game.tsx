@@ -185,6 +185,11 @@ export default function Game() {
             maxPolarAngle={Math.PI / 2}
             minDistance={5}
             maxDistance={100}
+            enableDamping={true}
+            dampingFactor={0.1} // Adjust for desired damping
+            rotateSpeed={0.5} // Adjust for desired rotation sensitivity
+            zoomSpeed={0.35} // Adjust for desired zoom sensitivity
+            panSpeed={0.5} // Adjust for desired pan sensitivity
           />
         </Suspense>
       </Canvas>
