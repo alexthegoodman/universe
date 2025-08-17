@@ -56,6 +56,13 @@ export class HealthMonitor {
 
   setGameManagerReference(gameManager: any): void {
     this.gameManagerRef = gameManager;
+    // Reinitialize action system with breeding system access
+    if (gameManager && gameManager.getBreedingSystem) {
+      this.actionSystem = new MXPActionSystem(
+        gameManager.getBreedingSystem(),
+        () => this.getAllAnimals()
+      );
+    }
   }
 
   setGlobalPlanQueue(globalPlanQueue: GlobalPlanQueue): void {
@@ -520,6 +527,12 @@ export class HealthMonitor {
               );
             }
           }
+        }
+
+        // Handle offspring from socializing-induced breeding
+        if (result.offspring && this.gameManagerRef) {
+          this.gameManagerRef.addAnimal(result.offspring);
+          console.log(`👶 ${result.offspring.name} was born from socializing-induced breeding!`);
         }
 
         // Use centralized state manager to apply updates

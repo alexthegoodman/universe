@@ -120,6 +120,7 @@ export interface ActionResult {
   consumedItem?: InventoryItem; // Item that was consumed during eating/drinking actions
   harvestedItem?: InventoryItem; // Item that was harvested during harvesting actions
   resourceId?: string; // ID of the resource that was harvested from
+  offspring?: Animal; // Animal offspring created during breeding from socializing
 }
 
 // Sight-based system interfaces

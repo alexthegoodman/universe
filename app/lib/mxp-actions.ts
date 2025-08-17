@@ -10,6 +10,7 @@ import { explorationSystem, ExplorationSystem } from "./exploration-system";
 import { HARVEST_RADIUS } from "./health-monitor";
 import { buildingSystem } from "./building-system";
 import { RESOURCE_WEIGHTS } from "../types/weights";
+import { BreedingSystem } from "./breeding-system";
 
 export interface MXPAction {
   name: string;
@@ -53,8 +54,12 @@ export interface MXPActionConfig {
 export class MXPActionSystem {
   private config: MXPActionConfig;
   private explorationSystem: ExplorationSystem;
+  private breedingSystem?: BreedingSystem;
+  private getAllAnimals?: () => Animal[];
 
-  constructor() {
+  constructor(breedingSystem?: BreedingSystem, getAllAnimals?: () => Animal[]) {
+    this.breedingSystem = breedingSystem;
+    this.getAllAnimals = getAllAnimals;
     this.config = {
       move: {
         maxDistance: 10,
@@ -662,6 +667,43 @@ export class MXPActionSystem {
     };
   }
 
+  private tryAutoBreedFromSocializing(animal: Animal, companions: string[]): { success: boolean; message: string; happiness: number; offspring?: Animal } {
+    if (!this.breedingSystem || !this.getAllAnimals || companions.length === 0) {
+      return { success: false, message: "", happiness: 0 };
+    }
+
+    // Check if this animal can breed
+    if (!this.breedingSystem.canBreed(animal).canBreed) {
+      return { success: false, message: "", happiness: 0 };
+    }
+
+    // Get all animals to find companions
+    const allAnimals = this.getAllAnimals();
+    const companionAnimals = allAnimals.filter(a => companions.includes(a.id));
+
+    // Try to find a compatible mate from companions
+    for (const companion of companionAnimals) {
+      if (this.breedingSystem.canBreed(companion).canBreed) {
+        const breedingResult = this.breedingSystem.attemptBreeding(animal, companion);
+        if (breedingResult.success) {
+          return {
+            success: true,
+            message: " The social interaction led to romance and breeding!",
+            happiness: 15,
+            offspring: breedingResult.offspring
+          };
+        }
+      }
+    }
+
+    // If no successful breeding but animals were interested
+    return {
+      success: false,
+      message: " The social interaction sparked romantic interest!",
+      happiness: 5
+    };
+  }
+
   private async executeSocialize(
     animal: Animal,
     params: any
@@ -671,16 +713,29 @@ export class MXPActionSystem {
 
     const happinessGain = 25 * socialMultiplier * (1 + companions.length * 0.2);
 
+    let breedingMessage = "";
+    let additionalHappiness = 0;
+    let offspring = undefined;
+
+    // 25% chance of auto-breeding when socializing with companions
+    if (companions.length > 0 && Math.random() < 0.25) {
+      const breedingResult = this.tryAutoBreedFromSocializing(animal, companions);
+      breedingMessage = breedingResult.message;
+      additionalHappiness = breedingResult.happiness;
+      offspring = breedingResult.offspring;
+    }
+
     return {
       success: true,
       message: `${animal.name} enjoyed socializing${
         companions.length > 0 ? ` with ${companions.length} companions` : ""
-      }`,
+      }${breedingMessage}`,
       statChanges: {
-        happiness: Math.min(100, animal.stats.happiness + happinessGain),
+        happiness: Math.min(100, animal.stats.happiness + happinessGain + additionalHappiness),
         energy: Math.max(0, animal.stats.energy - 2),
       },
       duration: 6000 + companions.length * 2000,
+      offspring: offspring,
     };
   }
 
