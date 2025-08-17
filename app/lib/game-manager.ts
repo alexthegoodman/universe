@@ -542,7 +542,7 @@ export class GameManager {
     ];
 
     commonStones.forEach((stone, i) => {
-      for (let j = 0; j < 4; j++) {
+      for (let j = 0; j < 8; j++) {
         resources.push(
           createResource(
             `${stone}_${i}_${j}`,
@@ -610,7 +610,7 @@ export class GameManager {
     const rareOrganics: ResourceType[] = ["honeycomb", "beeswax"];
 
     commonOrganics.forEach((organic, i) => {
-      for (let j = 0; j < 3; j++) {
+      for (let j = 0; j < 6; j++) {
         resources.push(
           createResource(
             `${organic}_${i}_${j}`,

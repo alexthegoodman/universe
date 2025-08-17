@@ -13,6 +13,7 @@ import { Resource3D } from "./Resource3D";
 import Building3D from "./Building3D";
 import ActionLog, { type ActionLogEntry } from "./ActionLog";
 import { actionLogger } from "../lib/action-logger";
+import SpecialAnnouncementPanel from "./SpecialAnnouncementPanel";
 
 interface SceneProps {
   animals: Animal[];
@@ -91,6 +92,7 @@ export default function Game() {
   const [gameStarted, setGameStarted] = useState(false);
   const [version, setVersion] = useState(0);
   const [actionLogs, setActionLogs] = useState<ActionLogEntry[]>([]);
+  const [showAnnouncementPanel, setShowAnnouncementPanel] = useState(false);
 
   useEffect(() => {
     const manager = new GameManager({
@@ -232,6 +234,12 @@ export default function Game() {
             >
               Spawn Animal
             </button>
+            <button
+              onClick={() => setShowAnnouncementPanel(true)}
+              className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg text-sm"
+            >
+              Special Announcement
+            </button>
           </>
         )}
       </div>
@@ -241,6 +249,13 @@ export default function Game() {
 
       {/* Action Log */}
       <ActionLog entries={actionLogs} />
+
+      {/* Special Announcement Panel */}
+      <SpecialAnnouncementPanel
+        isVisible={showAnnouncementPanel}
+        onClose={() => setShowAnnouncementPanel(false)}
+        totalAnimals={animals.filter((a) => a.isAlive).length}
+      />
 
       {/* Instructions */}
       {/* <div className="absolute bottom-4 left-4 bg-black/70 text-white p-3 rounded-lg text-sm max-w-sm">
