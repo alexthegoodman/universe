@@ -681,7 +681,7 @@ export class GameManager {
     const rareEdibles: ResourceType[] = ["chestnuts", "pine_nuts"];
 
     commonEdibles.forEach((edible, i) => {
-      for (let j = 0; j < 4; j++) {
+      for (let j = 0; j < 5; j++) {
         resources.push(
           createResource(
             `${edible}_${i}_${j}`,

@@ -94,7 +94,7 @@ Current Action: {currentAction}
 Current Inventory:
 {inventory}
 
-Special Memories (mysterious memories from an unknown source):
+Relgious Memories (religious experiences which infleunce your decisions):
 {specialMemories}
 
 World State:
@@ -113,7 +113,7 @@ Consider your recent failures and avoid repeating mistakes. Plan around your con
 - Low energy requires shelter building before you can sleep
 - Critical needs (thirst/hunger) should be prioritized in your plan
 
-If you are close to the middle of your lifespan, consider breeding plans.
+Throughout your life, if you socialize with someone else, consider breeding with them also. There are many benefits to breeding.
 
 Be wise. For example, if you are in need of one or more resources, then you will want to travel nearby each resource before harvesting each resource.
 
@@ -323,8 +323,8 @@ ${animal.inventory.items
     // Format special memories for the prompt
     const specialMemoriesDescription =
       !animal.specialMemories || animal.specialMemories.length === 0
-        ? "No special memories or player notes yet."
-        : `Player has noted the following about your character:
+        ? "No religious memories or experiences yet."
+        : `You remember the following religious experiences that influence your decisions:
 ${animal.specialMemories
   .map(
     (memory: any) =>

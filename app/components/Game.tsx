@@ -243,12 +243,12 @@ export default function Game() {
       <ActionLog entries={actionLogs} />
 
       {/* Instructions */}
-      <div className="absolute bottom-4 left-4 bg-black/70 text-white p-3 rounded-lg text-sm max-w-sm">
+      {/* <div className="absolute bottom-4 left-4 bg-black/70 text-white p-3 rounded-lg text-sm max-w-sm">
         <div className="font-semibold mb-1">Instructions:</div>
         <div>• Click an animal to see its details</div>
         <div>• Animals must harvest resources to survive</div>
         <div>• Animals need inventory items to eat/drink</div>
-      </div>
+      </div> */}
     </div>
   );
 }
