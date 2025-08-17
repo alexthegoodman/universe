@@ -43,9 +43,13 @@ export async function POST(request: NextRequest) {
     // Check for API key
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
-      // Return a fallback decision when no API key is available
-      const fallbackAction = getFallbackAction(animal);
-      return NextResponse.json({ action: fallbackAction });
+      // No fallback - pure LLM simulation requires API access
+      return NextResponse.json(
+        {
+          error: "AI service unavailable - no API key configured",
+        },
+        { status: 503 }
+      );
     }
 
     const llm = new ChatOpenAI({
@@ -152,8 +156,6 @@ Check your memories.recentFailures before attempting actions that have recently 
 - Learn from your past failures and avoid repeating the same mistakes in the same locations
 
 PLANNING SYSTEM:
-{planningInsights}
-{planGeneration}
 - You should think 3-10 turns ahead and create strategic plans
 - Consider the consequences of your current action choice
 - Balance immediate needs with longer-term goals like shelter, safety, and comfort
@@ -176,11 +178,7 @@ BUILDING SYSTEM:
 - They increase your happiness metrics when you rest inside them
 - The larger and more complex the building, the more happiness it provides
 
-IMPORTANT: You must respond with valid JSON in this exact format:
-
-{planGeneration}
-
-ALWAYS INCLUDE A PLAN when creating new plans. Use this format:
+ALWAYS INCLUDE A JSON PLAN when creating new plans. Use this format and always return as JSON:
 {{
   "plan": {{
     "steps": [
@@ -222,6 +220,7 @@ Plan Step Guidelines:
 - parameters: Action-specific details (resourceId for harvesting, building details, etc.)
 - planType: "survival", "building", "exploration", "social", or "mixed"
 - confidence: 0.1-1.0, how confident you are this plan will work
+- Make sure to use accurate resource IDs and parameters for actions
 
 PLAN STEP EXAMPLES (these are individual steps within plans, not full responses):
 
@@ -241,7 +240,7 @@ For exploration steps, include target coordinates in parameters:
   "action": "exploring",
   "priority": 7,
   "turnOffset": 1,
-  "reason": "Search for stone deposits",
+  "reason": "Search for stone and wood resources",
   "parameters": {{
     "targetX": 15.5,
     "targetZ": 25.0
@@ -502,63 +501,16 @@ Context: ${JSON.stringify(planningContext, null, 2)}`
   } catch (error) {
     console.error("Error in animal decision API:", error);
 
-    // Return fallback decision on error
-    const body = await request.json().catch(() => ({}));
-    const fallbackAction = getFallbackAction(body.animal);
-
-    return NextResponse.json({
-      action: fallbackAction,
-      error: "AI decision failed, using fallback",
-    });
+    // No fallback - pure LLM simulation
+    return NextResponse.json(
+      {
+        error: `AI decision failed: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
+      },
+      { status: 500 }
+    );
   }
 }
 
-function getFallbackAction(animal: any) {
-  if (!animal) return "idle";
-
-  // Simple rule-based fallback when AI is unavailable
-  if (animal.stats?.health < 30) return "sleeping";
-
-  // Check inventory before eating/drinking
-  if (animal.stats?.thirst > 70) {
-    const hasWater = animal.inventory?.items?.some(
-      (item: any) => item.type === "water" && item.quantity > 0
-    );
-    if (hasWater) {
-      return "drinking";
-    } else {
-      return "exploring"; // Need to find water sources
-    }
-  }
-
-  if (animal.stats?.hunger > 70) {
-    const hasFood = animal.inventory?.items?.some(
-      (item: any) =>
-        (item.type === "food" || item.type === "berries") && item.quantity > 0
-    );
-    if (hasFood) {
-      return "eating";
-    } else {
-      return "exploring"; // Need to find food sources
-    }
-  }
-
-  if (animal.stats?.energy < 30) return "sleeping";
-  if (animal.stats?.happiness < 30) return "playing";
-
-  // Check if animal has building materials and might want shelter
-  const hasStone = animal.inventory?.items?.some(
-    (item: any) => item.type === "stone" && item.quantity >= 5
-  );
-  const hasWood = animal.inventory?.items?.some(
-    (item: any) => item.type === "wood" && item.quantity >= 10
-  );
-  if (hasStone && hasWood) return "building";
-
-  // Based on personality
-  if (animal.dna?.personality?.playful > 70) return "playing";
-  if (animal.dna?.curiosity > 70) return "exploring";
-  if (animal.dna?.social > 70) return "socializing";
-
-  return "idle";
-}
+// getFallbackAction function removed - this is now a pure LLM simulation

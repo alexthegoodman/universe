@@ -316,28 +316,32 @@ export class ClientPlanningManager {
 
     // Plan is complete
     if (plan.currentStepIndex >= plan.steps.length) {
-      console.log(`📋 Plan completed for ${animalId}, needs new plan`);
+      // console.log(
+      //   `📋 Plan completed for ${animalId}, needs new plan`,
+      //   plan.currentStepIndex,
+      //   plan.steps.length
+      // );
       return true;
     }
 
     // Plan confidence is too low
     if (plan.confidence < 0.3) {
-      console.log(
-        `📋 Plan confidence too low for ${animalId} (${Math.round(
-          plan.confidence * 100
-        )}%), needs new plan`
-      );
+      // console.log(
+      //   `📋 Plan confidence too low for ${animalId} (${Math.round(
+      //     plan.confidence * 100
+      //   )}%), needs new plan`
+      // );
       return true;
     }
 
     // Plan is too old (more than 10 minutes)
     const ageMs = Date.now() - plan.createdAt;
     if (ageMs > 10 * 60 * 1000) {
-      console.log(
-        `📋 Plan too old for ${animalId} (${Math.round(
-          ageMs / 60000
-        )} minutes), needs new plan`
-      );
+      // console.log(
+      //   `📋 Plan too old for ${animalId} (${Math.round(
+      //     ageMs / 60000
+      //   )} minutes), needs new plan`
+      // );
       return true;
     }
 

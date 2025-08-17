@@ -55,16 +55,10 @@ export class AnimalAI {
         };
       }
 
-      // If no plan was created, this indicates a problem
+      // If no plan was created, the AI decision failed
       console.warn(`⚠️ AI did not create a plan for ${animal.name}`);
-
-      // Return fallback plan
-      const fallbackPlan = this.createFallbackPlan(animal);
-      clientPlanningManager.storePlan(fallbackPlan);
-
       return {
-        newPlan: fallbackPlan,
-        reasoning: "Fallback plan due to AI failure",
+        reasoning: "AI decision failed - no plan created",
       };
     } catch (error) {
       console.error(
@@ -72,135 +66,12 @@ export class AnimalAI {
         error
       );
 
-      // Create fallback plan on error
-      const fallbackPlan = this.createFallbackPlan(animal);
-      clientPlanningManager.storePlan(fallbackPlan);
-
       return {
-        newPlan: fallbackPlan,
-        reasoning: "Fallback plan due to API error",
+        reasoning: `AI decision failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
       };
     }
   }
 
-  private createFallbackPlan(animal: Animal): any {
-    const urgentActions = [];
-    let planType = "survival";
-
-    // Determine urgent needs
-    if (animal.stats.thirst > 70) {
-      const hasWater = animal.inventory.items.some(
-        (item) => item.type === "water" && item.quantity > 0
-      );
-      if (hasWater) {
-        urgentActions.push({
-          id: `step_${Date.now()}_0`,
-          action: "drinking",
-          priority: 10,
-          turnOffset: 0,
-          expectedBenefit: 25,
-          reason: "Urgent: quench thirst",
-        });
-      } else {
-        urgentActions.push({
-          id: `step_${Date.now()}_0`,
-          action: "exploring",
-          priority: 9,
-          turnOffset: 0,
-          expectedBenefit: 20,
-          reason: "Find water source",
-        });
-      }
-    }
-
-    if (animal.stats.hunger > 70) {
-      const hasFood = animal.inventory.items.some(
-        (item) => item.type === "food" && item.quantity > 0
-      );
-      if (hasFood) {
-        urgentActions.push({
-          id: `step_${Date.now()}_${urgentActions.length}`,
-          action: "eating",
-          priority: 10,
-          turnOffset: urgentActions.length,
-          expectedBenefit: 25,
-          reason: "Urgent: eat food",
-        });
-      } else {
-        urgentActions.push({
-          id: `step_${Date.now()}_${urgentActions.length}`,
-          action: "exploring",
-          priority: 9,
-          turnOffset: urgentActions.length,
-          expectedBenefit: 20,
-          reason: "Find food source",
-        });
-      }
-    }
-
-    if (animal.stats.energy < 30) {
-      // Check if has materials for building
-      const hasStone = animal.inventory.items.some(
-        (item) =>
-          item.type === "material" &&
-          item.name.includes("stone") &&
-          item.quantity >= 2
-      );
-      const hasWood = animal.inventory.items.some(
-        (item) =>
-          item.type === "material" &&
-          item.name.includes("wood") &&
-          item.quantity >= 2
-      );
-
-      if (hasStone && hasWood) {
-        urgentActions.push({
-          id: `step_${Date.now()}_${urgentActions.length}`,
-          action: "building",
-          parameters: {
-            action: "create_building",
-            buildingName: "Emergency Shelter",
-          },
-          priority: 10,
-          turnOffset: urgentActions.length,
-          expectedBenefit: 40,
-          reason: "Build shelter to enable sleeping",
-        });
-        planType = "building";
-      } else {
-        urgentActions.push({
-          id: `step_${Date.now()}_${urgentActions.length}`,
-          action: "exploring",
-          priority: 8,
-          turnOffset: urgentActions.length,
-          expectedBenefit: 15,
-          reason: "Find materials for shelter",
-        });
-      }
-    }
-
-    // If no urgent actions, add exploration
-    if (urgentActions.length === 0) {
-      urgentActions.push({
-        id: `step_${Date.now()}_0`,
-        action: "exploring",
-        priority: 5,
-        turnOffset: 0,
-        expectedBenefit: 10,
-        reason: "General exploration",
-      });
-      planType = "exploration";
-    }
-
-    return {
-      animalId: animal.id,
-      steps: urgentActions,
-      createdAt: Date.now(),
-      lastUpdated: Date.now(),
-      planHorizon: urgentActions.length,
-      currentStepIndex: 0,
-      confidence: 0.6, // Lower confidence for fallback
-      planType,
-    };
-  }
+  // Fallback plan creation removed - this is now a pure LLM simulation
+  // Animals will only act based on AI decisions, no hardcoded behaviors
 }

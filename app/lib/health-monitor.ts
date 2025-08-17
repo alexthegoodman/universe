@@ -13,7 +13,11 @@ import { animalStateManager } from "./animal-state-manager";
 import { explorationSystem, ExplorationSystem } from "./exploration-system";
 import { actionLogger } from "./action-logger";
 import { buildingSystem } from "./building-system";
-import { clientPlanningManager, type PlanStep } from "./client-planning-manager";
+import {
+  clientPlanningManager,
+  type PlanStep,
+} from "./client-planning-manager";
+import { GlobalPlanQueue } from "./global-plan-queue";
 
 export const HARVEST_RADIUS = 4; // Animals can harvest within this radius
 
@@ -39,6 +43,7 @@ export class HealthMonitor {
   private healthCheckInterval: NodeJS.Timeout | null = null;
   private decisionStagger: Map<string, number> = new Map();
   private gameManagerRef: any = null; // Weak reference to avoid circular dependency
+  private globalPlanQueue: GlobalPlanQueue | null = null;
   // private readonly HEALTH_CHECK_INTERVAL = 30000; // 30 seconds
   // private readonly DECISION_STAGGER_RANGE = 15000; // 15 second range for staggering
   private readonly HEALTH_CHECK_INTERVAL = 15000; // 10 seconds for testing
@@ -53,14 +58,19 @@ export class HealthMonitor {
     this.gameManagerRef = gameManager;
   }
 
+  setGlobalPlanQueue(globalPlanQueue: GlobalPlanQueue): void {
+    this.globalPlanQueue = globalPlanQueue;
+  }
+
   addAnimal(animal: Animal): void {
     // Add to centralized state manager
     animalStateManager.setAnimal(animal);
     this.aiInstances.set(animal.id, new AnimalAI(animal.id));
 
-    // Assign random stagger offset for this animal (0-15 seconds)
-    const staggerOffset = Math.random() * this.DECISION_STAGGER_RANGE;
-    this.decisionStagger.set(animal.id, staggerOffset);
+    // Add to global plan queue
+    if (this.globalPlanQueue) {
+      this.globalPlanQueue.addAnimal(animal.id);
+    }
 
     // Start monitoring if this is the first animal
     if (animalStateManager.getAllAnimals().length === 1) {
@@ -73,6 +83,11 @@ export class HealthMonitor {
     animalStateManager.removeAnimal(animalId);
     this.aiInstances.delete(animalId);
     this.decisionStagger.delete(animalId);
+
+    // Remove from global plan queue
+    if (this.globalPlanQueue) {
+      this.globalPlanQueue.removeAnimal(animalId);
+    }
 
     // Stop monitoring if no animals left
     if (animalStateManager.getAllAnimals().length === 0) {
@@ -97,7 +112,12 @@ export class HealthMonitor {
       this.performHealthChecks();
     }, this.HEALTH_CHECK_INTERVAL);
 
-    console.log("Health monitoring started - checking every 30 seconds");
+    // Initialize Global Plan Queue with all current animals
+    if (this.globalPlanQueue) {
+      this.globalPlanQueue.addAllAnimals();
+    }
+
+    console.log("Health monitoring started - checking every 15 seconds");
   }
 
   stopMonitoring(): void {
@@ -105,6 +125,12 @@ export class HealthMonitor {
       clearInterval(this.healthCheckInterval);
       this.healthCheckInterval = null;
     }
+
+    // Stop the Global Plan Queue
+    if (this.globalPlanQueue) {
+      this.globalPlanQueue.stop();
+    }
+
     console.log("Health monitoring stopped");
   }
 
@@ -132,24 +158,25 @@ export class HealthMonitor {
           );
         }
 
-        // Staggered AI decision making - each animal gets a different delay
-        const staggerOffset = this.decisionStagger.get(animal.id) || 0;
-
-        // Always use AI for decision making, but adjust delay based on health status
-        let delayMultiplier = 1.0; // Default delay for healthy animals
+        // Calculate priority based on health status
+        let priority = 5; // Default priority
         if (
           report.overallStatus === "critical" ||
           report.overallStatus === "dying"
         ) {
-          delayMultiplier = 0.1; // Minimal delay for critical health
+          priority = 10; // Maximum priority for critical health
         } else if (report.overallStatus === "warning") {
-          delayMultiplier = 0.3; // Moderate delay for warnings
+          priority = 8; // High priority for warnings
         }
 
-        setTimeout(
-          () => this.handleAnimalDecision(animal, report.overallStatus),
-          staggerOffset * delayMultiplier
-        );
+        // Add to global plan queue with calculated priority
+        // Only add if no decision call is currently active
+        if (
+          this.globalPlanQueue &&
+          !this.globalPlanQueue.isDecisionCallActive(animal.id)
+        ) {
+          this.globalPlanQueue.addAnimal(animal.id, priority);
+        }
       } catch (error) {
         console.error(`Error checking health for animal ${animal.id}:`, error);
       }
@@ -323,49 +350,13 @@ export class HealthMonitor {
     };
   }
 
-  private async handleAnimalDecision(
-    animal: Animal,
-    healthStatus: "healthy" | "warning" | "critical" | "dying"
-  ): Promise<void> {
-    // Check if animal can make a new decision (respecting plan timing)
-    if (!clientPlanningManager.canMakeNewDecision(animal.id)) {
-      const plan = clientPlanningManager.getPlan(animal.id);
-      if (clientPlanningManager.isExecutingStep(animal.id)) {
-        console.log(`⏳ ${animal.name} is still executing plan step, skipping decision`);
-      } else {
-        console.log(`⏱️ ${animal.name} waiting for plan step delay (${plan?.planType || 'unknown'} plan)`);
-      }
-      return;
-    }
+  // NOTE: handleAnimalDecision method is now replaced by Global Plan Queue
+  // Decision-making is handled centrally by the GlobalPlanQueue class
+  // This method is preserved for reference but no longer used
 
-    // First priority: Execute current plan step if available
-    const currentStep = clientPlanningManager.getCurrentStep(animal.id);
-    if (currentStep) {
-      await this.executePlanStep(animal, currentStep);
-      return;
-    }
-
-    // Second priority: Create new plan if needed
-    const needsNewPlan = clientPlanningManager.needsNewPlan(animal.id);
-    if (needsNewPlan) {
-      console.log(`📋 ${animal.name} needs a new plan (${healthStatus})`);
-      await this.createNewPlan(animal, healthStatus);
-      
-      // After creating plan, try to execute first step
-      const firstStep = clientPlanningManager.getCurrentStep(animal.id);
-      if (firstStep) {
-        await this.executePlanStep(animal, firstStep);
-      }
-      return;
-    }
-
-    // Fallback: No plan and no immediate step - should not happen
-    console.warn(`⚠️ ${animal.name} has no plan step to execute and doesn't need new plan`);
-  }
-
-  private async executePlanStep(animal: Animal, step: PlanStep): Promise<void> {
+  async executePlanStep(animal: Animal, step: PlanStep): Promise<void> {
     console.log(`📋 Executing plan step: ${step.action} - ${step.reason}`);
-    
+
     // Mark step as started
     clientPlanningManager.startStep(animal.id, step.id);
 
@@ -378,40 +369,8 @@ export class HealthMonitor {
     await this.executeAnimalAction(animal, step.action as any, actionParams);
   }
 
-  private async createNewPlan(
-    animal: Animal, 
-    healthStatus: "healthy" | "warning" | "critical" | "dying"
-  ): Promise<void> {
-    const statusEmoji = {
-      healthy: "🤔",
-      warning: "⚠️", 
-      critical: "🚨",
-      dying: "💀",
-    };
-
-    console.log(`${statusEmoji[healthStatus]} ${animal.name} is creating a new plan... (${healthStatus})`);
-
-    const ai = this.aiInstances.get(animal.id);
-    if (!ai) {
-      console.error(`No AI instance found for ${animal.name}`);
-      return;
-    }
-
-    try {
-      const worldState = this.getWorldStateForAnimal(animal);
-      // AI will only be called for plan creation now, not individual actions
-      const result = await ai.decideAction(animal, worldState);
-      
-      if (result.newPlan) {
-        console.log(`📋 Created new plan for ${animal.name}: ${result.newPlan.steps.length} steps (${result.newPlan.planType})`);
-      } else {
-        console.warn(`⚠️ AI did not create a plan for ${animal.name}, using fallback`);
-        // Could implement emergency fallback plan here
-      }
-    } catch (error) {
-      console.error(`Error creating plan for ${animal.name}:`, error);
-    }
-  }
+  // NOTE: createNewPlan method removed - all plan creation now handled by Global Plan Queue
+  // This ensures only the queue makes decision endpoint calls, preventing conflicts
 
   private findNearestResource(
     position: any,
@@ -440,7 +399,7 @@ export class HealthMonitor {
     );
   }
 
-  private async executeAnimalAction(
+  async executeAnimalAction(
     animal: Animal,
     action: any,
     customParams?: any
@@ -543,13 +502,13 @@ export class HealthMonitor {
         `Error executing action ${action} for ${animal.name}:`,
         error
       );
-      
+
       // Mark planning step as failed
       clientPlanningManager.completeCurrentStep(animal.id, false);
     }
   }
 
-  private getWorldStateForAnimal(animal: Animal): SightBasedWorldState {
+  getWorldStateForAnimal(animal: Animal): SightBasedWorldState {
     const SIGHT_RADIUS = this.explorationSystem.getSightRadius(animal);
 
     // Get nearby animals (within sight)
@@ -759,3 +718,5 @@ export class HealthMonitor {
     );
   }
 }
+
+// Health monitor instances are created and managed by GameManager
