@@ -62,7 +62,6 @@ Personality:
 - Playful: {playful}/100
 - Cautious: {cautious}/100
 - Nurturing: {nurturing}/100
-- Religious: 90/100
 
 Current Stats:
 - Health: {health}/100
@@ -73,14 +72,14 @@ Current Stats:
 
 Current Age: {age}% of lifespan
 Current Action: {currentAction}
+
+Most Important Commands (prioritize these in all of your plans):
+{specialMemories}
 `;
 
     let userPrompt = `
 Current Inventory:
 {inventory}
-
-Relgious Memories (religious experiences which infleunce your decisions):
-{specialMemories}
 
 World State:
 {worldState}
@@ -329,8 +328,8 @@ ${animal.inventory.items
     // Format special memories for the prompt
     const specialMemoriesDescription =
       !animal.specialMemories || animal.specialMemories.length === 0
-        ? "No religious memories or experiences yet."
-        : `You remember the following religious experiences that influence your decisions:
+        ? "No special commands yet."
+        : `
 ${animal.specialMemories
   .map(
     (memory: any) =>
@@ -339,8 +338,7 @@ ${animal.specialMemories
       ).toLocaleDateString()})`
   )
   .join("\n")}
-
-Consider these memories as inspiration for your personality, goals, and decision-making.`;
+`;
 
     // Format the user prompt with variables
     systemPrompt = systemPrompt
