@@ -5,6 +5,9 @@ import type {
   ActionResult,
   AnimalPosition,
   NearbyResource,
+  CraftingResult,
+  CraftingIngredient,
+  InventoryItem,
 } from "../types/animal";
 import { explorationSystem, ExplorationSystem } from "./exploration-system";
 import { HARVEST_RADIUS } from "./health-monitor";
@@ -128,6 +131,8 @@ export class MXPActionSystem {
           return await this.executeBuilding(animal, parameters);
         case "ideation":
           return await this.executeIdeation(animal, parameters);
+        case "crafting":
+          return await this.executeCrafting(animal, parameters);
         default:
           return await this.executeIdle(animal, parameters);
       }
@@ -1077,6 +1082,174 @@ export class MXPActionSystem {
         happiness: Math.min(100, animal.stats.happiness + happinessGain),
       },
       duration: 6000 + creativityBonus * 2000,
+    };
+  }
+
+  private async executeCrafting(
+    animal: Animal,
+    params: any
+  ): Promise<ActionResult> {
+    const { ingredients, craftingGoal, craftingMethod } = params;
+
+    if (!ingredients || !Array.isArray(ingredients) || ingredients.length === 0) {
+      return {
+        success: false,
+        message: `${animal.name} needs to specify ingredients for crafting`,
+        duration: 1000,
+      };
+    }
+
+    if (!craftingGoal) {
+      return {
+        success: false,
+        message: `${animal.name} needs to specify what they want to craft`,
+        duration: 1000,
+      };
+    }
+
+    // Find and validate ingredients in inventory
+    const usedIngredients: CraftingIngredient[] = [];
+    const usedItems: InventoryItem[] = [];
+    
+    for (const ingredientId of ingredients) {
+      const item = animal.inventory.items.find(i => i.id === ingredientId);
+      if (!item) {
+        return {
+          success: false,
+          message: `${animal.name} doesn't have ingredient ${ingredientId} in their inventory`,
+          duration: 1000,
+        };
+      }
+      
+      if (item.quantity <= 0) {
+        return {
+          success: false,
+          message: `${animal.name} doesn't have enough ${item.name} (need at least 1)`,
+          duration: 1000,
+        };
+      }
+
+      usedIngredients.push({
+        itemId: item.id,
+        name: item.name,
+        quantity: 1, // Always use 1 unit for now
+        traits: item.traits,
+      });
+      
+      usedItems.push(item);
+    }
+
+    // Calculate energy cost based on complexity
+    const energyCost = Math.max(5, usedIngredients.length * 3);
+    
+    if (animal.stats.energy < energyCost) {
+      return {
+        success: false,
+        message: `${animal.name} is too tired to craft (needs ${energyCost} energy)`,
+        duration: 1000,
+      };
+    }
+
+    // Create the new crafted item
+    const craftedItem = this.generateCraftedItem(usedIngredients, craftingGoal, craftingMethod, animal);
+
+    // Calculate stat bonuses based on intelligence and creativity
+    const intelligenceMultiplier = animal.dna.intelligence / 100;
+    const curiosityMultiplier = animal.dna.curiosity / 100;
+    const craftingSkillBonus = (intelligenceMultiplier + curiosityMultiplier) / 2;
+    
+    const happinessGain = Math.min(20, 10 + craftingSkillBonus * 15);
+    const duration = 8000 + usedIngredients.length * 2000;
+
+    const craftingResult: CraftingResult = {
+      usedIngredients,
+      createdItem: craftedItem,
+      craftingMethod: craftingMethod || "combined ingredients creatively",
+      skillUsed: intelligenceMultiplier > curiosityMultiplier ? "intelligence" : "curiosity",
+    };
+
+    return {
+      success: true,
+      message: `${animal.name} successfully crafted ${craftedItem.name} using ${usedIngredients.map(i => i.name).join(", ")}`,
+      statChanges: {
+        energy: Math.max(0, animal.stats.energy - energyCost),
+        happiness: Math.min(100, animal.stats.happiness + happinessGain),
+      },
+      craftingResult,
+      duration,
+    };
+  }
+
+  private generateCraftedItem(
+    ingredients: CraftingIngredient[],
+    goal: string,
+    method: string | undefined,
+    animal: Animal
+  ): InventoryItem {
+    // Calculate average quality from ingredients
+    const totalQuality = ingredients.reduce((sum, ing) => {
+      const item = animal.inventory.items.find(i => i.id === ing.itemId);
+      return sum + (item?.quality || 50);
+    }, 0);
+    const avgQuality = Math.floor(totalQuality / ingredients.length);
+
+    // Combine traits from all ingredients
+    const combinedTraits: Record<string, number> = {};
+    ingredients.forEach(ing => {
+      if (ing.traits) {
+        Object.entries(ing.traits).forEach(([trait, value]) => {
+          if (!combinedTraits[trait]) {
+            combinedTraits[trait] = 0;
+          }
+          combinedTraits[trait] = Math.max(combinedTraits[trait], value);
+        });
+      }
+    });
+
+    // Add crafting bonus to traits based on animal's skills
+    const skillBonus = (animal.dna.intelligence + animal.dna.curiosity) / 200 * 20;
+    Object.keys(combinedTraits).forEach(trait => {
+      combinedTraits[trait] = Math.min(100, combinedTraits[trait] + skillBonus);
+    });
+
+    // Determine item type and rarity based on ingredients and goal
+    let itemType: InventoryItem["type"] = "material";
+    let rarity: InventoryItem["rarity"] = "common";
+
+    if (goal.toLowerCase().includes("food") || goal.toLowerCase().includes("potion") || goal.toLowerCase().includes("meal")) {
+      itemType = "food";
+    } else if (goal.toLowerCase().includes("tool") || goal.toLowerCase().includes("weapon")) {
+      itemType = "tool";
+    } else if (goal.toLowerCase().includes("medicine") || goal.toLowerCase().includes("healing")) {
+      itemType = "medicinal";
+    } else if (goal.toLowerCase().includes("spice") || goal.toLowerCase().includes("seasoning")) {
+      itemType = "spice";
+    } else if (ingredients.some(ing => ing.name.includes("diamond") || ing.name.includes("ruby") || ing.name.includes("emerald"))) {
+      itemType = "rare";
+      rarity = "legendary";
+    }
+
+    // Adjust rarity based on quality and number of ingredients
+    if (avgQuality > 80 && ingredients.length >= 3) {
+      rarity = "epic";
+    } else if (avgQuality > 60 && ingredients.length >= 2) {
+      rarity = "rare";
+    } else if (avgQuality > 40) {
+      rarity = "uncommon";
+    }
+
+    // Generate a creative name based on goal and ingredients
+    const craftedName = goal.includes(" ") ? goal : `crafted ${goal}`;
+
+    return {
+      id: `crafted_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      type: itemType,
+      name: craftedName,
+      quantity: 1,
+      quality: Math.min(100, avgQuality + skillBonus),
+      harvestedAt: Date.now(),
+      rarity,
+      traits: Object.keys(combinedTraits).length > 0 ? combinedTraits : undefined,
     };
   }
 

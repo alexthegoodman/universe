@@ -564,6 +564,34 @@ export class HealthMonitor {
           );
         }
 
+        // Handle crafting results
+        if (result.craftingResult && this.gameManagerRef) {
+          // Consume the used ingredients
+          for (const ingredient of result.craftingResult.usedIngredients) {
+            this.gameManagerRef.consumeItemByIdFromInventory(
+              animal.id,
+              ingredient.itemId,
+              ingredient.quantity
+            );
+          }
+
+          // Add the crafted item to inventory
+          const added = this.gameManagerRef.addItemToAnimalInventory(
+            animal.id,
+            result.craftingResult.createdItem
+          );
+
+          if (!added) {
+            console.warn(
+              `⚠️ ${animal.name} couldn't store the crafted ${result.craftingResult.createdItem.name} - inventory full`
+            );
+          } else {
+            console.log(
+              `🔨 ${animal.name} successfully crafted ${result.craftingResult.createdItem.name}!`
+            );
+          }
+        }
+
         // Use centralized state manager to apply updates
         animalStateManager.updateFromActionResult(
           animal.id,

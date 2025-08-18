@@ -101,7 +101,7 @@ Throughout your life, if you socialize with someone else, consider breeding with
 
 Be wise. For example, if you are in need of one or more resources, then you will want to travel nearby each resource before harvesting each resource.
 
-Available plan actions: idle, moving, eating, drinking, sleeping, playing, exploring, socializing, working, mating, harvesting, building, ideation
+Available plan actions: idle, moving, eating, drinking, sleeping, playing, exploring, socializing, working, mating, harvesting, building, ideation, crafting
 
 IMPORTANT SURVIVAL RULES:
 - You can only eat/drink if you have food/water items in your inventory  
@@ -158,6 +158,17 @@ Use the "ideation" action to have creative thoughts about your world and life.
 - Consider various kinds of structures, tools, machines, or social systems you might want to create
 - Consider what might be most valuable in a marketplace
 - There's no need for your ideas to be relevant to your plan
+
+CRAFTING ACTION:
+Use the "crafting" action to combine inventory items into new, more useful items.
+- Combine materials to create tools, food, decorative items, or unique resources
+- Consider the traits of your ingredients - they influence the final result
+- Higher quality ingredients produce higher quality crafted items
+- Traits like "durable", "beautiful", "nutritious", or "energizing" can be combined creatively
+- Be innovative! Create items that solve problems or enhance your abilities
+- Examples: combine berries + herbs = healing potion, stone + wood = hammer, rare materials = jewelry
+- Only use items you actually have in inventory - specify exact item IDs
+- Describe your crafting goal and method clearly
 
 PLANNING SYSTEM:
 - You should think 3-10 turns ahead and create strategic plans
@@ -330,6 +341,19 @@ For ideation steps, include your creative idea in parameters:
   }}
 }}
 
+For crafting steps, specify ingredients and goal in parameters:
+{{
+  "action": "crafting",
+  "priority": 6,
+  "turnOffset": 1,
+  "reason": "Create healing potion from gathered herbs",
+  "parameters": {{
+    "ingredients": ["item_12345", "item_67890"],
+    "craftingGoal": "healing potion",
+    "craftingMethod": "grinding herbs and mixing with berries"
+  }}
+}}
+
 Consider:
 - Plan sequences that solve problems efficiently
 - Account for action duration and delays between steps  
@@ -488,6 +512,7 @@ ${animal.specialMemories
         "harvesting",
         "building",
         "ideation",
+        "crafting",
         "idle",
       ];
       const action =
@@ -514,6 +539,7 @@ ${animal.specialMemories
       "harvesting",
       "building",
       "ideation",
+      "crafting",
       "idle",
     ];
 
@@ -578,6 +604,18 @@ ${animal.specialMemories
 
     if (finalAction === "ideation" && parsedResponse.idea) {
       result.idea = parsedResponse.idea;
+    }
+
+    if (finalAction === "crafting") {
+      if (parsedResponse.ingredients) {
+        result.ingredients = parsedResponse.ingredients;
+      }
+      if (parsedResponse.craftingGoal) {
+        result.craftingGoal = parsedResponse.craftingGoal;
+      }
+      if (parsedResponse.craftingMethod) {
+        result.craftingMethod = parsedResponse.craftingMethod;
+      }
     }
 
     // Include plan in response for client-side storage

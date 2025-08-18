@@ -1316,6 +1316,33 @@ export class GameManager {
     return true;
   }
 
+  consumeItemByIdFromInventory(
+    animalId: string,
+    itemId: string,
+    amount: number = 1
+  ): boolean {
+    const animal = this.healthMonitor.getAnimal(animalId);
+    if (!animal) return false;
+
+    const item = animal.inventory.items.find(
+      (i) => i.id === itemId && i.quantity >= amount
+    );
+    if (!item) return false;
+
+    const consumeItem = { ...item, quantity: amount };
+    const itemWeight = this.getItemWeight(consumeItem);
+
+    item.quantity -= amount;
+    animal.inventory.currentWeight -= itemWeight;
+
+    if (item.quantity <= 0) {
+      const index = animal.inventory.items.indexOf(item);
+      animal.inventory.items.splice(index, 1);
+    }
+
+    return true;
+  }
+
   private addEvent(type: string, message: string, animalId?: string): void {
     const event = {
       id: `event_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,

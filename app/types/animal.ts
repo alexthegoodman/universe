@@ -110,7 +110,8 @@ export type AnimalAction =
   | "mating"
   | "harvesting"
   | "building"
-  | "ideation";
+  | "ideation"
+  | "crafting";
 
 export interface ActionResult {
   success: boolean;
@@ -122,6 +123,7 @@ export interface ActionResult {
   harvestedItem?: InventoryItem; // Item that was harvested during harvesting actions
   resourceId?: string; // ID of the resource that was harvested from
   offspring?: Animal; // Animal offspring created during breeding from socializing
+  craftingResult?: CraftingResult; // Result of a crafting action
 }
 
 // Sight-based system interfaces
@@ -202,4 +204,25 @@ export interface SightBasedWorldState {
       reliability: number;
     }>;
   };
+}
+
+// Crafting system interfaces
+export interface CraftingIngredient {
+  itemId: string; // ID of the inventory item being used
+  name: string; // Name of the item for readability
+  quantity: number; // How many units are consumed
+  traits?: Record<string, number>; // Traits that will influence the result
+}
+
+export interface CraftingResult {
+  usedIngredients: CraftingIngredient[]; // Items consumed in crafting
+  createdItem: InventoryItem; // New item that was crafted
+  craftingMethod: string; // Description of how it was made
+  skillUsed?: string; // What skill/trait was primarily used
+}
+
+export interface CraftingParameters {
+  ingredients: string[]; // Array of inventory item IDs to use
+  craftingGoal: string; // What the animal is trying to create
+  craftingMethod?: string; // Optional specific method description
 }
