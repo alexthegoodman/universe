@@ -1,4 +1,4 @@
-import type { Animal, InventoryItem } from "../types/animal";
+import type { Animal, InventoryItem, CraftingIngredient } from "../types/animal";
 import type { ResourceType, ResourceTraits } from "./game-manager";
 
 export interface CurrencyValues {
@@ -196,9 +196,16 @@ export class CurrencySystem {
    * Calculate the currency value of a single inventory item
    */
   static calculateItemValue(item: InventoryItem): number {
-    // Get base value for the resource type
-    const baseName = item.name.replace(/\s+/g, "_").toLowerCase() as ResourceType;
-    let baseValue = BASE_CURRENCY_VALUES[baseName] || 10; // Default to 10 if not found
+    let baseValue: number;
+
+    // For crafted items, calculate value based on ingredients
+    if (this.isCraftedItem(item) && item.craftingIngredients) {
+      baseValue = this.calculateCraftedItemBaseValue(item.craftingIngredients);
+    } else {
+      // Get base value for the resource type
+      const baseName = item.name.replace(/\s+/g, "_").toLowerCase() as ResourceType;
+      baseValue = BASE_CURRENCY_VALUES[baseName] || 10; // Default to 10 if not found
+    }
 
     // Apply rarity multiplier
     const rarityMultiplier = RARITY_MULTIPLIERS[item.rarity || "common"];
@@ -220,8 +227,8 @@ export class CurrencySystem {
     baseValue *= traitBonus;
 
     // Crafted items get significant bonus (they're more valuable than raw materials)
-    if (item.id.startsWith("crafted_")) {
-      baseValue *= 2.5; // 150% bonus for crafted items
+    if (this.isCraftedItem(item)) {
+      baseValue *= 1.8; // 80% bonus for crafted items (making ring worth ~1.8x emerald)
     }
 
     return Math.round(baseValue * item.quantity);
@@ -288,6 +295,29 @@ export class CurrencySystem {
       wealth: entry?.wealth || 0,
       totalAnimals: leaderboard.length,
     };
+  }
+
+  /**
+   * Check if an item is crafted (has a dynamic ID not in base values)
+   */
+  static isCraftedItem(item: InventoryItem): boolean {
+    const baseName = item.name.replace(/\s+/g, "_").toLowerCase() as ResourceType;
+    return !BASE_CURRENCY_VALUES[baseName] && item.id.includes("_");
+  }
+
+  /**
+   * Calculate base value for crafted items based on ingredients
+   */
+  static calculateCraftedItemBaseValue(ingredients: CraftingIngredient[]): number {
+    // Sum up the base values of all ingredients
+    const totalIngredientValue = ingredients.reduce((sum, ingredient) => {
+      const baseName = ingredient.name.replace(/\s+/g, "_").toLowerCase() as ResourceType;
+      const baseValue = BASE_CURRENCY_VALUES[baseName] || 10;
+      return sum + (baseValue * ingredient.quantity);
+    }, 0);
+
+    // Return the total value of ingredients as the base (before multipliers)
+    return totalIngredientValue;
   }
 
   /**

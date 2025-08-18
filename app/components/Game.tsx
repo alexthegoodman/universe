@@ -16,6 +16,7 @@ import ActionLog, { type ActionLogEntry } from "./ActionLog";
 import { actionLogger } from "../lib/action-logger";
 import SpecialAnnouncementPanel from "./SpecialAnnouncementPanel";
 import CurrencyLeaderboard, { CompactLeaderboard, LeaderboardPodium } from "./CurrencyLeaderboard";
+import EventsPanel, { type GameEvent } from "./EventsPanel";
 
 interface SceneProps {
   animals: Animal[];
@@ -108,6 +109,7 @@ export default function Game() {
   const [gameStarted, setGameStarted] = useState(false);
   const [version, setVersion] = useState(0);
   const [actionLogs, setActionLogs] = useState<ActionLogEntry[]>([]);
+  const [events, setEvents] = useState<GameEvent[]>([]);
   const [showAnnouncementPanel, setShowAnnouncementPanel] = useState(false);
 
   useEffect(() => {
@@ -149,6 +151,7 @@ export default function Game() {
         setResources([...worldState.resources]);
         setBuildings([...worldState.buildings]);
         setBandits([...worldState.bandits]);
+        setEvents([...worldState.events]);
         setVersion((v) => v + 1);
 
         // Update selected animal if it still exists
@@ -285,6 +288,9 @@ export default function Game() {
 
       {/* Action Log */}
       <ActionLog entries={actionLogs} />
+
+      {/* Events Panel */}
+      <EventsPanel events={events} />
 
       {/* Currency Leaderboard */}
       <div className="absolute top-4 right-4 w-80">

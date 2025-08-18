@@ -51,6 +51,7 @@ export interface InventoryItem {
   harvestedAt: number; // timestamp
   rarity?: "common" | "uncommon" | "rare" | "epic" | "legendary";
   traits?: Record<string, number>; // Resource traits with scores 0-100
+  craftingIngredients?: CraftingIngredient[]; // For crafted items, store what went into them
 }
 
 export interface Inventory {

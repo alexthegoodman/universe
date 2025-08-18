@@ -1217,7 +1217,7 @@ export class MXPActionSystem {
       const item = animal.inventory.items.find((i) => i.id === ing.itemId);
       return sum + (item?.quality || 50);
     }, 0);
-    const avgQuality = Math.floor(totalQuality / ingredients.length);
+    const avgQuality = Math.round(totalQuality / ingredients.length);
 
     // Combine traits from all ingredients
     const combinedTraits: Record<string, number> = {};
@@ -1233,10 +1233,11 @@ export class MXPActionSystem {
     });
 
     // Add crafting bonus to traits based on animal's skills
-    const skillBonus =
-      ((animal.dna.intelligence + animal.dna.curiosity) / 200) * 20;
+    const skillBonus = Math.round(
+      ((animal.dna.intelligence + animal.dna.curiosity) / 200) * 20
+    );
     Object.keys(combinedTraits).forEach((trait) => {
-      combinedTraits[trait] = Math.min(100, combinedTraits[trait] + skillBonus);
+      combinedTraits[trait] = Math.min(100, Math.round(combinedTraits[trait] + skillBonus));
     });
 
     // Determine item type and rarity based on ingredients and goal
@@ -1294,11 +1295,12 @@ export class MXPActionSystem {
       type: itemType,
       name: craftedName,
       quantity: 1,
-      quality: Math.min(100, avgQuality + skillBonus),
+      quality: Math.min(100, Math.round(avgQuality + skillBonus)),
       harvestedAt: Date.now(),
       rarity,
       traits:
         Object.keys(combinedTraits).length > 0 ? combinedTraits : undefined,
+      craftingIngredients: ingredients, // Store what went into making this item
     };
   }
 
