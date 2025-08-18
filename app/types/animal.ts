@@ -109,7 +109,8 @@ export type AnimalAction =
   | "working"
   | "mating"
   | "harvesting"
-  | "building";
+  | "building"
+  | "ideation";
 
 export interface ActionResult {
   success: boolean;
@@ -190,6 +191,12 @@ export interface SightBasedWorldState {
     discoveries: Array<{
       type: string;
       description: string;
+      position: { x: number; y: number; z: number };
+      timestamp: number;
+      reliability: number;
+    }>;
+    ideations: Array<{
+      idea: string;
       position: { x: number; y: number; z: number };
       timestamp: number;
       reliability: number;

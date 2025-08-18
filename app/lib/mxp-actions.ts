@@ -126,6 +126,8 @@ export class MXPActionSystem {
           return await this.executeHarvest(animal, parameters);
         case "building":
           return await this.executeBuilding(animal, parameters);
+        case "ideation":
+          return await this.executeIdeation(animal, parameters);
         default:
           return await this.executeIdle(animal, parameters);
       }
@@ -1036,6 +1038,46 @@ export class MXPActionSystem {
     };
 
     return actionResult;
+  }
+
+  private async executeIdeation(
+    animal: Animal,
+    params: any
+  ): Promise<ActionResult> {
+    const { idea } = params;
+    
+    if (!idea) {
+      return {
+        success: false,
+        message: `${animal.name} tried to have an idea but couldn't focus`,
+        duration: 2000,
+      };
+    }
+    
+    const intelligenceMultiplier = animal.dna.intelligence / 100;
+    const curiosityMultiplier = animal.dna.curiosity / 100;
+    const creativityBonus = (intelligenceMultiplier + curiosityMultiplier) / 2;
+    
+    // Store the idea as an exploration memory
+    this.explorationSystem.addMemory(animal.id, {
+      position: { x: animal.position.x, y: animal.position.y, z: animal.position.z },
+      discoveryType: 'ideation',
+      description: idea,
+      reliability: 0.9 + creativityBonus * 0.1, // High reliability, boosted by creativity
+    });
+    
+    const energyCost = Math.max(2, 5 - creativityBonus * 2);
+    const happinessGain = Math.min(15, 8 + creativityBonus * 10);
+    
+    return {
+      success: true,
+      message: `${animal.name} had a creative vision: "${idea}"`,
+      statChanges: {
+        energy: Math.max(0, animal.stats.energy - energyCost),
+        happiness: Math.min(100, animal.stats.happiness + happinessGain),
+      },
+      duration: 6000 + creativityBonus * 2000,
+    };
   }
 
   private async executeIdle(

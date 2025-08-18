@@ -101,7 +101,7 @@ Throughout your life, if you socialize with someone else, consider breeding with
 
 Be wise. For example, if you are in need of one or more resources, then you will want to travel nearby each resource before harvesting each resource.
 
-Available plan actions: idle, moving, eating, drinking, sleeping, playing, exploring, socializing, working, mating, harvesting, building
+Available plan actions: idle, moving, eating, drinking, sleeping, playing, exploring, socializing, working, mating, harvesting, building, ideation
 
 IMPORTANT SURVIVAL RULES:
 - You can only eat/drink if you have food/water items in your inventory  
@@ -143,6 +143,19 @@ Check your memories.recentFailures before attempting actions that have recently 
 - If you failed due to being too far, move closer before attempting again
 - If you failed due to full inventory, consider eating/drinking items to make space
 - Learn from your past failures and avoid repeating the same mistakes in the same locations
+
+Check your memories.ideations to see your past creative thoughts and dreams.
+- These are your personal visions and ideas about your world and life
+- You can build upon previous ideas or create entirely new ones
+- Ideation helps you think about future goals and possibilities
+- Use ideation when you have some energy and want to be creative or contemplative
+
+IDEATION ACTION:
+Use the "ideation" action to have creative thoughts about your world and life.
+- This action stores your ideas as memories that influence future decisions
+- Be creative! Think about dreams, goals, inventions, or philosophical thoughts
+- Ideas should reflect your personality and current situation
+- Examples: "I dream of building a magnificent crystal palace" or "What if I could teach all animals to live in harmony?"
 
 PLANNING SYSTEM:
 - You should think 3-10 turns ahead and create strategic plans
@@ -304,6 +317,17 @@ For survival steps (drinking/sleeping), no special parameters needed:
   "reason": "Restore energy in safe shelter"
 }}
 
+For ideation steps, include your creative idea in parameters:
+{{
+  "action": "ideation",
+  "priority": 4,
+  "turnOffset": 3,
+  "reason": "Dream about future possibilities while resting",
+  "parameters": {{
+    "idea": "I imagine creating a beautiful garden where all creatures can gather peacefully"
+  }}
+}}
+
 Consider:
 - Plan sequences that solve problems efficiently
 - Account for action duration and delays between steps  
@@ -461,6 +485,7 @@ ${animal.specialMemories
         "mating",
         "harvesting",
         "building",
+        "ideation",
         "idle",
       ];
       const action =
@@ -486,6 +511,7 @@ ${animal.specialMemories
       "mating",
       "harvesting",
       "building",
+      "ideation",
       "idle",
     ];
 
@@ -546,6 +572,10 @@ ${animal.specialMemories
       if (parsedResponse.buildingName) {
         result.buildingName = parsedResponse.buildingName;
       }
+    }
+
+    if (finalAction === "ideation" && parsedResponse.idea) {
+      result.idea = parsedResponse.idea;
     }
 
     // Include plan in response for client-side storage

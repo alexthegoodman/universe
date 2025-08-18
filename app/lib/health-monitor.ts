@@ -732,12 +732,15 @@ export class HealthMonitor {
       console.log(`🧠 ${animal.name} has no relevant memories nearby`);
     }
 
-    // Separate failure memories for easier AI processing
+    // Separate memory types for easier AI processing
     const failureMemories = memories.filter(
       (m) => m.discoveryType === "failure"
     );
+    const ideationMemories = memories.filter(
+      (m) => m.discoveryType === "ideation"
+    );
     const discoveryMemories = memories.filter(
-      (m) => m.discoveryType !== "failure"
+      (m) => m.discoveryType !== "failure" && m.discoveryType !== "ideation"
     );
 
     return {
@@ -760,6 +763,12 @@ export class HealthMonitor {
         discoveries: discoveryMemories.map((m) => ({
           type: m.discoveryType,
           description: m.description,
+          position: m.position,
+          timestamp: m.timestamp,
+          reliability: m.reliability,
+        })),
+        ideations: ideationMemories.map((m) => ({
+          idea: m.description,
           position: m.position,
           timestamp: m.timestamp,
           reliability: m.reliability,
