@@ -46,7 +46,8 @@ export interface BuildingAction {
     | "make_taller"
     | "make_beautiful"
     | "add_room"
-    | "create_building";
+    | "create_building"
+    | "purchase_upgrade";
   name: string;
   description: string;
   requiredMaterials: BuildingMaterial;
@@ -55,6 +56,7 @@ export interface BuildingAction {
     statChanges?: Partial<BuildingStats>;
     capacityChange?: number;
   };
+  currencyCost?: number; // For purchase_upgrade action
 }
 
 export interface BuildingActionResult {
@@ -142,5 +144,20 @@ export const BUILDING_ACTIONS: Record<string, BuildingAction> = {
       statChanges: { durability: -3 },
       capacityChange: 2,
     },
+  },
+  purchase_upgrade: {
+    type: "purchase_upgrade",
+    name: "Purchase Upgrade",
+    description: "Spend currency to instantly upgrade building size and appearance",
+    requiredMaterials: {
+      requiredQuantity: 0,
+      suitableTraits: [],
+    },
+    effects: {
+      dimensionChanges: { width: 1, height: 1, depth: 1 },
+      statChanges: { beauty: 10, comfort: 5, durability: 5 },
+      capacityChange: 1,
+    },
+    currencyCost: 100, // Base cost, will be scaled by amount spent
   },
 };

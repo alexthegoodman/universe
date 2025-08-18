@@ -147,7 +147,8 @@ export class BuildingSystem {
   modifyBuilding(
     animal: Animal,
     buildingId: string,
-    actionType: string
+    actionType: string,
+    amount?: number
   ): BuildingActionResult {
     const building = this.buildings.get(buildingId);
     if (!building) {
@@ -182,35 +183,57 @@ export class BuildingSystem {
       };
     }
 
-    // Check materials
-    const materialCheck = this.checkMaterials(animal, action.requiredMaterials);
-    if (!materialCheck.success) {
-      return {
-        success: false,
-        message: materialCheck.message!,
-        duration: 2000,
-      };
-    }
+    // Handle currency-based vs material-based actions
+    let consumeResult: any = { success: true, materialsUsed: {} };
+    
+    if (actionType === "purchase_upgrade") {
+      // Handle currency-based upgrade with variable amount
+      const spendAmount = Math.min(amount || 100, animal.currency);
+      if (spendAmount < 1) {
+        return {
+          success: false,
+          message: `${animal.name} needs at least 1 currency but has ${animal.currency}`,
+          duration: 2000,
+        };
+      }
+      
+      // Consume currency
+      animal.currency -= spendAmount;
+    } else {
+      // Handle material-based actions
+      const materialCheck = this.checkMaterials(animal, action.requiredMaterials);
+      if (!materialCheck.success) {
+        return {
+          success: false,
+          message: materialCheck.message!,
+          duration: 2000,
+        };
+      }
 
-    // Consume materials from animal's inventory
-    const consumeResult = this.consumeMaterials(animal, action.requiredMaterials);
-    if (!consumeResult.success) {
-      return {
-        success: false,
-        message: `${animal.name} failed to gather the required materials for building modification`,
-        duration: 2000,
-      };
+      // Consume materials from animal's inventory
+      consumeResult = this.consumeMaterials(animal, action.requiredMaterials);
+      if (!consumeResult.success) {
+        return {
+          success: false,
+          message: `${animal.name} failed to gather the required materials for building modification`,
+          duration: 2000,
+        };
+      }
     }
 
     // Apply modifications
     const changes: any = {};
+    
+    // Scale effects for purchase_upgrade based on amount spent
+    const effectMultiplier = actionType === "purchase_upgrade" ? Math.floor((amount || 100) / 100) : 1;
 
     if (action.effects.dimensionChanges) {
       Object.keys(action.effects.dimensionChanges).forEach((key) => {
         const change =
           action.effects.dimensionChanges![key as keyof BuildingDimensions];
         if (change) {
-          building.dimensions[key as keyof BuildingDimensions] += change;
+          const scaledChange = change * effectMultiplier;
+          building.dimensions[key as keyof BuildingDimensions] += scaledChange;
           changes.dimensions = changes.dimensions || {};
           changes.dimensions[key] =
             building.dimensions[key as keyof BuildingDimensions];
@@ -222,9 +245,10 @@ export class BuildingSystem {
       Object.keys(action.effects.statChanges).forEach((key) => {
         const change = action.effects.statChanges![key as keyof BuildingStats];
         if (change) {
+          const scaledChange = change * effectMultiplier;
           building.stats[key as keyof BuildingStats] = Math.max(
             0,
-            Math.min(100, building.stats[key as keyof BuildingStats] + change)
+            Math.min(100, building.stats[key as keyof BuildingStats] + scaledChange)
           );
           changes.stats = changes.stats || {};
           changes.stats[key] = building.stats[key as keyof BuildingStats];
@@ -233,15 +257,18 @@ export class BuildingSystem {
     }
 
     if (action.effects.capacityChange) {
-      building.maxOccupants += action.effects.capacityChange;
+      const scaledCapacityChange = action.effects.capacityChange * effectMultiplier;
+      building.maxOccupants += scaledCapacityChange;
       building.stats.capacity = building.maxOccupants;
       changes.capacity = building.maxOccupants;
     }
 
-    // Update building materials used (add to existing materials)
-    Object.keys(consumeResult.materialsUsed).forEach((resourceName) => {
-      building.materials[resourceName] = (building.materials[resourceName] || 0) + consumeResult.materialsUsed[resourceName];
-    });
+    // Update building materials used (add to existing materials) - only for material-based actions
+    if (actionType !== "purchase_upgrade") {
+      Object.keys(consumeResult.materialsUsed).forEach((resourceName) => {
+        building.materials[resourceName] = (building.materials[resourceName] || 0) + consumeResult.materialsUsed[resourceName];
+      });
+    }
     building.lastModifiedAt = Date.now();
 
     // Calculate area bonus for larger houses

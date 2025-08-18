@@ -214,6 +214,7 @@ BUILDING SYSTEM:
   • "make_taller" - Increase building height (needs 2 durable materials, trait score ≥50)
   • "make_beautiful" - Add decorative elements (needs 2 beautiful materials, trait score ≥60)
   • "add_room" - Construct additional space (needs 2 durable materials, trait score ≥50)
+  • "purchase_upgrade" - Spend currency to instantly upgrade building size and appearance, the more you spend, the better the improvement
 - DURABLE materials include: granite, limestone, marble, oak_wood, cedar_wood, iron_ore, etc.
 - BEAUTIFUL materials include: marble, diamond, ruby, emerald, amethyst, silk, etc.
 - Consider building when you have collected enough suitable materials and want long-term shelter
@@ -334,6 +335,18 @@ Make Beautiful...
   "parameters": {{
     "action": "make_beautiful",
     "buildingId": "building_123"
+  }}
+}}
+Purchase Upgrade...
+{{
+  "action": "building",
+  "priority": 8,
+  "turnOffset": 3,
+  "reason": "Spend currency to instantly upgrade building size and beauty",
+  "parameters": {{
+    "action": "purchase_upgrade",
+    "buildingId": "building_123",
+    "amount": 250
   }}
 }}
 

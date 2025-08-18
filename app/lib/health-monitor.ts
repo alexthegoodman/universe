@@ -617,6 +617,13 @@ export class HealthMonitor {
             ...currentAnimal,
             currentAction: "idle",
           });
+
+          this.explorationSystem.addFailureMemory(
+            currentAnimal.id,
+            currentAnimal.position,
+            action,
+            result.message
+          );
         }
         console.log(`❌ ${result.message}`);
       }

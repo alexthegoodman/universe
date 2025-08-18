@@ -169,18 +169,6 @@ export class MXPActionSystem {
       targetZ < -halfDepth ||
       targetZ > halfDepth
     ) {
-      // Store failure memory when attempting to move outside bounds
-      this.explorationSystem.addFailureMemory(
-        animal.id,
-        animal.position,
-        "move",
-        `attempted to move outside map bounds (${targetX.toFixed(
-          1
-        )}, ${targetZ.toFixed(1)}) - world is ${worldBounds.width}x${
-          worldBounds.depth
-        }`
-      );
-
       return {
         success: false,
         message: `${animal.name} cannot venture beyond the known world boundaries`,
@@ -479,16 +467,6 @@ export class MXPActionSystem {
       (this.config.work.energyCost * difficulty) / effectiveness;
 
     if (animal.stats.energy < energyCost) {
-      // Store failure memory
-      this.explorationSystem.addFailureMemory(
-        animal.id,
-        animal.position,
-        "work",
-        `not enough energy (needed ${energyCost.toFixed(1)}, had ${
-          animal.stats.energy
-        })`
-      );
-
       return {
         success: false,
         message: `${animal.name} is too tired to work effectively`,
@@ -566,18 +544,6 @@ export class MXPActionSystem {
       newPosition.z < -halfDepth ||
       newPosition.z > halfDepth
     ) {
-      // Store failure memory when attempting to explore outside bounds
-      this.explorationSystem.addFailureMemory(
-        animal.id,
-        animal.position,
-        "explore",
-        `attempted to explore outside map bounds (${newPosition.x.toFixed(
-          1
-        )}, ${newPosition.z.toFixed(1)}) - world is ${worldBounds.width}x${
-          worldBounds.depth
-        }`
-      );
-
       return {
         success: false,
         message: `${animal.name} senses the edge of the known world and turns back`,
@@ -879,14 +845,6 @@ export class MXPActionSystem {
     );
 
     if (distance > HARVEST_RADIUS) {
-      // Store failure memory
-      this.explorationSystem.addFailureMemory(
-        animal.id,
-        animal.position,
-        "harvest",
-        `too far from resource (distance: ${distance.toFixed(1)})`
-      );
-
       return {
         success: false,
         message: `${animal.name} is too far from the resource to harvest it`,
@@ -906,14 +864,6 @@ export class MXPActionSystem {
     }
 
     if (animal.stats.energy < energyCost) {
-      // Store failure memory
-      this.explorationSystem.addFailureMemory(
-        animal.id,
-        animal.position,
-        "harvest",
-        `not enough energy (needed ${energyCost}, had ${animal.stats.energy})`
-      );
-
       return {
         success: false,
         message: `${animal.name} is too tired to harvest`,
@@ -936,14 +886,6 @@ export class MXPActionSystem {
         : 0.2);
 
     if (currentWeight + itemWeight > animal.inventory.maxCapacity) {
-      // Store failure memory
-      this.explorationSystem.addFailureMemory(
-        animal.id,
-        animal.position,
-        "harvest",
-        `inventory full (${currentWeight}/${animal.inventory.maxCapacity})`
-      );
-
       return {
         success: false,
         message: `${animal.name}'s inventory is too full to carry more`,
@@ -982,6 +924,7 @@ export class MXPActionSystem {
       buildingId,
       position,
       buildingName,
+      amount,
     } = params;
 
     let result;
@@ -1020,7 +963,12 @@ export class MXPActionSystem {
         };
       }
 
-      result = buildingSystem.modifyBuilding(animal, buildingId, action);
+      result = buildingSystem.modifyBuilding(
+        animal,
+        buildingId,
+        action,
+        amount
+      );
 
       // Materials are now consumed automatically by the building system
     }
@@ -1237,7 +1185,10 @@ export class MXPActionSystem {
       ((animal.dna.intelligence + animal.dna.curiosity) / 200) * 20
     );
     Object.keys(combinedTraits).forEach((trait) => {
-      combinedTraits[trait] = Math.min(100, Math.round(combinedTraits[trait] + skillBonus));
+      combinedTraits[trait] = Math.min(
+        100,
+        Math.round(combinedTraits[trait] + skillBonus)
+      );
     });
 
     // Determine item type and rarity based on ingredients and goal
