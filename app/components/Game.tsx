@@ -15,7 +15,10 @@ import Building3D from "./Building3D";
 import ActionLog, { type ActionLogEntry } from "./ActionLog";
 import { actionLogger } from "../lib/action-logger";
 import SpecialAnnouncementPanel from "./SpecialAnnouncementPanel";
-import CurrencyLeaderboard, { CompactLeaderboard, LeaderboardPodium } from "./CurrencyLeaderboard";
+import CurrencyLeaderboard, {
+  CompactLeaderboard,
+  LeaderboardPodium,
+} from "./CurrencyLeaderboard";
 import EventsPanel, { type GameEvent } from "./EventsPanel";
 
 interface SceneProps {
@@ -89,11 +92,7 @@ function Scene({
 
       {/* Bandits */}
       {bandits.map((bandit) => (
-        <Bandit3D
-          key={bandit.id}
-          bandit={bandit}
-          onClick={onBanditClick}
-        />
+        <Bandit3D key={bandit.id} bandit={bandit} onClick={onBanditClick} />
       ))}
     </>
   );
@@ -150,7 +149,7 @@ export default function Game() {
         setAnimals([...currentAnimals]);
         setResources([...worldState.resources]);
         setBuildings([...worldState.buildings]);
-        setBandits([...worldState.bandits]);
+        setBandits([...worldState.bandits.filter((b) => b.isAlive)]);
         setEvents([...worldState.events]);
         setVersion((v) => v + 1);
 
@@ -264,7 +263,9 @@ export default function Game() {
                   {buildings.reduce((sum, b) => sum + b.maxOccupants, 0)}
                 </div>
                 <div>Bandits: {bandits.length}</div>
-                <div>Alive Bandits: {bandits.filter((b) => b.isAlive).length}</div>
+                <div>
+                  Alive Bandits: {bandits.filter((b) => b.isAlive).length}
+                </div>
               </div>
             </div>
             <button
