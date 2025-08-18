@@ -192,19 +192,26 @@ export class BuildingSystem {
 
     if (actionType === "purchase_upgrade") {
       // Handle currency-based upgrade with variable amount
-      // const spendAmount = Math.min(amount || 100, animal.currency);
-      // if (spendAmount < 1) {
-      //   return {
-      //     success: false,
-      //     message: `${animal.name} needs at least 1 currency but has ${animal.currency}`,
-      //     duration: 2000,
-      //   };
-      // }
-      // // Consume currency
-      // animal.currency -= spendAmount;
-      // connect with currency system
-      // CurrencySystem.calculateAnimalWealth(animal);
-      // NOTE: actually, when the items are removed from inventory, the currency is updated there
+      const spendAmount = amount || 100;
+      const currentWealth = CurrencySystem.calculateAnimalWealth(animal);
+      
+      if (currentWealth < spendAmount) {
+        return {
+          success: false,
+          message: `${animal.name} needs ${spendAmount} currency but only has ${currentWealth}`,
+          duration: 2000,
+        };
+      }
+
+      // Consume materials from inventory equal to spend amount, starting with most valuable
+      consumeResult = this.consumeMaterialsForCurrency(animal, spendAmount);
+      if (!consumeResult.success) {
+        return {
+          success: false,
+          message: `${animal.name} failed to gather resources worth ${spendAmount} currency`,
+          duration: 2000,
+        };
+      }
     } else {
       // Handle material-based actions
       const materialCheck = this.checkMaterials(
@@ -253,10 +260,18 @@ export class BuildingSystem {
           action.effects.dimensionChanges![key as keyof BuildingDimensions];
         if (change) {
           const scaledChange = change * effectMultiplier;
-          building.dimensions[key as keyof BuildingDimensions] += scaledChange;
+          const dimensionKey = key as keyof BuildingDimensions;
+          
+          // Apply the change
+          building.dimensions[dimensionKey] += scaledChange;
+          
+          // Apply limits: clamp width and depth to maximum of 10, but allow height to scale infinitely
+          if (dimensionKey === 'width' || dimensionKey === 'depth') {
+            building.dimensions[dimensionKey] = Math.min(10, building.dimensions[dimensionKey]);
+          }
+          
           changes.dimensions = changes.dimensions || {};
-          changes.dimensions[key] =
-            building.dimensions[key as keyof BuildingDimensions];
+          changes.dimensions[key] = building.dimensions[dimensionKey];
         }
       });
     }
@@ -405,6 +420,70 @@ export class BuildingSystem {
     return {
       success: materialsNeeded === 0,
       materialsUsed: materialsUsed,
+    };
+  }
+
+  // Consume materials from animal's inventory equal to currency amount, starting with most valuable
+  consumeMaterialsForCurrency(
+    animal: Animal,
+    targetAmount: number
+  ): { success: boolean; materialsUsed: BuildingMaterialsUsed; totalValue: number } {
+    const inventory = animal.inventory.items;
+    const materialsUsed: BuildingMaterialsUsed = {};
+    let totalValueConsumed = 0;
+
+    // Create list of items with their values, sorted by value per unit (most valuable first)
+    const itemsWithValues = inventory
+      .filter(item => item.type === "material" && item.quantity > 0)
+      .map(item => ({
+        item,
+        valuePerUnit: CurrencySystem.calculateItemValue({...item, quantity: 1}),
+        totalValue: CurrencySystem.calculateItemValue(item)
+      }))
+      .sort((a, b) => b.valuePerUnit - a.valuePerUnit);
+
+    // Consume items starting with most valuable until we reach target amount
+    for (let i = inventory.length - 1; i >= 0 && totalValueConsumed < targetAmount; i--) {
+      const item = inventory[i];
+      const itemValueData = itemsWithValues.find(ivd => ivd.item === item);
+      
+      if (!itemValueData || item.quantity <= 0) continue;
+
+      const remainingNeeded = targetAmount - totalValueConsumed;
+      const valuePerUnit = itemValueData.valuePerUnit;
+      
+      // Calculate how much of this item we need
+      const quantityNeeded = Math.min(
+        item.quantity,
+        Math.ceil(remainingNeeded / valuePerUnit)
+      );
+
+      if (quantityNeeded > 0) {
+        const valueConsumed = quantityNeeded * valuePerUnit;
+        
+        // Update item quantity
+        item.quantity -= quantityNeeded;
+        totalValueConsumed += valueConsumed;
+
+        // Track what was consumed
+        materialsUsed[item.name] = (materialsUsed[item.name] || 0) + quantityNeeded;
+
+        // Update weight using the appropriate resource weight
+        const resourceWeight =
+          RESOURCE_WEIGHTS[item.name as keyof typeof RESOURCE_WEIGHTS] || 1;
+        animal.inventory.currentWeight -= quantityNeeded * resourceWeight;
+
+        // Remove item if depleted
+        if (item.quantity <= 0) {
+          inventory.splice(i, 1);
+        }
+      }
+    }
+
+    return {
+      success: totalValueConsumed >= targetAmount,
+      materialsUsed,
+      totalValue: totalValueConsumed
     };
   }
 
