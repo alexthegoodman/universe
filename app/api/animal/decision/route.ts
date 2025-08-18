@@ -155,7 +155,9 @@ Use the "ideation" action to have creative thoughts about your world and life.
 - This action stores your ideas as memories that influence future decisions
 - Be creative! Think about dreams, goals, inventions, or philosophical thoughts
 - Ideas should reflect your personality and current situation
-- Examples: "I dream of building a magnificent crystal palace" or "What if I could teach all animals to live in harmony?"
+- Consider various kinds of structures, tools, machines, or social systems you might want to create
+- Consider what might be most valuable in a marketplace
+- There's no need for your ideas to be relevant to your plan
 
 PLANNING SYSTEM:
 - You should think 3-10 turns ahead and create strategic plans
