@@ -12,6 +12,7 @@ import type { Animal, InventoryItem } from "../types/animal";
 import { RESOURCE_WEIGHTS } from "../types/weights";
 import type { ResourceType, ResourceTraits } from "./game-manager";
 import { RESOURCE_TRAIT_MAP } from "./game-manager";
+import { CurrencySystem } from "./currency-system";
 
 export class BuildingSystem {
   private buildings: Map<string, Building> = new Map();
@@ -32,7 +33,7 @@ export class BuildingSystem {
     // +1 happiness per 2 additional area units, capped at +20
     const baseArea = 20;
     if (area <= baseArea) return 0;
-    
+
     const extraArea = area - baseArea;
     return Math.min(20, Math.floor(extraArea / 2));
   }
@@ -45,17 +46,17 @@ export class BuildingSystem {
     for (const building of this.buildings.values()) {
       const distance = Math.sqrt(
         Math.pow(position.x - building.position.x, 2) +
-        Math.pow(position.z - building.position.z, 2)
+          Math.pow(position.z - building.position.z, 2)
       );
-      
+
       if (distance < minDistance) {
         return {
           canBuild: false,
-          conflictingBuilding: building
+          conflictingBuilding: building,
         };
       }
     }
-    
+
     return { canBuild: true };
   }
 
@@ -89,7 +90,10 @@ export class BuildingSystem {
     }
 
     // Consume materials from animal's inventory
-    const consumeResult = this.consumeMaterials(animal, action.requiredMaterials);
+    const consumeResult = this.consumeMaterials(
+      animal,
+      action.requiredMaterials
+    );
     if (!consumeResult.success) {
       return {
         success: false,
@@ -185,23 +189,28 @@ export class BuildingSystem {
 
     // Handle currency-based vs material-based actions
     let consumeResult: any = { success: true, materialsUsed: {} };
-    
+
     if (actionType === "purchase_upgrade") {
       // Handle currency-based upgrade with variable amount
-      const spendAmount = Math.min(amount || 100, animal.currency);
-      if (spendAmount < 1) {
-        return {
-          success: false,
-          message: `${animal.name} needs at least 1 currency but has ${animal.currency}`,
-          duration: 2000,
-        };
-      }
-      
-      // Consume currency
-      animal.currency -= spendAmount;
+      // const spendAmount = Math.min(amount || 100, animal.currency);
+      // if (spendAmount < 1) {
+      //   return {
+      //     success: false,
+      //     message: `${animal.name} needs at least 1 currency but has ${animal.currency}`,
+      //     duration: 2000,
+      //   };
+      // }
+      // // Consume currency
+      // animal.currency -= spendAmount;
+      // connect with currency system
+      // CurrencySystem.calculateAnimalWealth(animal);
+      // NOTE: actually, when the items are removed from inventory, the currency is updated there
     } else {
       // Handle material-based actions
-      const materialCheck = this.checkMaterials(animal, action.requiredMaterials);
+      const materialCheck = this.checkMaterials(
+        animal,
+        action.requiredMaterials
+      );
       if (!materialCheck.success) {
         return {
           success: false,
@@ -223,9 +232,20 @@ export class BuildingSystem {
 
     // Apply modifications
     const changes: any = {};
-    
+
     // Scale effects for purchase_upgrade based on amount spent
-    const effectMultiplier = actionType === "purchase_upgrade" ? Math.floor((amount || 100) / 100) : 1;
+    const amountPerMultiple = 250;
+    const effectMultiplier =
+      actionType === "purchase_upgrade"
+        ? Math.ceil((amount || 100) / amountPerMultiple)
+        : 1;
+
+    console.info(
+      "Improving building with action:",
+      actionType,
+      action,
+      effectMultiplier
+    );
 
     if (action.effects.dimensionChanges) {
       Object.keys(action.effects.dimensionChanges).forEach((key) => {
@@ -248,7 +268,10 @@ export class BuildingSystem {
           const scaledChange = change * effectMultiplier;
           building.stats[key as keyof BuildingStats] = Math.max(
             0,
-            Math.min(100, building.stats[key as keyof BuildingStats] + scaledChange)
+            Math.min(
+              100,
+              building.stats[key as keyof BuildingStats] + scaledChange
+            )
           );
           changes.stats = changes.stats || {};
           changes.stats[key] = building.stats[key as keyof BuildingStats];
@@ -257,7 +280,8 @@ export class BuildingSystem {
     }
 
     if (action.effects.capacityChange) {
-      const scaledCapacityChange = action.effects.capacityChange * effectMultiplier;
+      const scaledCapacityChange =
+        action.effects.capacityChange * effectMultiplier;
       building.maxOccupants += scaledCapacityChange;
       building.stats.capacity = building.maxOccupants;
       changes.capacity = building.maxOccupants;
@@ -266,7 +290,9 @@ export class BuildingSystem {
     // Update building materials used (add to existing materials) - only for material-based actions
     if (actionType !== "purchase_upgrade") {
       Object.keys(consumeResult.materialsUsed).forEach((resourceName) => {
-        building.materials[resourceName] = (building.materials[resourceName] || 0) + consumeResult.materialsUsed[resourceName];
+        building.materials[resourceName] =
+          (building.materials[resourceName] || 0) +
+          consumeResult.materialsUsed[resourceName];
       });
     }
     building.lastModifiedAt = Date.now();
@@ -277,7 +303,9 @@ export class BuildingSystem {
 
     return {
       success: true,
-      message: `${animal.name} successfully improved the building with "${action.name}"!`,
+      message: `${animal.name} successfully improved the building with "${
+        action.name
+      }"! ${amount ? `(Spent ${amount} currency)` : ""}`,
       materialConsumed: consumeResult.materialsUsed,
       buildingChanges: changes,
       duration: 8000 + action.requiredMaterials.requiredQuantity * 1000,
@@ -308,7 +336,10 @@ export class BuildingSystem {
       });
     });
 
-    const totalSuitableMaterials = suitableItems.reduce((sum, item) => sum + item.quantity, 0);
+    const totalSuitableMaterials = suitableItems.reduce(
+      (sum, item) => sum + item.quantity,
+      0
+    );
 
     if (totalSuitableMaterials < required.requiredQuantity) {
       const traitList = required.suitableTraits.join(", ");
@@ -322,7 +353,10 @@ export class BuildingSystem {
   }
 
   // Consume materials from animal's inventory
-  consumeMaterials(animal: Animal, materials: BuildingMaterial): { success: boolean; materialsUsed: BuildingMaterialsUsed } {
+  consumeMaterials(
+    animal: Animal,
+    materials: BuildingMaterial
+  ): { success: boolean; materialsUsed: BuildingMaterialsUsed } {
     const inventory = animal.inventory.items;
     const minScore = materials.minTraitScore || 50;
 
@@ -347,7 +381,7 @@ export class BuildingSystem {
 
     for (let i = inventory.length - 1; i >= 0 && materialsNeeded > 0; i--) {
       const item = inventory[i];
-      
+
       // Check if this item is suitable
       if (suitableItems.includes(item)) {
         const consumed = Math.min(item.quantity, materialsNeeded);
@@ -358,7 +392,8 @@ export class BuildingSystem {
         materialsUsed[item.name] = (materialsUsed[item.name] || 0) + consumed;
 
         // Update weight using the appropriate resource weight
-        const resourceWeight = RESOURCE_WEIGHTS[item.name as keyof typeof RESOURCE_WEIGHTS] || 1;
+        const resourceWeight =
+          RESOURCE_WEIGHTS[item.name as keyof typeof RESOURCE_WEIGHTS] || 1;
         animal.inventory.currentWeight -= consumed * resourceWeight;
 
         if (item.quantity <= 0) {
@@ -369,7 +404,7 @@ export class BuildingSystem {
 
     return {
       success: materialsNeeded === 0,
-      materialsUsed: materialsUsed
+      materialsUsed: materialsUsed,
     };
   }
 
@@ -482,9 +517,9 @@ export class BuildingSystem {
     for (const building of this.buildings.values()) {
       const distance = Math.sqrt(
         Math.pow(building.position.x - animal.position.x, 2) +
-        Math.pow(building.position.z - animal.position.z, 2)
+          Math.pow(building.position.z - animal.position.z, 2)
       );
-      
+
       // If animal is within building radius, apply bonuses
       if (distance <= 5) {
         bonus.comfort = Math.min(2, 1 + building.stats.comfort / 100);

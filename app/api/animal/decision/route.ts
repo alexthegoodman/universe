@@ -149,7 +149,8 @@ PLAN STRUCTURE: Each step should have a clear purpose that builds toward your go
 
 EXPLORATION GUIDANCE:
 Your current position is: {currentPosition}
-If you choose "exploring", specify where to go by providing coordinates within 20 units of your current position.
+If you choose "exploring", specify where to go by providing coordinates. It's okay to try to explore distant areas.
+It's important to explore often and far, but also to balance it with your other needs. You might go to a specific resource location, or just explore in a direction that seems promising.
 Consider moving towards areas you haven't explored, towards distant resources, or in directions that match your goals.
 
 MEMORY & EXPERIENCE:
@@ -633,6 +634,8 @@ ${animal.specialMemories
       const targetX = parseFloat(parsedResponse.target.x);
       const targetZ = parseFloat(parsedResponse.target.z);
 
+      const maxDistance = 35; // Maximum distance for exploration
+
       if (!isNaN(targetX) && !isNaN(targetZ)) {
         // Validate coordinates are within 20 units of current position
         const distance = Math.sqrt(
@@ -640,7 +643,7 @@ ${animal.specialMemories
             Math.pow(targetZ - animal.position.z, 2)
         );
 
-        if (distance <= 20) {
+        if (distance <= maxDistance) {
           explorationTarget = { x: targetX, z: targetZ };
         } else {
           // Limit to 20 units in the direction of the target
@@ -649,8 +652,8 @@ ${animal.specialMemories
             targetX - animal.position.x
           );
           explorationTarget = {
-            x: animal.position.x + Math.cos(angle) * 20,
-            z: animal.position.z + Math.sin(angle) * 20,
+            x: animal.position.x + Math.cos(angle) * maxDistance,
+            z: animal.position.z + Math.sin(angle) * maxDistance,
           };
         }
       }
