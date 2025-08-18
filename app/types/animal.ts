@@ -111,7 +111,8 @@ export type AnimalAction =
   | "harvesting"
   | "building"
   | "ideation"
-  | "crafting";
+  | "crafting"
+  | "combat";
 
 export interface ActionResult {
   success: boolean;
@@ -162,11 +163,30 @@ export interface NearbyBuilding {
   position: AnimalPosition;
   distance: number;
   dimensions: { width: number; height: number; depth: number };
-  stats: { durability: number; beauty: number; capacity: number; comfort: number };
+  stats: {
+    durability: number;
+    beauty: number;
+    capacity: number;
+    comfort: number;
+  };
   currentOccupants: number;
   maxOccupants: number;
   canEnter: boolean;
   availableActions: string[];
+}
+
+export interface NearbyBandit {
+  id: string;
+  name: string;
+  position: AnimalPosition;
+  distance: number;
+  health: number;
+  strength: number;
+  agility: number;
+  aggression: number;
+  canAttackNow: boolean; // Within harvest radius and ready to fight
+  tooFarToAttack: boolean; // Visible but too far to attack
+  direction: "north" | "south" | "east" | "west";
 }
 
 export interface SightBasedWorldState {
@@ -176,6 +196,7 @@ export interface SightBasedWorldState {
   nearbyAnimals: NearbyAnimal[];
   nearbyResources: NearbyResource[];
   nearbyBuildings: NearbyBuilding[];
+  nearbyBandits: NearbyBandit[];
   environment: {
     timeOfDay: string;
     weather: string;
@@ -199,6 +220,13 @@ export interface SightBasedWorldState {
     }>;
     ideations: Array<{
       idea: string;
+      position: { x: number; y: number; z: number };
+      timestamp: number;
+      reliability: number;
+    }>;
+    actions: Array<{
+      action: string;
+      details: string;
       position: { x: number; y: number; z: number };
       timestamp: number;
       reliability: number;

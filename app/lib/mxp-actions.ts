@@ -9,6 +9,7 @@ import type {
   CraftingIngredient,
   InventoryItem,
 } from "../types/animal";
+import type { Bandit } from "./game-manager";
 import { explorationSystem, ExplorationSystem } from "./exploration-system";
 import { HARVEST_RADIUS } from "./health-monitor";
 import { buildingSystem } from "./building-system";
@@ -133,6 +134,8 @@ export class MXPActionSystem {
           return await this.executeIdeation(animal, parameters);
         case "crafting":
           return await this.executeCrafting(animal, parameters);
+        case "combat":
+          return await this.executeCombat(animal, parameters);
         default:
           return await this.executeIdle(animal, parameters);
       }
@@ -1296,6 +1299,131 @@ export class MXPActionSystem {
       rarity,
       traits:
         Object.keys(combinedTraits).length > 0 ? combinedTraits : undefined,
+    };
+  }
+
+  private async executeCombat(
+    animal: Animal,
+    params: any
+  ): Promise<ActionResult> {
+    const { targetId, weaponId } = params;
+
+    // Get bandit manager from global context (we'll need to implement this)
+    const gameManager = (global as any).gameManager;
+    if (!gameManager) {
+      return {
+        success: false,
+        message: `${animal.name} cannot find combat systems`,
+        duration: 1000,
+      };
+    }
+
+    // Find the target bandit
+    const worldState = gameManager.getWorldState();
+    // const targetBandit = worldState.bandits.find(
+    //   (b: Bandit) => b.id === targetId
+    // );
+    // bandit IDs are prefixed with name_here, so broad matching works as expected
+    const targetBandit = worldState.bandits.find((b: Bandit) =>
+      b.id.includes(targetId.split("_")[0])
+    );
+
+    if (!targetBandit || !targetBandit.isAlive) {
+      return {
+        success: false,
+        message: `${animal.name} cannot find the target to attack`,
+        duration: 1000,
+      };
+    }
+
+    // Check if bandit is within attack range (HARVEST_RADIUS)
+    const distance = Math.sqrt(
+      Math.pow(targetBandit.position.x - animal.position.x, 2) +
+        Math.pow(targetBandit.position.z - animal.position.z, 2)
+    );
+
+    if (distance > HARVEST_RADIUS) {
+      return {
+        success: false,
+        message: `${animal.name} is too far away to attack ${targetBandit.name}`,
+        duration: 1000,
+      };
+    }
+
+    // Calculate animal's damage
+    let animalDamage = animal.dna.strength * 0.3; // Base damage from strength (0-30)
+
+    // Check for weapon (item with damage/sharp trait)
+    let weaponUsed = null;
+    if (weaponId) {
+      // const weapon = animal.inventory.items.find(item => item.id === weaponId);
+      const weapon = animal.inventory.items.find((i) =>
+        i.id.includes(weaponId.split("_")[0])
+      );
+      if (weapon && weapon.traits) {
+        const sharpTrait = weapon.traits.sharp || 0;
+        const durableTrait = weapon.traits.durable || 0;
+        animalDamage += sharpTrait * 0.5 + durableTrait * 0.2; // Weapon bonus
+        weaponUsed = weapon;
+      }
+    }
+
+    // Add some randomness
+    animalDamage = animalDamage * (0.8 + Math.random() * 0.4); // 80-120% of calculated damage
+
+    // Calculate bandit's counter-attack damage
+    const banditDamage =
+      targetBandit.strength * 0.4 * (0.8 + Math.random() * 0.4);
+
+    // Apply damage to bandit
+    targetBandit.health = Math.max(0, targetBandit.health - animalDamage);
+
+    // Apply counter-attack damage to animal
+    const animalHealthLoss = Math.min(animal.stats.health, banditDamage);
+
+    let resultMessage = `${animal.name} attacks ${targetBandit.name}`;
+    if (weaponUsed) {
+      resultMessage += ` with ${weaponUsed.name}`;
+    }
+    resultMessage += ` for ${Math.round(animalDamage)} damage!`;
+
+    const statChanges: any = {
+      health: Math.max(0, animal.stats.health - animalHealthLoss),
+      energy: Math.max(0, animal.stats.energy - 15), // Combat is exhausting
+    };
+
+    if (banditDamage > 0) {
+      resultMessage += ` ${targetBandit.name} counter-attacks for ${Math.round(
+        animalHealthLoss
+      )} damage!`;
+    }
+
+    // Check if bandit is defeated
+    if (targetBandit.health <= 0) {
+      targetBandit.isAlive = false;
+      resultMessage += ` ${targetBandit.name} has been defeated!`;
+
+      // Award loot from bandit
+      const lootItems = [...targetBandit.lootInventory];
+      lootItems.forEach((item) => {
+        if (gameManager.addItemToAnimalInventory(animal.id, item)) {
+          resultMessage += ` Found ${item.name}!`;
+        }
+      });
+
+      // Add some happiness for victory
+      statChanges.happiness = Math.min(100, animal.stats.happiness + 10);
+    } else {
+      resultMessage += ` ${targetBandit.name} has ${Math.round(
+        targetBandit.health
+      )} health remaining.`;
+    }
+
+    return {
+      success: true,
+      message: resultMessage,
+      statChanges,
+      duration: 3000, // Combat takes time
     };
   }
 

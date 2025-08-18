@@ -4,6 +4,7 @@ import type {
   NearbyResource,
   NearbyAnimal,
   NearbyBuilding,
+  NearbyBandit,
   ResourceSummary,
 } from "../types/animal";
 import { AnimalLifecycle } from "./animal-lifecycle";
@@ -40,7 +41,7 @@ export interface HealthReport {
 export class HealthMonitor {
   private aiInstances: Map<string, AnimalAI> = new Map();
   private actionSystem: MXPActionSystem;
-  private explorationSystem: ExplorationSystem;
+  explorationSystem: ExplorationSystem;
   private healthCheckInterval: NodeJS.Timeout | null = null;
   private decisionStagger: Map<string, number> = new Map();
   private gameManagerRef: GameManager | null = null; // Weak reference to avoid circular dependency
@@ -523,6 +524,14 @@ export class HealthMonitor {
       );
 
       if (result.success) {
+        // Add all successful actions to animal's memories
+        this.explorationSystem.addMemory(animal.id, {
+          discoveryType: "action",
+          description: `Successfully performed action: ${action} - ${result.message}`,
+          position: { ...animal.position },
+          reliability: 0.9,
+        });
+
         // Handle consumed items if any
         if (result.consumedItem && this.gameManagerRef) {
           this.gameManagerRef.consumeItemFromInventory(
@@ -734,6 +743,37 @@ export class HealthMonitor {
       .filter((building) => building.distance <= SIGHT_RADIUS)
       .sort((a, b) => a.distance - b.distance);
 
+    // Calculate nearby bandits with distances and combat information
+    let allBandits: any[] = [];
+    if (this.gameManagerRef) {
+      const worldState = this.gameManagerRef.getWorldState();
+      allBandits = worldState.bandits.filter((bandit) => bandit.isAlive);
+    }
+
+    const nearbyBandits = allBandits
+      .map((bandit: any) => {
+        const distance = this.getDistance(animal.position, bandit.position);
+        return {
+          id: bandit.id,
+          name: bandit.name,
+          position: bandit.position,
+          distance: Math.round(distance * 10) / 10,
+          health: bandit.health,
+          strength: bandit.strength,
+          agility: bandit.agility,
+          aggression: bandit.aggression,
+          canAttackNow: distance <= HARVEST_RADIUS && bandit.isAlive,
+          tooFarToAttack: distance > HARVEST_RADIUS && distance <= SIGHT_RADIUS,
+          direction: this.getDirection(animal.position, bandit.position) as
+            | "north"
+            | "south"
+            | "east"
+            | "west",
+        };
+      })
+      .filter((bandit) => bandit.distance <= SIGHT_RADIUS)
+      .sort((a, b) => a.distance - b.distance);
+
     const resourceSummary: ResourceSummary = {
       foodSources: nearbyResources.filter(
         (r) => r.type === "food" || r.type === "berries"
@@ -767,8 +807,12 @@ export class HealthMonitor {
     const ideationMemories = memories.filter(
       (m) => m.discoveryType === "ideation"
     );
+    const actionMemories = memories.filter((m) => m.discoveryType === "action");
     const discoveryMemories = memories.filter(
-      (m) => m.discoveryType !== "failure" && m.discoveryType !== "ideation"
+      (m) =>
+        m.discoveryType !== "failure" &&
+        m.discoveryType !== "ideation" &&
+        m.discoveryType !== "action"
     );
 
     return {
@@ -778,6 +822,7 @@ export class HealthMonitor {
       nearbyAnimals,
       nearbyResources,
       nearbyBuildings,
+      nearbyBandits,
       environment,
       resourceSummary,
       memories: {
@@ -797,6 +842,13 @@ export class HealthMonitor {
         })),
         ideations: ideationMemories.map((m) => ({
           idea: m.description,
+          position: m.position,
+          timestamp: m.timestamp,
+          reliability: m.reliability,
+        })),
+        actions: actionMemories.map((m) => ({
+          action: m.description.split(":")[0],
+          details: m.description.split(": ")[1] || m.description,
           position: m.position,
           timestamp: m.timestamp,
           reliability: m.reliability,

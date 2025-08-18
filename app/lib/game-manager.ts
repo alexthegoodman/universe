@@ -10,6 +10,7 @@ import { clientPlanningManager } from "./client-planning-manager";
 import { GlobalPlanQueue, setGlobalPlanQueue } from "./global-plan-queue";
 import { RESOURCE_COUNTS, RESOURCE_WEIGHTS } from "../types/weights";
 import { CurrencySystem } from "./currency-system";
+import { HARVEST_RADIUS } from "./health-monitor";
 import { v4 as uuidv4 } from "uuid";
 
 export interface GameConfig {
@@ -202,10 +203,25 @@ export interface WorldResource {
   traits: ResourceTraits; // Scored traits 0-100
 }
 
+export interface Bandit {
+  id: string;
+  name: string;
+  position: { x: number; y: number; z: number };
+  health: number; // 0-100
+  strength: number; // 0-100 (determines damage)
+  agility: number; // 0-100 (determines speed)
+  aggression: number; // 0-100 (likelihood to attack)
+  lastAttackTime: number; // timestamp
+  attackCooldown: number; // milliseconds
+  lootInventory: InventoryItem[]; // items they drop when defeated
+  isAlive: boolean;
+}
+
 export interface WorldState {
   animals: Animal[];
   resources: WorldResource[];
   buildings: Building[];
+  bandits: Bandit[];
   environment: {
     temperature: number;
     humidity: number;
@@ -457,6 +473,7 @@ export class GameManager {
       animals: [],
       resources: this.generateInitialResources(),
       buildings: [],
+      bandits: this.generateInitialBandits(),
       environment: {
         temperature: 72,
         humidity: 0.6,
@@ -904,6 +921,97 @@ export class GameManager {
     return resources;
   }
 
+  private generateInitialBandits(): Bandit[] {
+    const bandits: Bandit[] = [];
+    const { width, depth } = this.config.worldSize;
+    const banditCount = Math.floor(Math.random() * 5) + 3; // 3-7 bandits
+
+    const banditNames = [
+      "Scarface",
+      "Iron Fist",
+      "Shadow",
+      "Viper",
+      "Reaper",
+      "Hammer",
+      "Blade",
+      "Rust",
+      "Scar",
+      "Bone",
+      "Fang",
+      "Claw",
+      "Thorn",
+    ];
+
+    for (let i = 0; i < banditCount; i++) {
+      const position = {
+        x: (Math.random() - 0.5) * width * 0.9,
+        y: 0,
+        z: (Math.random() - 0.5) * depth * 0.9,
+      };
+
+      let name = banditNames[Math.floor(Math.random() * banditNames.length)];
+      let nameSnake = name.toLowerCase().replace(/ /g, "_");
+
+      const bandit: Bandit = {
+        id: `${nameSnake}_${Date.now()}_${i}`,
+        name: name,
+        position,
+        health: 60 + Math.random() * 40, // 60-100 health
+        strength: 40 + Math.random() * 40, // 40-80 strength (not too strong)
+        agility: 30 + Math.random() * 50, // 30-80 agility
+        aggression: 20 + Math.random() * 60, // 20-80 aggression
+        lastAttackTime: 0,
+        attackCooldown: 10000 + Math.random() * 20000, // 10-20 seconds
+        lootInventory: this.generateBanditLoot(),
+        isAlive: true,
+      };
+
+      bandits.push(bandit);
+    }
+
+    return bandits;
+  }
+
+  private generateBanditLoot(): InventoryItem[] {
+    const loot: InventoryItem[] = [];
+
+    // Bandits have a chance to carry basic materials and tools
+    const lootChances = [
+      {
+        type: "material",
+        items: ["iron_ore", "copper_ore", "leather", "bone"],
+        chance: 0.7,
+      },
+      { type: "food", items: ["dried_meat", "hard_bread"], chance: 0.4 },
+      { type: "rare", items: ["silver_ore", "gold_ore"], chance: 0.2 },
+    ];
+
+    lootChances.forEach(({ type, items, chance }) => {
+      if (Math.random() < chance) {
+        const itemType = items[Math.floor(Math.random() * items.length)];
+        const quantity = Math.floor(Math.random() * 3) + 1;
+
+        loot.push({
+          id: `${itemType}_${Date.now()}_${Math.random()
+            .toString(36)
+            .substr(2, 9)}`,
+          type: type as InventoryItem["type"],
+          name: itemType.replace(/_/g, " "),
+          quantity,
+          quality: 30 + Math.random() * 40, // Lower quality items
+          harvestedAt: Date.now(),
+          rarity: Math.random() < 0.1 ? "uncommon" : "common",
+          traits:
+            type === "material"
+              ? { durable: 50, sharp: Math.random() < 0.3 ? 60 : 0 }
+              : {},
+        });
+      }
+    });
+
+    return loot;
+  }
+
   private handleAnimalStateUpdate(update: any): void {
     const animalIndex = this.worldState.animals.findIndex(
       (a) => a.id === update.animalId
@@ -975,6 +1083,7 @@ export class GameManager {
     // Start world simulation loops
     this.startEnvironmentUpdates();
     this.startResourceRegeneration();
+    this.startBanditAI();
     // this.startBreedingCycles();
 
     console.log(
@@ -1149,6 +1258,15 @@ export class GameManager {
     }, 3 * 60 * 1000);
   }
 
+  private startBanditAI(): void {
+    // Bandit AI checks every 45-90 seconds
+    setInterval(() => {
+      if (!this.gameRunning) return;
+
+      this.processBanditAI();
+    }, 45000 + Math.random() * 45000); // 45-90 seconds
+  }
+
   private updateEnvironment(): void {
     const env = this.worldState.environment;
 
@@ -1214,6 +1332,134 @@ export class GameManager {
         data: this.worldState.resources,
       });
     }
+  }
+
+  private processBanditAI(): void {
+    const currentTime = Date.now();
+    const allAnimals = this.getAllAnimals();
+
+    this.worldState.bandits.forEach((bandit) => {
+      if (!bandit.isAlive) return;
+
+      // Check if bandit is ready to attack (cooldown passed)
+      if (currentTime - bandit.lastAttackTime < bandit.attackCooldown) return;
+
+      // Find nearby animals within attack range
+      const nearbyAnimals = allAnimals.filter((animal) => {
+        const distance = Math.sqrt(
+          Math.pow(animal.position.x - bandit.position.x, 2) +
+            Math.pow(animal.position.z - bandit.position.z, 2)
+        );
+        return distance <= HARVEST_RADIUS && animal.isAlive;
+      });
+
+      if (nearbyAnimals.length === 0) return;
+
+      // Determine if bandit should attack based on aggression
+      const shouldAttack = Math.random() * 100 < bandit.aggression;
+      if (!shouldAttack) return;
+
+      // Pick a random target from nearby animals
+      const target =
+        nearbyAnimals[Math.floor(Math.random() * nearbyAnimals.length)];
+
+      // Calculate bandit's attack damage
+      const banditDamage = bandit.strength * 0.35 * (0.8 + Math.random() * 0.4); // 28-42% of strength
+
+      // Calculate animal's counter-attack damage
+      const animalCounterDamage =
+        target.dna.strength * 0.25 * (0.8 + Math.random() * 0.4);
+
+      // Apply damage to animal
+      const healthLoss = Math.min(target.stats.health, banditDamage);
+      target.stats.health = Math.max(0, target.stats.health - healthLoss);
+
+      // Apply counter-attack damage to bandit
+      bandit.health = Math.max(0, bandit.health - animalCounterDamage);
+
+      // Update bandit's last attack time and reset cooldown
+      bandit.lastAttackTime = currentTime;
+      bandit.attackCooldown = 10000 + Math.random() * 20000; // 10-20 seconds
+
+      let eventMessage = `🏴‍☠️ ${bandit.name} attacks ${
+        target.name
+      } for ${Math.round(healthLoss)} damage!`;
+
+      if (animalCounterDamage > 0) {
+        eventMessage += ` ${target.name} fights back for ${Math.round(
+          animalCounterDamage
+        )} damage!`;
+
+        // add memory to animal about bandit attack
+        this.healthMonitor.explorationSystem.addMemory(target.id, {
+          discoveryType: "action",
+          description: `Fought off bandit ${bandit.name} but was injured`,
+          position: { ...target.position },
+          reliability: 0.9,
+        });
+      } else {
+        // add memory to animal about bandit attack
+        this.healthMonitor.explorationSystem.addMemory(target.id, {
+          discoveryType: "action",
+          description: `Was attacked by bandit ${bandit.name} but could not fight back`,
+          position: { ...target.position },
+          reliability: 0.9,
+        });
+      }
+
+      // Check if bandit was defeated by counter-attack
+      if (bandit.health <= 0) {
+        bandit.isAlive = false;
+        eventMessage += ` ${bandit.name} has been defeated!`;
+
+        // Award loot to the animal
+        bandit.lootInventory.forEach((item) => {
+          if (this.addItemToAnimalInventory(target.id, item)) {
+            eventMessage += ` ${target.name} found ${item.name}!`;
+          }
+        });
+
+        // Bonus happiness for defeating attacker
+        target.stats.happiness = Math.min(100, target.stats.happiness + 15);
+
+        // add memory to animal about bandit attack
+        this.healthMonitor.explorationSystem.addMemory(target.id, {
+          discoveryType: "action",
+          description: `Defeated bandit ${bandit.name} and gained loot`,
+          position: { ...target.position },
+          reliability: 0.9,
+        });
+      }
+
+      // Check if animal was defeated
+      if (target.stats.health <= 0) {
+        eventMessage += ` ${target.name} has been severely wounded!`;
+        // Note: Animals don't die instantly from bandit attacks, but get very low health
+        target.stats.health = 1; // Leave them with 1 health instead of 0
+      }
+
+      this.addEvent("combat", eventMessage, target.id);
+      console.log(`⚔️ Bandit AI: ${eventMessage}`);
+
+      // Update animal state
+      animalStateManager.updateStats(
+        target.id,
+        {
+          health: target.stats.health,
+          happiness: target.stats.happiness,
+        },
+        "bandit-ai"
+      );
+
+      // Broadcast updates
+      if (this.websocketServer) {
+        this.websocketServer.updateAnimal(target);
+        this.websocketServer.broadcastToClients({
+          type: "banditAttack",
+          data: { bandit, target, message: eventMessage },
+        });
+      }
+    });
   }
 
   harvestResource(
@@ -1500,7 +1746,7 @@ export class GameManager {
   } {
     const animal = this.getAnimal(animalId);
     if (!animal) return { rank: 0, wealth: 0, totalAnimals: 0 };
-    
+
     const allAnimals = this.getAllAnimals();
     return CurrencySystem.getAnimalRank(animal, allAnimals);
   }

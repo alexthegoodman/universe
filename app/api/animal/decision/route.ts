@@ -105,6 +105,7 @@ You MUST create strategic multi-step plans, NOT individual actions. Think about 
 - "find water → drink → explore for food → eat"
 - "harvest granite → harvest oak_wood → create building → improve building"
 - "harvest marble → harvest diamond → make building beautiful"
+- "harvest sharp materials → craft weapon → combat bandit → claim territory"
 
 Consider your recent failures and avoid repeating mistakes. Plan around your constraints:
 - Full inventory means you need to consume items before harvesting more
@@ -115,7 +116,7 @@ Throughout your life, if you socialize with someone else, consider breeding with
 
 Be wise. For example, if you are in need of one or more resources, then you will want to travel nearby each resource before harvesting each resource.
 
-Available plan actions: idle, moving, eating, drinking, sleeping, playing, exploring, socializing, working, mating, harvesting, building, ideation, crafting
+Available plan actions: idle, moving, eating, drinking, sleeping, playing, exploring, socializing, working, mating, harvesting, building, ideation, crafting, combat
 
 IMPORTANT SURVIVAL RULES:
 - You can only eat/drink if you have food/water items in your inventory  
@@ -183,6 +184,17 @@ Use the "crafting" action to combine inventory items into new, more useful items
 - Examples: combine berries + herbs = healing potion, stone + wood = hammer, rare materials = jewelry
 - Only use items you actually have in inventory - specify exact item IDs
 - Describe your crafting goal and method clearly
+
+COMBAT ACTION:
+Use the "combat" action to fight bandits and defend yourself.
+- You can attack bandits within {harvestRadius} units using your fists or weapons
+- Check nearbyBandits to see hostile entities in your area
+- Items with "sharp" or "durable" traits make effective weapons (specify weaponId)
+- Combat drains energy (15 points) and may cause damage to your health
+- Defeating bandits rewards you with their loot and increases happiness
+- Bandits will counter-attack, so ensure you're healthy before engaging
+- Consider your strength stat - higher strength deals more damage
+- Combat with bandits is necessary because they will attack you
 
 PLANNING SYSTEM:
 - You should think 3-10 turns ahead and create strategic plans
@@ -365,6 +377,18 @@ For crafting steps, specify ingredients and goal in parameters:
     "ingredients": ["item_12345", "item_67890"],
     "craftingGoal": "healing potion",
     "craftingMethod": "grinding herbs and mixing with berries"
+  }}
+}}
+
+For combat steps, specify target bandit and optional weapon in parameters:
+{{
+  "action": "combat",
+  "priority": 8,
+  "turnOffset": 2,
+  "reason": "Eliminate bandit threat and claim their loot",
+  "parameters": {{
+    "targetId": "bandit_12345",
+    "weaponId": "item_67890"
   }}
 }}
 
@@ -557,6 +581,7 @@ ${animal.specialMemories
         "building",
         "ideation",
         "crafting",
+        "combat",
         "idle",
       ];
       const action =
@@ -584,6 +609,7 @@ ${animal.specialMemories
       "building",
       "ideation",
       "crafting",
+      "combat",
       "idle",
     ];
 
@@ -659,6 +685,15 @@ ${animal.specialMemories
       }
       if (parsedResponse.craftingMethod) {
         result.craftingMethod = parsedResponse.craftingMethod;
+      }
+    }
+
+    if (finalAction === "combat") {
+      if (parsedResponse.targetId) {
+        result.targetId = parsedResponse.targetId;
+      }
+      if (parsedResponse.weaponId) {
+        result.weaponId = parsedResponse.weaponId;
       }
     }
 
