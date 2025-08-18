@@ -9,6 +9,7 @@ import { buildingSystem } from "./building-system";
 import { clientPlanningManager } from "./client-planning-manager";
 import { GlobalPlanQueue, setGlobalPlanQueue } from "./global-plan-queue";
 import { RESOURCE_COUNTS, RESOURCE_WEIGHTS } from "../types/weights";
+import { v4 as uuidv4 } from "uuid";
 
 export interface GameConfig {
   maxAnimals: number;
@@ -382,7 +383,7 @@ export const RESOURCE_TRAIT_MAP: Record<ResourceType, ResourceTraits> = {
 
 export class GameManager {
   private config: GameConfig;
-  private healthMonitor: HealthMonitor;
+  healthMonitor: HealthMonitor;
   private globalPlanQueue: GlobalPlanQueue;
   private breedingSystem: BreedingSystem;
   private worldState: WorldState;
@@ -426,6 +427,8 @@ export class GameManager {
     };
 
     this.healthMonitor = new HealthMonitor();
+    this.breedingSystem = new BreedingSystem();
+
     this.healthMonitor.setGameManagerReference(this);
 
     // Create global plan queue and connect it to health monitor
@@ -436,7 +439,6 @@ export class GameManager {
     // const { setGlobalPlanQueue } = require('./global-plan-queue');
     setGlobalPlanQueue(this.globalPlanQueue);
 
-    this.breedingSystem = new BreedingSystem();
     this.worldState = this.initializeWorld();
 
     // Subscribe to animal state updates to keep world state in sync
@@ -1026,7 +1028,7 @@ export class GameManager {
     parent1: Animal,
     parent2: Animal
   ): Promise<Animal | null> {
-    if (this.worldState.animals.length >= this.config.maxAnimals) {
+    if (animalStateManager.getAllAnimals().length >= this.config.maxAnimals) {
       return null;
     }
 
@@ -1047,7 +1049,7 @@ export class GameManager {
       parent2.dna,
     ]);
 
-    this.worldState.animals.push(animal);
+    // Only use health monitor - it will handle state manager updates
     this.healthMonitor.addAnimal(animal);
 
     if (this.websocketServer) {
@@ -1062,6 +1064,29 @@ export class GameManager {
     console.log(`👶 ${name} born from ${parent1.name} and ${parent2.name}!`);
 
     return animal;
+  }
+
+  spawnAnimal(animal: Animal): void {
+    if (animalStateManager.getAllAnimals().length >= this.config.maxAnimals) {
+      console.log("Maximum animal capacity reached");
+      return;
+    }
+
+    // Only use health monitor - it will handle state manager updates
+    // which will trigger handleAnimalStateUpdate to add to worldState.animals
+    this.healthMonitor.addAnimal(animal);
+
+    // Broadcast to clients
+    if (this.websocketServer) {
+      this.websocketServer.updateAnimal(animal);
+    }
+
+    this.addEvent("birth", `${animal.name} was spawned!`, animal.id);
+    console.log(
+      `🐾 ${animal.name} spawned at position (${animal.position.x.toFixed(
+        1
+      )}, ${animal.position.z.toFixed(1)})`
+    );
   }
 
   removeAnimal(animalId: string): void {

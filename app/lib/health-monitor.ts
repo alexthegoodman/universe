@@ -18,6 +18,7 @@ import {
   type PlanStep,
 } from "./client-planning-manager";
 import { GlobalPlanQueue } from "./global-plan-queue";
+import { GameManager } from "./game-manager";
 
 export const HARVEST_RADIUS = 10; // Animals can harvest within this radius
 
@@ -42,7 +43,7 @@ export class HealthMonitor {
   private explorationSystem: ExplorationSystem;
   private healthCheckInterval: NodeJS.Timeout | null = null;
   private decisionStagger: Map<string, number> = new Map();
-  private gameManagerRef: any = null; // Weak reference to avoid circular dependency
+  private gameManagerRef: GameManager | null = null; // Weak reference to avoid circular dependency
   private globalPlanQueue: GlobalPlanQueue | null = null;
   // private readonly HEALTH_CHECK_INTERVAL = 30000; // 30 seconds
   // private readonly DECISION_STAGGER_RANGE = 15000; // 15 second range for staggering
@@ -218,8 +219,10 @@ export class HealthMonitor {
     // Check if animal should die from prolonged critical conditions
     if (this.shouldDieFromCriticalCondition(updatedAnimalWithCounters)) {
       updatedAnimalWithCounters.isAlive = false;
-      console.log(`💀 ${animal.name} died from prolonged critical health/energy conditions`);
-      
+      console.log(
+        `💀 ${animal.name} died from prolonged critical health/energy conditions`
+      );
+
       // Schedule removal of dead animal
       this.scheduleAnimalRemoval(animal.id);
     }
@@ -230,13 +233,13 @@ export class HealthMonitor {
       updatedAnimal.age,
       updatedAnimalWithCounters.isAlive
     );
-    
+
     // Schedule removal if animal died of old age
     if (updatedAnimal.age >= 1 && !updatedAnimalWithCounters.isAlive) {
       this.scheduleAnimalRemoval(animal.id);
     }
     animalStateManager.updateStats(animal.id, degradedStats, "health-monitor");
-    
+
     // Update death counters in state manager
     animalStateManager.setAnimal(updatedAnimalWithCounters);
 
@@ -323,10 +326,11 @@ export class HealthMonitor {
 
     // Check if animal died of old age or critical conditions
     if (!updatedAnimalWithCounters.isAlive) {
-      const deathMessage = updatedAnimal.age >= 1 
-        ? `${animal.name} has reached the end of their natural lifespan`
-        : `${animal.name} died from prolonged critical conditions (health: ${updatedAnimalWithCounters.deathCounters.healthAtZero} periods, energy: ${updatedAnimalWithCounters.deathCounters.energyAtZero} periods)`;
-      
+      const deathMessage =
+        updatedAnimal.age >= 1
+          ? `${animal.name} has reached the end of their natural lifespan`
+          : `${animal.name} died from prolonged critical conditions (health: ${updatedAnimalWithCounters.deathCounters.healthAtZero} periods, energy: ${updatedAnimalWithCounters.deathCounters.energyAtZero} periods)`;
+
       alerts.push({
         animalId: animal.id,
         severity: "critical",
@@ -385,19 +389,27 @@ export class HealthMonitor {
     };
   }
 
-  private updateDeathCounters(animal: Animal): { healthAtZero: number; energyAtZero: number } {
-    const currentCounters = animal.deathCounters || { healthAtZero: 0, energyAtZero: 0 };
-    
+  private updateDeathCounters(animal: Animal): {
+    healthAtZero: number;
+    energyAtZero: number;
+  } {
+    const currentCounters = animal.deathCounters || {
+      healthAtZero: 0,
+      energyAtZero: 0,
+    };
+
     return {
-      healthAtZero: animal.stats.health <= 0 ? currentCounters.healthAtZero + 1 : 0,
-      energyAtZero: animal.stats.energy <= 0 ? currentCounters.energyAtZero + 1 : 0,
+      healthAtZero:
+        animal.stats.health <= 0 ? currentCounters.healthAtZero + 1 : 0,
+      energyAtZero:
+        animal.stats.energy <= 0 ? currentCounters.energyAtZero + 1 : 0,
     };
   }
 
   private shouldDieFromCriticalCondition(animal: Animal): boolean {
     const deathCounters = animal.deathCounters;
     if (!deathCounters) return false;
-    
+
     // Animal dies if health or energy has been at 0 for more than 3 consecutive health checks
     return deathCounters.healthAtZero > 3 || deathCounters.energyAtZero > 3;
   }
@@ -493,9 +505,15 @@ export class HealthMonitor {
       if (action === "socializing" && !params.companions) {
         // Automatically populate companions with only the nearest animal
         const worldState = this.getWorldStateForAnimal(animal);
-        params.companions = worldState.nearbyAnimals.length > 0 
-          ? [worldState.nearbyAnimals[0].id] 
-          : [];
+        params.companions =
+          worldState.nearbyAnimals.length > 0
+            ? [worldState.nearbyAnimals[0].id]
+            : [];
+
+        console.info(
+          "🐾 Socializing companions set to nearest animal:",
+          params.companions
+        );
       }
 
       const result = await this.actionSystem.executeAction(
@@ -539,8 +557,11 @@ export class HealthMonitor {
 
         // Handle offspring from socializing-induced breeding
         if (result.offspring && this.gameManagerRef) {
-          this.gameManagerRef.addAnimal(result.offspring);
-          console.log(`👶 ${result.offspring.name} was born from socializing-induced breeding!`);
+          // this.gameManagerRef.addAnimal(result.offspring);
+          this.gameManagerRef.spawnAnimal(result.offspring);
+          console.log(
+            `👶 ${result.offspring.name} was born from socializing-induced breeding!`
+          );
         }
 
         // Use centralized state manager to apply updates

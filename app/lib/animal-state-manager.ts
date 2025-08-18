@@ -1,8 +1,8 @@
-import type { Animal, ActionResult } from '../types/animal';
+import type { Animal, ActionResult } from "../types/animal";
 
 export interface AnimalUpdate {
   animalId: string;
-  type: 'stats' | 'position' | 'action' | 'inventory' | 'full';
+  type: "stats" | "position" | "action" | "inventory" | "full";
   data: Partial<Animal>;
   source: string; // Track which system made the update
   timestamp: number;
@@ -25,13 +25,14 @@ export class AnimalStateManager {
 
   // Add or update an animal in the state
   setAnimal(animal: Animal): void {
+    // console.warn("social Setting animal in state manager:", animal.id);
     this.animals.set(animal.id, { ...animal });
     this.notifySubscribers({
       animalId: animal.id,
-      type: 'full',
+      type: "full",
       data: animal,
-      source: 'state-manager',
-      timestamp: Date.now()
+      source: "state-manager",
+      timestamp: Date.now(),
     });
   }
 
@@ -50,65 +51,78 @@ export class AnimalStateManager {
     this.animals.delete(animalId);
     this.notifySubscribers({
       animalId,
-      type: 'full',
+      type: "full",
       data: {},
-      source: 'state-manager',
-      timestamp: Date.now()
+      source: "state-manager",
+      timestamp: Date.now(),
     });
   }
 
   // Update animal stats (from health degradation)
-  updateStats(animalId: string, stats: Partial<Animal['stats']>, source: string = 'unknown'): boolean {
+  updateStats(
+    animalId: string,
+    stats: Partial<Animal["stats"]>,
+    source: string = "unknown"
+  ): boolean {
     const animal = this.animals.get(animalId);
     if (!animal) return false;
 
     const updatedAnimal = {
       ...animal,
       stats: { ...animal.stats, ...stats },
-      lastHealthCheck: Date.now()
+      lastHealthCheck: Date.now(),
     };
 
     this.animals.set(animalId, updatedAnimal);
     this.queueUpdate({
       animalId,
-      type: 'stats',
+      type: "stats",
       data: { stats: updatedAnimal.stats },
       source,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     return true;
   }
 
   // Update animal position (from movement/exploration)
-  updatePosition(animalId: string, position: Animal['position'], source: string = 'unknown'): boolean {
+  updatePosition(
+    animalId: string,
+    position: Animal["position"],
+    source: string = "unknown"
+  ): boolean {
     const animal = this.animals.get(animalId);
     if (!animal) return false;
 
     const updatedAnimal = {
       ...animal,
-      position: { ...position }
+      position: { ...position },
     };
 
     this.animals.set(animalId, updatedAnimal);
     this.queueUpdate({
       animalId,
-      type: 'position',
+      type: "position",
       data: { position: updatedAnimal.position },
       source,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     return true;
   }
 
   // Update animal action and related changes
-  updateFromActionResult(animalId: string, actionResult: ActionResult, newAction: string, source: string = 'action-system'): boolean {
+  updateFromActionResult(
+    animalId: string,
+    actionResult: ActionResult,
+    newAction: string,
+    source: string = "action-system"
+  ): boolean {
     const animal = this.animals.get(animalId);
     if (!animal) return false;
 
     const updates: Partial<Animal> = {
-      currentAction: newAction
+      currentAction: newAction,
     };
 
     // Apply stat changes if present
@@ -123,60 +137,68 @@ export class AnimalStateManager {
 
     const updatedAnimal = {
       ...animal,
-      ...updates
+      ...updates,
     };
 
     this.animals.set(animalId, updatedAnimal);
     this.queueUpdate({
       animalId,
-      type: 'action',
+      type: "action",
       data: updates,
       source,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     return true;
   }
 
   // Update animal inventory
-  updateInventory(animalId: string, inventory: Animal['inventory'], source: string = 'unknown'): boolean {
+  updateInventory(
+    animalId: string,
+    inventory: Animal["inventory"],
+    source: string = "unknown"
+  ): boolean {
     const animal = this.animals.get(animalId);
     if (!animal) return false;
 
     const updatedAnimal = {
       ...animal,
-      inventory: { ...inventory }
+      inventory: { ...inventory },
     };
 
     this.animals.set(animalId, updatedAnimal);
     this.queueUpdate({
       animalId,
-      type: 'inventory',
+      type: "inventory",
       data: { inventory: updatedAnimal.inventory },
       source,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     return true;
   }
 
   // Update animal special memories
-  updateSpecialMemories(animalId: string, specialMemories: Animal['specialMemories'], source: string = 'player'): boolean {
+  updateSpecialMemories(
+    animalId: string,
+    specialMemories: Animal["specialMemories"],
+    source: string = "player"
+  ): boolean {
     const animal = this.animals.get(animalId);
     if (!animal) return false;
 
     const updatedAnimal = {
       ...animal,
-      specialMemories: specialMemories ? [...specialMemories] : undefined
+      specialMemories: specialMemories ? [...specialMemories] : undefined,
     };
 
     this.animals.set(animalId, updatedAnimal);
     this.queueUpdate({
       animalId,
-      type: 'full',
+      type: "full",
       data: { specialMemories: updatedAnimal.specialMemories },
       source,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     return true;
@@ -190,16 +212,16 @@ export class AnimalStateManager {
     const updatedAnimal = {
       ...animal,
       age,
-      isAlive
+      isAlive,
     };
 
     this.animals.set(animalId, updatedAnimal);
     this.queueUpdate({
       animalId,
-      type: 'full',
+      type: "full",
       data: { age, isAlive },
-      source: 'lifecycle',
-      timestamp: Date.now()
+      source: "lifecycle",
+      timestamp: Date.now(),
     });
 
     return true;
@@ -208,7 +230,7 @@ export class AnimalStateManager {
   // Queue update for batched processing
   private queueUpdate(update: AnimalUpdate): void {
     this.updateQueue.push(update);
-    
+
     if (!this.processingUpdates) {
       // Process updates on next tick to batch them
       setTimeout(() => this.processUpdateQueue(), 0);
@@ -253,17 +275,21 @@ export class AnimalStateManager {
       try {
         callback(update);
       } catch (error) {
-        console.error('Error notifying subscriber:', error);
+        console.error("Error notifying subscriber:", error);
       }
     }
   }
 
   // Get state statistics for debugging
-  getStateStats(): { animalCount: number; subscriberCount: number; queueSize: number } {
+  getStateStats(): {
+    animalCount: number;
+    subscriberCount: number;
+    queueSize: number;
+  } {
     return {
       animalCount: this.animals.size,
       subscriberCount: this.subscribers.size,
-      queueSize: this.updateQueue.length
+      queueSize: this.updateQueue.length,
     };
   }
 }

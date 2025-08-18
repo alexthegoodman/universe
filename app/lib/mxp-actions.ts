@@ -681,11 +681,17 @@ export class MXPActionSystem {
       !this.getAllAnimals ||
       companions.length === 0
     ) {
+      console.warn(
+        "Breeding system or getAllAnimals not available for auto-breeding"
+      );
       return { success: false, message: "", happiness: 0 };
     }
 
     // Check if this animal can breed
     if (!this.breedingSystem.canBreed(animal).canBreed) {
+      console.warn(
+        `${animal.name} cannot breed at this time due to age or health`
+      );
       return { success: false, message: "", happiness: 0 };
     }
 
@@ -695,13 +701,26 @@ export class MXPActionSystem {
       companions.includes(a.id)
     );
 
+    console.info("Companion animals for breeding", companionAnimals);
+
     // Try to find a compatible mate from companions
     for (const companion of companionAnimals) {
-      if (this.breedingSystem.canBreed(companion).canBreed) {
+      let breedInfo = this.breedingSystem.canBreed(companion);
+
+      console.info(
+        "Checking breeding compatibility with companion",
+        companion.name,
+        breedInfo
+      );
+
+      if (breedInfo.canBreed) {
         const breedingResult = this.breedingSystem.attemptBreeding(
           animal,
           companion
         );
+
+        console.info("Breeding attempt result", breedingResult);
+
         if (breedingResult.success) {
           return {
             success: true,
@@ -712,6 +731,10 @@ export class MXPActionSystem {
         }
       }
     }
+
+    console.warn(
+      `${animal.name} had social interaction but no successful breeding`
+    );
 
     // If no successful breeding but animals were interested
     return {
@@ -735,7 +758,9 @@ export class MXPActionSystem {
     let offspring = undefined;
 
     // 25% chance of auto-breeding when socializing with companions
-    if (companions.length > 0 && Math.random() < 0.75) {
+    let chance = Math.random();
+    console.info("Socializing chance", chance, companions.length);
+    if (companions.length > 0 && chance < 0.75) {
       const breedingResult = this.tryAutoBreedFromSocializing(
         animal,
         companions

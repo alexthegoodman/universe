@@ -127,6 +127,8 @@ export default function Game() {
         const currentAnimals = gameManager.getAllAnimals();
         const worldState = gameManager.getWorldState();
 
+        console.info("Animal count:", currentAnimals.length);
+
         setAnimals([...currentAnimals]);
         setResources([...worldState.resources]);
         setBuildings([...worldState.buildings]);
@@ -207,6 +209,10 @@ export default function Game() {
           <>
             <div className="bg-white/90 backdrop-blur-sm p-3 rounded-lg">
               <div className="text-sm">
+                {/* <div>
+                  Time Elapsed (version):
+                  {Math.floor(version / 60)}m {version % 60}s (v{version})
+                </div> */}
                 <div>Animals: {animals.length}</div>
                 <div>Alive: {animals.filter((a) => a.isAlive).length}</div>
                 <div>

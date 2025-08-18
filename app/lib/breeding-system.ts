@@ -21,7 +21,7 @@ export class BreedingSystem {
   private readonly BREEDING_COOLDOWN = 30 * 60 * 1000; // 30 minutes
   // private readonly MIN_AGE_FOR_BREEDING = 0.25; // 25% of lifespan
   // private readonly MAX_AGE_FOR_BREEDING = 0.85; // 85% of lifespan
-  private readonly MIN_AGE_FOR_BREEDING = 0.03; // 3% of lifespan
+  private readonly MIN_AGE_FOR_BREEDING = 0.01; // 1% of lifespan
   private readonly MAX_AGE_FOR_BREEDING = 0.9; // 90% of lifespan
   // private readonly MIN_HEALTH_FOR_BREEDING = 60;
   // private readonly MIN_ENERGY_FOR_BREEDING = 40;
@@ -200,7 +200,8 @@ export class BreedingSystem {
     }
 
     // Calculate breeding success probability
-    const probability = this.calculateOffspringProbability(parent1, parent2);
+    // const probability = this.calculateOffspringProbability(parent1, parent2);
+    const probability = 1.0; // For testing, assume 100% success rate, besides, we have a 25% chance of failure in the breeding system
     const success = Math.random() < probability;
 
     if (!success) {
