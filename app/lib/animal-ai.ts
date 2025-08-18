@@ -1,11 +1,15 @@
 import type { Animal, AnimalAction, ActionResult } from "../types/animal";
 import { clientPlanningManager } from "./client-planning-manager";
+import { CurrencySystem } from "./currency-system";
+import type { GameManager } from "./game-manager";
 
 export class AnimalAI {
   private animalId: string;
+  private gameManager: GameManager | null;
 
-  constructor(animalId: string) {
+  constructor(animalId: string, gameManager?: GameManager) {
     this.animalId = animalId;
+    this.gameManager = gameManager || null;
   }
 
   async decideAction(
@@ -22,6 +26,15 @@ export class AnimalAI {
       const existingPlan = clientPlanningManager.getPlan(animal.id);
       const needsNewPlan = clientPlanningManager.needsNewPlan(animal.id);
 
+      // Calculate currency data if game manager is available
+      let currencyLeaderboard: any[] = [];
+      let animalWealth = 0;
+
+      if (this.gameManager) {
+        currencyLeaderboard = this.gameManager.getCurrencyLeaderboard();
+        animalWealth = this.gameManager.getAnimalWealth(animal.id);
+      }
+
       // Call our secure API route instead of direct OpenAI
       const response = await fetch("/api/animal/decision", {
         method: "POST",
@@ -33,6 +46,8 @@ export class AnimalAI {
           worldState,
           existingPlan,
           needsNewPlan,
+          currencyLeaderboard,
+          animalWealth,
         }),
       });
 

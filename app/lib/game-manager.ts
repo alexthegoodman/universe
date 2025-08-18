@@ -9,6 +9,7 @@ import { buildingSystem } from "./building-system";
 import { clientPlanningManager } from "./client-planning-manager";
 import { GlobalPlanQueue, setGlobalPlanQueue } from "./global-plan-queue";
 import { RESOURCE_COUNTS, RESOURCE_WEIGHTS } from "../types/weights";
+import { CurrencySystem } from "./currency-system";
 import { v4 as uuidv4 } from "uuid";
 
 export interface GameConfig {
@@ -1243,10 +1244,12 @@ export class GameManager {
       }
     };
 
+    const itemName = resource.type.replace(/_/g, " ");
+    const baseId = itemName.toLowerCase().replace(/\s+/g, "_");
     const harvestedItem = {
-      id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `${baseId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       type: getItemType(resource.category),
-      name: resource.type.replace(/_/g, " "),
+      name: itemName,
       quantity: amount,
       quality: resource.quality,
       harvestedAt: Date.now(),
@@ -1463,5 +1466,46 @@ export class GameManager {
 
   getPlanningManager() {
     return clientPlanningManager;
+  }
+
+  // Currency system methods
+  getAnimalWealth(animalId: string): number {
+    const animal = this.getAnimal(animalId);
+    if (!animal) return 0;
+    return CurrencySystem.calculateAnimalWealth(animal);
+  }
+
+  getCurrencyLeaderboard(): Array<{
+    animal: Animal;
+    wealth: number;
+    rank: number;
+  }> {
+    const allAnimals = this.getAllAnimals();
+    return CurrencySystem.getLeaderboard(allAnimals);
+  }
+
+  getTopWealthyAnimals(count: number = 5): Array<{
+    animal: Animal;
+    wealth: number;
+    rank: number;
+  }> {
+    const allAnimals = this.getAllAnimals();
+    return CurrencySystem.getTopAnimals(allAnimals, count);
+  }
+
+  getAnimalRank(animalId: string): {
+    rank: number;
+    wealth: number;
+    totalAnimals: number;
+  } {
+    const animal = this.getAnimal(animalId);
+    if (!animal) return { rank: 0, wealth: 0, totalAnimals: 0 };
+    
+    const allAnimals = this.getAllAnimals();
+    return CurrencySystem.getAnimalRank(animal, allAnimals);
+  }
+
+  formatCurrency(amount: number): string {
+    return CurrencySystem.formatCurrency(amount);
   }
 }

@@ -2,6 +2,7 @@
 
 import type { Animal, SpecialMemory } from "../types/animal";
 import { animalStateManager } from "../lib/animal-state-manager";
+import { CurrencySystem } from "../lib/currency-system";
 import { useState } from "react";
 
 interface AnimalInfoProps {
@@ -26,9 +27,9 @@ function StatWithControls({ label, value, onChange }: StatWithControlsProps) {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       handleSubmit();
-    } else if (e.key === 'Escape') {
+    } else if (e.key === "Escape") {
       setInputValue(value.toString());
       setEditMode(false);
     }
@@ -54,7 +55,7 @@ function StatWithControls({ label, value, onChange }: StatWithControlsProps) {
   }
 
   return (
-    <div 
+    <div
       className="flex items-center justify-between cursor-pointer hover:bg-gray-100 px-1 rounded"
       onClick={() => {
         setInputValue(value.toString());
@@ -73,40 +74,46 @@ export default function AnimalInfo({ animal, onClose }: AnimalInfoProps) {
   const [newMemoryText, setNewMemoryText] = useState("");
   const [showAddMemory, setShowAddMemory] = useState(false);
 
-  const updateStat = (statName: keyof Animal['stats'], value: number) => {
+  const updateStat = (statName: keyof Animal["stats"], value: number) => {
     const clampedValue = Math.max(0, Math.min(100, value));
     animalStateManager.updateStats(
       animal.id,
       { [statName]: clampedValue },
-      'manual-adjustment'
+      "manual-adjustment"
     );
   };
 
   const addSpecialMemory = () => {
     if (!newMemoryText.trim()) return;
-    
+
     const newMemory: SpecialMemory = {
       id: `memory-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       content: newMemoryText.trim(),
-      createdAt: Date.now()
+      createdAt: Date.now(),
     };
 
     const currentMemories = animal.specialMemories || [];
     const updatedMemories = [...currentMemories, newMemory];
-    
-    animalStateManager.updateSpecialMemories(animal.id, updatedMemories, 'player-add-memory');
+
+    animalStateManager.updateSpecialMemories(
+      animal.id,
+      updatedMemories,
+      "player-add-memory"
+    );
     setNewMemoryText("");
     setShowAddMemory(false);
   };
 
   const deleteSpecialMemory = (memoryId: string) => {
     const currentMemories = animal.specialMemories || [];
-    const updatedMemories = currentMemories.filter(memory => memory.id !== memoryId);
-    
+    const updatedMemories = currentMemories.filter(
+      (memory) => memory.id !== memoryId
+    );
+
     animalStateManager.updateSpecialMemories(
-      animal.id, 
-      updatedMemories.length > 0 ? updatedMemories : undefined, 
-      'player-delete-memory'
+      animal.id,
+      updatedMemories.length > 0 ? updatedMemories : undefined,
+      "player-delete-memory"
     );
   };
 
@@ -130,7 +137,7 @@ export default function AnimalInfo({ animal, onClose }: AnimalInfoProps) {
   };
 
   return (
-    <div className="max-h-[400px] overflow-y-scroll fixed top-4 right-4 bg-white/90 backdrop-blur-sm p-6 rounded-lg shadow-lg max-w-sm">
+    <div className="max-h-[400px] overflow-y-scroll fixed top-4 right-4 bg-white/90 backdrop-blur-sm p-6 rounded-lg shadow-lg max-w-sm z-40">
       <div className="flex justify-between items-start mb-4">
         <h3 className="text-xl font-bold">{animal.name}</h3>
         <button
@@ -153,6 +160,13 @@ export default function AnimalInfo({ animal, onClose }: AnimalInfoProps) {
         </div>
 
         <div>
+          <span className="font-semibold">Wealth:</span> ✨
+          {CurrencySystem.formatCurrency(
+            CurrencySystem.calculateAnimalWealth(animal)
+          )}
+        </div>
+
+        <div>
           <span className="font-semibold">Current Action:</span>{" "}
           {animal.currentAction}
         </div>
@@ -165,30 +179,30 @@ export default function AnimalInfo({ animal, onClose }: AnimalInfoProps) {
         <div className="grid grid-cols-2 gap-2 text-sm">
           <div>
             <div className="font-semibold mb-1">Stats</div>
-            <StatWithControls 
-              label="Health" 
-              value={animal.stats.health} 
-              onChange={(value) => updateStat('health', value)}
+            <StatWithControls
+              label="Health"
+              value={animal.stats.health}
+              onChange={(value) => updateStat("health", value)}
             />
-            <StatWithControls 
-              label="Hunger" 
-              value={animal.stats.hunger} 
-              onChange={(value) => updateStat('hunger', value)}
+            <StatWithControls
+              label="Hunger"
+              value={animal.stats.hunger}
+              onChange={(value) => updateStat("hunger", value)}
             />
-            <StatWithControls 
-              label="Thirst" 
-              value={animal.stats.thirst} 
-              onChange={(value) => updateStat('thirst', value)}
+            <StatWithControls
+              label="Thirst"
+              value={animal.stats.thirst}
+              onChange={(value) => updateStat("thirst", value)}
             />
-            <StatWithControls 
-              label="Energy" 
-              value={animal.stats.energy} 
-              onChange={(value) => updateStat('energy', value)}
+            <StatWithControls
+              label="Energy"
+              value={animal.stats.energy}
+              onChange={(value) => updateStat("energy", value)}
             />
-            <StatWithControls 
-              label="Happiness" 
-              value={animal.stats.happiness} 
-              onChange={(value) => updateStat('happiness', value)}
+            <StatWithControls
+              label="Happiness"
+              value={animal.stats.happiness}
+              onChange={(value) => updateStat("happiness", value)}
             />
           </div>
 
@@ -245,9 +259,18 @@ export default function AnimalInfo({ animal, onClose }: AnimalInfoProps) {
                     className="flex justify-between items-center p-1 bg-gray-100 rounded text-xs"
                   >
                     <span className="capitalize">{item.name}</span>
+                    <span className="text-gray-500 text-xs">
+                      (ID: {item.id})
+                    </span>
                     <div className="flex gap-2 text-gray-600">
                       <span>×{item.quantity}</span>
                       <span>Q{item.quality}</span>
+                      <span className="text-green-600">
+                        ✨
+                        {CurrencySystem.formatCurrency(
+                          CurrencySystem.calculateItemValue(item)
+                        )}
+                      </span>
                     </div>
                   </div>
                 ))}
@@ -266,7 +289,7 @@ export default function AnimalInfo({ animal, onClose }: AnimalInfoProps) {
               {showAddMemory ? "Cancel" : "Add"}
             </button>
           </div>
-          
+
           {showAddMemory && (
             <div className="mb-2 p-2 bg-gray-50 rounded">
               <textarea
@@ -276,7 +299,7 @@ export default function AnimalInfo({ animal, onClose }: AnimalInfoProps) {
                 className="w-full text-xs p-2 border rounded resize-none"
                 rows={2}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && e.ctrlKey) {
+                  if (e.key === "Enter" && e.ctrlKey) {
                     addSpecialMemory();
                   }
                 }}
@@ -289,14 +312,18 @@ export default function AnimalInfo({ animal, onClose }: AnimalInfoProps) {
                 >
                   Save
                 </button>
-                <span className="text-xs text-gray-500 self-center">Ctrl+Enter to save</span>
+                <span className="text-xs text-gray-500 self-center">
+                  Ctrl+Enter to save
+                </span>
               </div>
             </div>
           )}
 
           <div className="text-sm max-h-32 overflow-y-auto">
             {!animal.specialMemories || animal.specialMemories.length === 0 ? (
-              <div className="text-gray-500 italic text-xs">No special memories yet</div>
+              <div className="text-gray-500 italic text-xs">
+                No special memories yet
+              </div>
             ) : (
               <div className="space-y-2">
                 {animal.specialMemories.map((memory) => (

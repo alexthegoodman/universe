@@ -1050,7 +1050,7 @@ export class MXPActionSystem {
     params: any
   ): Promise<ActionResult> {
     const { idea } = params;
-    
+
     if (!idea) {
       return {
         success: false,
@@ -1058,22 +1058,26 @@ export class MXPActionSystem {
         duration: 2000,
       };
     }
-    
+
     const intelligenceMultiplier = animal.dna.intelligence / 100;
     const curiosityMultiplier = animal.dna.curiosity / 100;
     const creativityBonus = (intelligenceMultiplier + curiosityMultiplier) / 2;
-    
+
     // Store the idea as an exploration memory
     this.explorationSystem.addMemory(animal.id, {
-      position: { x: animal.position.x, y: animal.position.y, z: animal.position.z },
-      discoveryType: 'ideation',
+      position: {
+        x: animal.position.x,
+        y: animal.position.y,
+        z: animal.position.z,
+      },
+      discoveryType: "ideation",
       description: idea,
       reliability: 0.9 + creativityBonus * 0.1, // High reliability, boosted by creativity
     });
-    
+
     const energyCost = Math.max(2, 5 - creativityBonus * 2);
     const happinessGain = Math.min(15, 8 + creativityBonus * 10);
-    
+
     return {
       success: true,
       message: `${animal.name} had a creative vision: "${idea}"`,
@@ -1091,7 +1095,11 @@ export class MXPActionSystem {
   ): Promise<ActionResult> {
     const { ingredients, craftingGoal, craftingMethod } = params;
 
-    if (!ingredients || !Array.isArray(ingredients) || ingredients.length === 0) {
+    if (
+      !ingredients ||
+      !Array.isArray(ingredients) ||
+      ingredients.length === 0
+    ) {
       return {
         success: false,
         message: `${animal.name} needs to specify ingredients for crafting`,
@@ -1110,9 +1118,13 @@ export class MXPActionSystem {
     // Find and validate ingredients in inventory
     const usedIngredients: CraftingIngredient[] = [];
     const usedItems: InventoryItem[] = [];
-    
+
     for (const ingredientId of ingredients) {
-      const item = animal.inventory.items.find(i => i.id === ingredientId);
+      // const item = animal.inventory.items.find(i => i.id === ingredientId);
+      // Find item by ID prefix (e.g., "item" from "item_12345", to help with exact matches)
+      const item = animal.inventory.items.find((i) =>
+        i.id.includes(ingredientId.split("_")[0])
+      );
       if (!item) {
         return {
           success: false,
@@ -1120,7 +1132,7 @@ export class MXPActionSystem {
           duration: 1000,
         };
       }
-      
+
       if (item.quantity <= 0) {
         return {
           success: false,
@@ -1135,13 +1147,13 @@ export class MXPActionSystem {
         quantity: 1, // Always use 1 unit for now
         traits: item.traits,
       });
-      
+
       usedItems.push(item);
     }
 
     // Calculate energy cost based on complexity
     const energyCost = Math.max(5, usedIngredients.length * 3);
-    
+
     if (animal.stats.energy < energyCost) {
       return {
         success: false,
@@ -1151,13 +1163,19 @@ export class MXPActionSystem {
     }
 
     // Create the new crafted item
-    const craftedItem = this.generateCraftedItem(usedIngredients, craftingGoal, craftingMethod, animal);
+    const craftedItem = this.generateCraftedItem(
+      usedIngredients,
+      craftingGoal,
+      craftingMethod,
+      animal
+    );
 
     // Calculate stat bonuses based on intelligence and creativity
     const intelligenceMultiplier = animal.dna.intelligence / 100;
     const curiosityMultiplier = animal.dna.curiosity / 100;
-    const craftingSkillBonus = (intelligenceMultiplier + curiosityMultiplier) / 2;
-    
+    const craftingSkillBonus =
+      (intelligenceMultiplier + curiosityMultiplier) / 2;
+
     const happinessGain = Math.min(20, 10 + craftingSkillBonus * 15);
     const duration = 8000 + usedIngredients.length * 2000;
 
@@ -1165,12 +1183,17 @@ export class MXPActionSystem {
       usedIngredients,
       createdItem: craftedItem,
       craftingMethod: craftingMethod || "combined ingredients creatively",
-      skillUsed: intelligenceMultiplier > curiosityMultiplier ? "intelligence" : "curiosity",
+      skillUsed:
+        intelligenceMultiplier > curiosityMultiplier
+          ? "intelligence"
+          : "curiosity",
     };
 
     return {
       success: true,
-      message: `${animal.name} successfully crafted ${craftedItem.name} using ${usedIngredients.map(i => i.name).join(", ")}`,
+      message: `${animal.name} successfully crafted ${
+        craftedItem.name
+      } using ${usedIngredients.map((i) => i.name).join(", ")}`,
       statChanges: {
         energy: Math.max(0, animal.stats.energy - energyCost),
         happiness: Math.min(100, animal.stats.happiness + happinessGain),
@@ -1188,14 +1211,14 @@ export class MXPActionSystem {
   ): InventoryItem {
     // Calculate average quality from ingredients
     const totalQuality = ingredients.reduce((sum, ing) => {
-      const item = animal.inventory.items.find(i => i.id === ing.itemId);
+      const item = animal.inventory.items.find((i) => i.id === ing.itemId);
       return sum + (item?.quality || 50);
     }, 0);
     const avgQuality = Math.floor(totalQuality / ingredients.length);
 
     // Combine traits from all ingredients
     const combinedTraits: Record<string, number> = {};
-    ingredients.forEach(ing => {
+    ingredients.forEach((ing) => {
       if (ing.traits) {
         Object.entries(ing.traits).forEach(([trait, value]) => {
           if (!combinedTraits[trait]) {
@@ -1207,8 +1230,9 @@ export class MXPActionSystem {
     });
 
     // Add crafting bonus to traits based on animal's skills
-    const skillBonus = (animal.dna.intelligence + animal.dna.curiosity) / 200 * 20;
-    Object.keys(combinedTraits).forEach(trait => {
+    const skillBonus =
+      ((animal.dna.intelligence + animal.dna.curiosity) / 200) * 20;
+    Object.keys(combinedTraits).forEach((trait) => {
       combinedTraits[trait] = Math.min(100, combinedTraits[trait] + skillBonus);
     });
 
@@ -1216,15 +1240,35 @@ export class MXPActionSystem {
     let itemType: InventoryItem["type"] = "material";
     let rarity: InventoryItem["rarity"] = "common";
 
-    if (goal.toLowerCase().includes("food") || goal.toLowerCase().includes("potion") || goal.toLowerCase().includes("meal")) {
+    if (
+      goal.toLowerCase().includes("food") ||
+      goal.toLowerCase().includes("potion") ||
+      goal.toLowerCase().includes("meal")
+    ) {
       itemType = "food";
-    } else if (goal.toLowerCase().includes("tool") || goal.toLowerCase().includes("weapon")) {
+    } else if (
+      goal.toLowerCase().includes("tool") ||
+      goal.toLowerCase().includes("weapon")
+    ) {
       itemType = "tool";
-    } else if (goal.toLowerCase().includes("medicine") || goal.toLowerCase().includes("healing")) {
+    } else if (
+      goal.toLowerCase().includes("medicine") ||
+      goal.toLowerCase().includes("healing")
+    ) {
       itemType = "medicinal";
-    } else if (goal.toLowerCase().includes("spice") || goal.toLowerCase().includes("seasoning")) {
+    } else if (
+      goal.toLowerCase().includes("spice") ||
+      goal.toLowerCase().includes("seasoning")
+    ) {
       itemType = "spice";
-    } else if (ingredients.some(ing => ing.name.includes("diamond") || ing.name.includes("ruby") || ing.name.includes("emerald"))) {
+    } else if (
+      ingredients.some(
+        (ing) =>
+          ing.name.includes("diamond") ||
+          ing.name.includes("ruby") ||
+          ing.name.includes("emerald")
+      )
+    ) {
       itemType = "rare";
       rarity = "legendary";
     }
@@ -1240,16 +1284,18 @@ export class MXPActionSystem {
 
     // Generate a creative name based on goal and ingredients
     const craftedName = goal.includes(" ") ? goal : `crafted ${goal}`;
+    const baseId = craftedName.toLowerCase().replace(/\s+/g, "_");
 
     return {
-      id: `crafted_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `${baseId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       type: itemType,
       name: craftedName,
       quantity: 1,
       quality: Math.min(100, avgQuality + skillBonus),
       harvestedAt: Date.now(),
       rarity,
-      traits: Object.keys(combinedTraits).length > 0 ? combinedTraits : undefined,
+      traits:
+        Object.keys(combinedTraits).length > 0 ? combinedTraits : undefined,
     };
   }
 

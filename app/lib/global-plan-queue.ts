@@ -205,7 +205,7 @@ export class GlobalPlanQueue {
       this.activeDecisionCalls.add(animal.id);
 
       // Create AI instance and call decision system
-      const ai = new AnimalAI(animal.id);
+      const ai = new AnimalAI(animal.id, this.gameManager || undefined);
       const decision = await ai.decideAction(
         animal,
         // this.gameManager?.getWorldState()

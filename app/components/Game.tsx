@@ -14,6 +14,7 @@ import Building3D from "./Building3D";
 import ActionLog, { type ActionLogEntry } from "./ActionLog";
 import { actionLogger } from "../lib/action-logger";
 import SpecialAnnouncementPanel from "./SpecialAnnouncementPanel";
+import CurrencyLeaderboard, { CompactLeaderboard, LeaderboardPodium } from "./CurrencyLeaderboard";
 
 interface SceneProps {
   animals: Animal[];
@@ -260,6 +261,11 @@ export default function Game() {
 
       {/* Action Log */}
       <ActionLog entries={actionLogs} />
+
+      {/* Currency Leaderboard */}
+      <div className="absolute top-4 right-4 w-80">
+        <CurrencyLeaderboard animals={animals} maxEntries={10} />
+      </div>
 
       {/* Special Announcement Panel */}
       <SpecialAnnouncementPanel

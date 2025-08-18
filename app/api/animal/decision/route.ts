@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { serverPlanningHelper } from "../../../lib/server-planning-helper";
+import { CurrencySystem } from "../../../lib/currency-system";
 import OpenAI from "openai";
 
 const openai = new OpenAI({
@@ -9,7 +10,7 @@ const openai = new OpenAI({
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { animal, worldState } = body;
+    const { animal, worldState, currencyLeaderboard, animalWealth } = body;
 
     console.log(
       `🧠 AI decision request for ${animal?.name || "unknown animal"}`
@@ -73,6 +74,8 @@ Current Stats:
 Current Age: {age}% of lifespan
 Current Action: {currentAction}
 
+Current Wealth: ✨{animalWealth} (Rank #{animalRank} out of {totalAnimals} animals)
+
 Most Important Commands (prioritize these in all of your plans):
 {specialMemories}
 `;
@@ -81,10 +84,21 @@ Most Important Commands (prioritize these in all of your plans):
 Current Inventory:
 {inventory}
 
+Current Wealth Leaderboard (Top 5):
+{leaderboard}
+
 World State:
 {worldState}
 
 Based on your traits, current needs, and the world around you, what PLAN should you create for the next 3-7 turns?
+
+CURRENCY & WEALTH AWARENESS:
+- All resources and crafted items have currency values
+- Raw materials have base values, crafted items are worth 2.5x more
+- Quality, rarity, and traits affect item values significantly
+- Higher wealth improves your social standing and opportunities
+- Consider crafting valuable items to increase your wealth ranking
+- Your current wealth and rank are shown above - use this to motivate your decisions
 
 You MUST create strategic multi-step plans, NOT individual actions. Think about sequences like:
 - "gather materials → build shelter → sleep to restore energy"
@@ -390,6 +404,22 @@ ${animal.specialMemories
   .join("\n")}
 `;
 
+    // Format leaderboard for the prompt
+    const leaderboardDescription =
+      !currencyLeaderboard || currencyLeaderboard.length === 0
+        ? "No wealth rankings available yet."
+        : currencyLeaderboard
+            .slice(0, 5)
+            .map(
+              (entry: any, index: number) =>
+                `${index + 1}. ${
+                  entry.animal.name
+                }: ✨${CurrencySystem.formatCurrency(entry.wealth)} (${
+                  entry.animal.inventory.items.length
+                } items)`
+            )
+            .join("\n");
+
     // Format the user prompt with variables
     systemPrompt = systemPrompt
       .replace("{name}", animal.name)
@@ -420,11 +450,25 @@ ${animal.specialMemories
         `x:${animal.position.x.toFixed(1)} z:${animal.position.z.toFixed(1)}`
       )
       .replace("{worldState}", JSON.stringify(worldState, null, 2))
-      .replace("{sleepConstraint}", sleepCheck.reason);
+      .replace("{sleepConstraint}", sleepCheck.reason)
+      .replace(
+        "{animalWealth}",
+        CurrencySystem.formatCurrency(animalWealth || 0)
+      )
+      .replace(
+        "{animalRank}",
+        (
+          currencyLeaderboard?.find(
+            (entry: any) => entry.animal.id === animal.id
+          )?.rank || 0
+        ).toString()
+      )
+      .replace("{totalAnimals}", (currencyLeaderboard?.length || 0).toString());
 
     userPrompt = userPrompt
       .replace("{inventory}", inventoryDescription)
       .replace("{specialMemories}", specialMemoriesDescription)
+      .replace("{leaderboard}", leaderboardDescription)
       .replace("{worldState}", JSON.stringify(worldState, null, 2))
       .replace("{sightRadius}", worldState.sightRadius.toString())
       .replace("{harvestRadius}", worldState.harvestRadius.toString())
