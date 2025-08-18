@@ -18,7 +18,10 @@
               "name": "Composite Tools",
               "requirements": ["stoneKnapping: 100", "cordage: 60"],
               "description": "Combine stone with wood and binding",
-              "effects": ["Create hafted axes and spears", "Tools don't break on use"]
+              "effects": [
+                "Create hafted axes and spears",
+                "Tools don't break on use"
+              ]
             }
           ]
         },
@@ -31,13 +34,19 @@
               "name": "Controlled Burning",
               "requirements": ["firemaking: 100", "foraging: 50"],
               "description": "Use fire to manage landscape and hunting",
-              "effects": ["Clear land for resources", "Drive animals for hunting"]
+              "effects": [
+                "Clear land for resources",
+                "Drive livestock for hunting"
+              ]
             },
             {
               "name": "Kiln Technology",
               "requirements": ["firemaking: 100", "clayWorking: 75"],
               "description": "Build high-temperature furnaces",
-              "effects": ["Enable pottery and metalworking", "Reach 1200°C temperatures"]
+              "effects": [
+                "Enable pottery and metalworking",
+                "Reach 1200°C temperatures"
+              ]
             }
           ]
         },
@@ -49,7 +58,7 @@
           "advancedPaths": [
             {
               "name": "Advanced Textiles",
-              "requirements": ["cordage: 100", "animalHusbandry: 50"],
+              "requirements": ["cordage: 100", "livestockHusbandry: 50"],
               "description": "Create complex woven fabrics",
               "effects": ["Produce clothing and sails", "Weather protection"]
             },
@@ -76,7 +85,10 @@
               "name": "Ceramic Mastery",
               "requirements": ["clayWorking: 100", "kilnTechnology: 25"],
               "description": "Create advanced ceramics and glazes",
-              "effects": ["Waterproof containers", "Decorative pottery with trade value"]
+              "effects": [
+                "Waterproof containers",
+                "Decorative pottery with trade value"
+              ]
             },
             {
               "name": "Foundry Molds",
@@ -102,27 +114,39 @@
               "name": "Precision Smithing",
               "requirements": ["metalworking: 100", "foundryMolds: 40"],
               "description": "Create intricate metal mechanisms",
-              "effects": ["Build gears and clockwork", "Enable mechanical devices"]
+              "effects": [
+                "Build gears and clockwork",
+                "Enable mechanical devices"
+              ]
             }
           ]
         },
-        "animalHusbandry": {
+        "livestockHusbandry": {
           "name": "Animal Husbandry",
           "maxLevel": 100,
-          "description": "Domesticate and breed animals for various purposes",
+          "description": "Domesticate and breed livestock for various purposes",
           "prerequisites": ["foraging: 40", "charismaticLeader: 30"],
           "advancedPaths": [
             {
               "name": "Selective Breeding",
-              "requirements": ["animalHusbandry: 100", "geneticOptimizer: 50"],
-              "description": "Breed animals for specific traits",
-              "effects": ["Create specialized animal variants", "Enhanced animal abilities"]
+              "requirements": [
+                "livestockHusbandry: 100",
+                "geneticOptimizer: 50"
+              ],
+              "description": "Breed livestock for specific traits",
+              "effects": [
+                "Create specialized livestock variants",
+                "Enhanced livestock abilities"
+              ]
             },
             {
               "name": "Beast Mastery",
-              "requirements": ["animalHusbandry: 100", "banditTaming: 60"],
-              "description": "Train animals for complex tasks",
-              "effects": ["Animals perform skilled labor", "Animal assistants in crafting"]
+              "requirements": ["livestockHusbandry: 100", "banditTaming: 60"],
+              "description": "Train livestock for complex tasks",
+              "effects": [
+                "Animals perform skilled labor",
+                "Animal assistants in crafting"
+              ]
             }
           ]
         }
@@ -141,7 +165,10 @@
               "name": "Steel Mastery",
               "requirements": ["ironworking: 100", "alloyMastery: 30"],
               "description": "Create high-carbon steel and specialized alloys",
-              "effects": ["Superior weapons and tools", "Spring steel for mechanisms"]
+              "effects": [
+                "Superior weapons and tools",
+                "Spring steel for mechanisms"
+              ]
             },
             {
               "name": "Mass Production",
@@ -155,7 +182,7 @@
           "name": "Agriculture",
           "maxLevel": 100,
           "description": "Cultivate crops and manage farmland",
-          "prerequisites": ["ironworking: 25", "animalHusbandry: 40"],
+          "prerequisites": ["ironworking: 25", "livestockHusbandry: 40"],
           "advancedPaths": [
             {
               "name": "Crop Rotation",
@@ -167,7 +194,10 @@
               "name": "Irrigation Systems",
               "requirements": ["agriculture: 100", "engineeringCables: 40"],
               "description": "Build complex water management systems",
-              "effects": ["Farm in any terrain", "Controlled water distribution"]
+              "effects": [
+                "Farm in any terrain",
+                "Controlled water distribution"
+              ]
             }
           ]
         },
@@ -181,13 +211,19 @@
               "name": "Architectural Engineering",
               "requirements": ["masonry: 100", "precisionSmithing: 60"],
               "description": "Design complex stone structures",
-              "effects": ["Build arches and domes", "Multi-story stone buildings"]
+              "effects": [
+                "Build arches and domes",
+                "Multi-story stone buildings"
+              ]
             },
             {
               "name": "Monument Construction",
               "requirements": ["masonry: 100", "massProduction: 40"],
               "description": "Create massive stone monuments",
-              "effects": ["Permanent cultural landmarks", "Area-wide happiness bonuses"]
+              "effects": [
+                "Permanent cultural landmarks",
+                "Area-wide happiness bonuses"
+              ]
             }
           ]
         }
@@ -204,13 +240,19 @@
           "advancedPaths": [
             {
               "name": "Steam Power",
-              "requirements": ["mechanicalEngineering: 100", "kilnTechnology: 75"],
+              "requirements": [
+                "mechanicalEngineering: 100",
+                "kilnTechnology: 75"
+              ],
               "description": "Harness steam for mechanical power",
               "effects": ["Automated machinery", "Steam-powered transportation"]
             },
             {
               "name": "Precision Manufacturing",
-              "requirements": ["mechanicalEngineering: 100", "massProduction: 60"],
+              "requirements": [
+                "mechanicalEngineering: 100",
+                "massProduction: 60"
+              ],
               "description": "Create interchangeable parts and assembly lines",
               "effects": ["Rapid mass production", "Standardized components"]
             }
@@ -232,7 +274,10 @@
               "name": "Advanced Materials",
               "requirements": ["chemistry: 100", "traitFusion: 50"],
               "description": "Synthesize new chemical compounds",
-              "effects": ["Create plastics and composites", "Custom material properties"]
+              "effects": [
+                "Create plastics and composites",
+                "Custom material properties"
+              ]
             }
           ]
         },
@@ -250,7 +295,10 @@
             },
             {
               "name": "Electronics",
-              "requirements": ["electricity: 100", "precisionManufacturing: 50"],
+              "requirements": [
+                "electricity: 100",
+                "precisionManufacturing: 50"
+              ],
               "description": "Create electronic devices and circuits",
               "effects": ["Build computers and communication devices"]
             }
@@ -271,7 +319,10 @@
               "name": "Artificial Intelligence",
               "requirements": ["computerScience: 100", "charismaticLeader: 80"],
               "description": "Create AI assistants and automation",
-              "effects": ["AI helpers for complex tasks", "Automated resource management"]
+              "effects": [
+                "AI helpers for complex tasks",
+                "Automated resource management"
+              ]
             },
             {
               "name": "Networking",
@@ -297,14 +348,17 @@
               "name": "Synthetic Biology",
               "requirements": ["biotechnology: 100", "advancedMaterials: 50"],
               "description": "Build biological systems from scratch",
-              "effects": ["Living buildings that grow", "Biological manufacturing"]
+              "effects": [
+                "Living buildings that grow",
+                "Biological manufacturing"
+              ]
             }
           ]
         }
       }
     },
     "harvesting": {
-      "name": "Harvesting Specializations", 
+      "name": "Harvesting Specializations",
       "skills": {
         "mining": {
           "name": "Mining",
@@ -315,32 +369,41 @@
               "name": "Deep Mining",
               "requirements": ["mining: 100", "explosives: 50"],
               "description": "Access deep underground resources",
-              "effects": ["Find rare deep minerals", "Higher quality ore deposits"]
+              "effects": [
+                "Find rare deep minerals",
+                "Higher quality ore deposits"
+              ]
             },
             {
               "name": "Strip Mining",
               "requirements": ["mining: 100", "steamPower: 40"],
-              "description": "Large-scale surface mining operations", 
+              "description": "Large-scale surface mining operations",
               "effects": ["Massive resource extraction", "Reshape terrain"]
             }
           ]
         },
         "foraging": {
-          "name": "Foraging", 
+          "name": "Foraging",
           "maxLevel": 100,
           "description": "Gather organic materials and food",
           "advancedPaths": [
             {
-              "name": "Cultivation", 
+              "name": "Cultivation",
               "requirements": ["foraging: 100", "agriculture: 60"],
               "description": "Domesticate wild plants for farming",
-              "effects": ["Convert wild resources to farmable", "Improve plant yields"]
+              "effects": [
+                "Convert wild resources to farmable",
+                "Improve plant yields"
+              ]
             },
             {
               "name": "Herbalism",
               "requirements": ["foraging: 100", "chemistry: 40"],
               "description": "Create medicines and chemicals from plants",
-              "effects": ["Extract healing compounds", "Synthesize natural chemicals"]
+              "effects": [
+                "Extract healing compounds",
+                "Synthesize natural chemicals"
+              ]
             }
           ]
         },
@@ -352,9 +415,12 @@
           "advancedPaths": [
             {
               "name": "Aquaculture",
-              "requirements": ["fishing: 100", "animalHusbandry: 70"],
+              "requirements": ["fishing: 100", "livestockHusbandry: 70"],
               "description": "Farm fish and aquatic organisms",
-              "effects": ["Sustainable fish production", "Domesticate sea creatures"]
+              "effects": [
+                "Sustainable fish production",
+                "Domesticate sea creatures"
+              ]
             },
             {
               "name": "Deep Sea Fishing",
@@ -382,29 +448,44 @@
             },
             {
               "name": "Material Science",
-              "requirements": ["traitAnalysis: 100", "precisionManufacturing: 50"],
+              "requirements": [
+                "traitAnalysis: 100",
+                "precisionManufacturing: 50"
+              ],
               "description": "Engineer materials with specific properties",
-              "effects": ["Design custom materials", "Predict material behavior"]
+              "effects": [
+                "Design custom materials",
+                "Predict material behavior"
+              ]
             }
           ]
         },
         "qualityEnhancement": {
-          "name": "Quality Enhancement", 
+          "name": "Quality Enhancement",
           "maxLevel": 100,
           "description": "Improve material quality and purity",
           "prerequisites": ["traitAnalysis: 30"],
           "advancedPaths": [
             {
               "name": "Perfection Crafting",
-              "requirements": ["qualityEnhancement: 100", "precisionManufacturing: 75"],
+              "requirements": [
+                "qualityEnhancement: 100",
+                "precisionManufacturing: 75"
+              ],
               "description": "Achieve maximum trait scores consistently",
-              "effects": ["Guaranteed high-quality results", "No failed crafting attempts"]
+              "effects": [
+                "Guaranteed high-quality results",
+                "No failed crafting attempts"
+              ]
             },
             {
               "name": "Refinement Mastery",
               "requirements": ["qualityEnhancement: 100", "traitFusion: 50"],
               "description": "Purify and concentrate material properties",
-              "effects": ["Enhance existing traits", "Remove unwanted properties"]
+              "effects": [
+                "Enhance existing traits",
+                "Remove unwanted properties"
+              ]
             }
           ]
         }
@@ -422,13 +503,19 @@
               "name": "Army Command",
               "requirements": ["combatTactics: 100", "charismaticLeader: 70"],
               "description": "Lead large groups in coordinated combat",
-              "effects": ["Command multiple animals", "Coordinate group attacks"]
+              "effects": [
+                "Command multiple animals",
+                "Coordinate group attacks"
+              ]
             },
             {
               "name": "Siege Warfare",
               "requirements": ["combatTactics: 100", "explosives: 60"],
               "description": "Specialized tactics for attacking fortifications",
-              "effects": ["Destroy enemy buildings", "Breach defensive structures"]
+              "effects": [
+                "Destroy enemy buildings",
+                "Breach defensive structures"
+              ]
             }
           ]
         },
@@ -442,13 +529,19 @@
               "name": "Bandit Kingdom",
               "requirements": ["banditTaming: 100", "armyCommand: 50"],
               "description": "Rule over reformed bandit armies",
-              "effects": ["Bandits become protectors", "Collect tribute from territory"]
+              "effects": [
+                "Bandits become protectors",
+                "Collect tribute from territory"
+              ]
             },
             {
               "name": "Rehabilitation",
               "requirements": ["banditTaming: 100", "charismaticLeader: 80"],
               "description": "Permanently reform bandit behavior",
-              "effects": ["Convert bandits to citizens", "Former bandits become productive"]
+              "effects": [
+                "Convert bandits to citizens",
+                "Former bandits become productive"
+              ]
             }
           ]
         }
@@ -485,7 +578,10 @@
               "name": "Camouflage",
               "requirements": ["stealth: 100", "advancedTextiles: 40"],
               "description": "Blend perfectly with environment",
-              "effects": ["Near-invisible in natural settings", "Evade most detection"]
+              "effects": [
+                "Near-invisible in natural settings",
+                "Evade most detection"
+              ]
             },
             {
               "name": "Silent Movement",
@@ -504,13 +600,19 @@
               "name": "Marathon Ability",
               "requirements": ["endurance: 100"],
               "description": "Sustain activity for extended periods",
-              "effects": ["Energy drains much slower", "Work longer without rest"]
+              "effects": [
+                "Energy drains much slower",
+                "Work longer without rest"
+              ]
             },
             {
               "name": "Environmental Adaptation",
               "requirements": ["endurance: 100", "herbalism: 50"],
               "description": "Adapt to harsh environmental conditions",
-              "effects": ["Immunity to weather effects", "Survive in extreme conditions"]
+              "effects": [
+                "Immunity to weather effects",
+                "Survive in extreme conditions"
+              ]
             }
           ]
         }
@@ -526,15 +628,24 @@
           "advancedPaths": [
             {
               "name": "Community Builder",
-              "requirements": ["charismaticLeader: 100", "architecturalEngineering: 50"],
+              "requirements": [
+                "charismaticLeader: 100",
+                "architecturalEngineering: 50"
+              ],
               "description": "Organize large-scale community projects",
-              "effects": ["Coordinate group building", "Shared community resources"]
+              "effects": [
+                "Coordinate group building",
+                "Shared community resources"
+              ]
             },
             {
               "name": "Diplomatic Corps",
               "requirements": ["charismaticLeader: 100", "networking: 40"],
               "description": "Establish formal relations between groups",
-              "effects": ["Negotiate treaties", "Prevent conflicts through diplomacy"]
+              "effects": [
+                "Negotiate treaties",
+                "Prevent conflicts through diplomacy"
+              ]
             }
           ]
         },
@@ -542,19 +653,25 @@
           "name": "Genetic Optimizer",
           "maxLevel": 100,
           "description": "Improve breeding outcomes and genetic traits",
-          "prerequisites": ["animalHusbandry: 60", "traitAnalysis: 50"],
+          "prerequisites": ["livestockHusbandry: 60", "traitAnalysis: 50"],
           "advancedPaths": [
             {
               "name": "Selective Breeding Master",
               "requirements": ["geneticOptimizer: 100", "biotechnology: 40"],
               "description": "Precisely control inherited traits",
-              "effects": ["Target specific trait combinations", "Accelerated genetic improvement"]
+              "effects": [
+                "Target specific trait combinations",
+                "Accelerated genetic improvement"
+              ]
             },
             {
               "name": "Hybrid Creation",
               "requirements": ["geneticOptimizer: 100", "syntheticBiology: 30"],
               "description": "Create hybrid organisms with mixed traits",
-              "effects": ["Combine traits from different species", "Create new animal variants"]
+              "effects": [
+                "Combine traits from different species",
+                "Create new animal variants"
+              ]
             }
           ]
         }
@@ -564,11 +681,11 @@
   "progressionRules": {
     "experienceGain": {
       "stoneAge": "Gain XP from basic tool use, fire creation, and primitive crafting",
-      "bronzeAge": "Gain XP from pottery, early metalworking, and animal domestication",
+      "bronzeAge": "Gain XP from pottery, early metalworking, and livestock domestication",
       "ironAge": "Gain XP from advanced metallurgy, agriculture, and masonry",
       "industrialAge": "Gain XP from mechanical engineering, chemistry, and electrical work",
       "informationAge": "Gain XP from computer programming, biotechnology, and advanced systems",
-      "harvesting": "Gain XP when gathering resources, bonus for rare materials", 
+      "harvesting": "Gain XP when gathering resources, bonus for rare materials",
       "combat": "Gain XP from winning fights and taming bandits",
       "exploration": "Gain XP from discovering new areas and mapping terrain",
       "social": "Gain XP from successful breeding, leadership, and diplomacy"
