@@ -924,7 +924,8 @@ export class GameManager {
   private generateInitialBandits(): Bandit[] {
     const bandits: Bandit[] = [];
     const { width, depth } = this.config.worldSize;
-    const banditCount = Math.floor(Math.random() * 5) + 3; // 3-7 bandits
+    // const banditCount = Math.floor(Math.random() * 5) + 3; // 3-7 bandits
+    const banditCount = 5; // Fixed number of bandits for consistency
 
     const banditNames = [
       "Scarface",

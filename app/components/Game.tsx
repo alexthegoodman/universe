@@ -6,8 +6,9 @@ import { Suspense, useEffect, useState, useCallback } from "react";
 import { GameManager } from "../lib/game-manager";
 import type { Animal } from "../types/animal";
 import type { Building } from "../types/building";
-import type { WorldResource } from "../lib/game-manager";
+import type { WorldResource, Bandit } from "../lib/game-manager";
 import Animal3D from "./Animal3D";
+import Bandit3D from "./Bandit3D";
 import AnimalInfo from "./AnimalInfo";
 import { Resource3D } from "./Resource3D";
 import Building3D from "./Building3D";
@@ -20,18 +21,22 @@ interface SceneProps {
   animals: Animal[];
   resources: WorldResource[];
   buildings: Building[];
+  bandits: Bandit[];
   onAnimalClick: (animal: Animal) => void;
   onResourceClick?: (resource: WorldResource) => void;
   onBuildingClick?: (building: Building) => void;
+  onBanditClick?: (bandit: Bandit) => void;
 }
 
 function Scene({
   animals,
   resources,
   buildings,
+  bandits,
   onAnimalClick,
   onResourceClick,
   onBuildingClick,
+  onBanditClick,
 }: SceneProps) {
   return (
     <>
@@ -80,6 +85,15 @@ function Scene({
           onClick={onBuildingClick}
         />
       ))}
+
+      {/* Bandits */}
+      {bandits.map((bandit) => (
+        <Bandit3D
+          key={bandit.id}
+          bandit={bandit}
+          onClick={onBanditClick}
+        />
+      ))}
     </>
   );
 }
@@ -89,6 +103,7 @@ export default function Game() {
   const [animals, setAnimals] = useState<Animal[]>([]);
   const [resources, setResources] = useState<WorldResource[]>([]);
   const [buildings, setBuildings] = useState<Building[]>([]);
+  const [bandits, setBandits] = useState<Bandit[]>([]);
   const [selectedAnimal, setSelectedAnimal] = useState<Animal | null>(null);
   const [gameStarted, setGameStarted] = useState(false);
   const [version, setVersion] = useState(0);
@@ -133,6 +148,7 @@ export default function Game() {
         setAnimals([...currentAnimals]);
         setResources([...worldState.resources]);
         setBuildings([...worldState.buildings]);
+        setBandits([...worldState.bandits]);
         setVersion((v) => v + 1);
 
         // Update selected animal if it still exists
@@ -164,6 +180,10 @@ export default function Game() {
     console.log("Building clicked:", building.name, building);
   }, []);
 
+  const handleBanditClick = useCallback((bandit: Bandit) => {
+    console.log("Bandit clicked:", bandit.name, bandit);
+  }, []);
+
   const spawnNewAnimal = useCallback(async () => {
     if (gameManager) {
       await gameManager.spawnRandomAnimal();
@@ -178,8 +198,10 @@ export default function Game() {
             animals={animals}
             resources={resources}
             buildings={buildings}
+            bandits={bandits}
             onAnimalClick={handleAnimalClick}
             onBuildingClick={handleBuildingClick}
+            onBanditClick={handleBanditClick}
           />
           <OrbitControls
             enablePan={true}
@@ -238,6 +260,8 @@ export default function Game() {
                   Total Shelter Capacity:{" "}
                   {buildings.reduce((sum, b) => sum + b.maxOccupants, 0)}
                 </div>
+                <div>Bandits: {bandits.length}</div>
+                <div>Alive Bandits: {bandits.filter((b) => b.isAlive).length}</div>
               </div>
             </div>
             <button
