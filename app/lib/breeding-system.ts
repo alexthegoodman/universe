@@ -18,7 +18,8 @@ export interface BreedingAttempt {
 
 export class BreedingSystem {
   private breedingCooldowns: Map<string, number> = new Map();
-  private readonly BREEDING_COOLDOWN = 30 * 60 * 1000; // 30 minutes
+  // private readonly BREEDING_COOLDOWN = 30 * 60 * 1000; // 30 minutes
+  private readonly BREEDING_COOLDOWN = 1 * 60 * 1000; // 1 minute
   // private readonly MIN_AGE_FOR_BREEDING = 0.25; // 25% of lifespan
   // private readonly MAX_AGE_FOR_BREEDING = 0.85; // 85% of lifespan
   private readonly MIN_AGE_FOR_BREEDING = 0.01; // 1% of lifespan
