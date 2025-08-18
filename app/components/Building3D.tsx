@@ -12,17 +12,64 @@ interface Building3DProps {
 export default function Building3D({ building, onClick }: Building3DProps) {
   const meshRef = useRef<THREE.Mesh>(null)
 
-  // Color based on building materials and stats
-  const getColor = () => {
-    const { stone, wood } = building.materials
-    const stoneRatio = stone / (stone + wood)
+  // Get color for specific material type
+  const getColorForMaterial = (materialName: string): THREE.Color => {
+    // Metal ores - metallic colors
+    if (materialName.includes('iron')) return new THREE.Color(0.4, 0.4, 0.5)
+    if (materialName.includes('copper')) return new THREE.Color(0.7, 0.4, 0.2)
+    if (materialName.includes('gold')) return new THREE.Color(0.8, 0.7, 0.3)
+    if (materialName.includes('silver')) return new THREE.Color(0.7, 0.7, 0.8)
+    if (materialName.includes('tin')) return new THREE.Color(0.6, 0.6, 0.7)
     
-    // More stone = more gray, more wood = more brown
-    const baseR = 0.4 + stoneRatio * 0.3 + (building.stats.beauty / 100) * 0.2
-    const baseG = 0.3 + (wood / (stone + wood)) * 0.4 + (building.stats.beauty / 100) * 0.15
-    const baseB = 0.2 + (building.stats.beauty / 100) * 0.3
+    // Precious stones - jewel tones
+    if (materialName.includes('diamond')) return new THREE.Color(0.9, 0.9, 1.0)
+    if (materialName.includes('emerald')) return new THREE.Color(0.2, 0.7, 0.3)
+    if (materialName.includes('ruby')) return new THREE.Color(0.8, 0.2, 0.3)
+    if (materialName.includes('amethyst')) return new THREE.Color(0.6, 0.3, 0.8)
+    if (materialName.includes('quartz')) return new THREE.Color(0.8, 0.8, 0.9)
     
-    return new THREE.Color(baseR, baseG, baseB)
+    // Stone types - earth tones
+    if (materialName.includes('granite')) return new THREE.Color(0.5, 0.5, 0.6)
+    if (materialName.includes('limestone')) return new THREE.Color(0.8, 0.8, 0.7)
+    if (materialName.includes('marble')) return new THREE.Color(0.9, 0.9, 0.9)
+    if (materialName.includes('slate')) return new THREE.Color(0.3, 0.3, 0.4)
+    if (materialName.includes('sandstone')) return new THREE.Color(0.8, 0.7, 0.5)
+    if (materialName.includes('obsidian')) return new THREE.Color(0.1, 0.1, 0.2)
+    if (materialName.includes('stone')) return new THREE.Color(0.5, 0.5, 0.5)
+    
+    // Wood types - brown tones
+    if (materialName.includes('oak')) return new THREE.Color(0.5, 0.3, 0.2)
+    if (materialName.includes('pine')) return new THREE.Color(0.6, 0.4, 0.2)
+    if (materialName.includes('cedar')) return new THREE.Color(0.7, 0.4, 0.3)
+    if (materialName.includes('birch')) return new THREE.Color(0.8, 0.7, 0.5)
+    if (materialName.includes('bamboo')) return new THREE.Color(0.6, 0.7, 0.3)
+    if (materialName.includes('wood')) return new THREE.Color(0.4, 0.3, 0.2)
+    
+    // Organic materials
+    if (materialName.includes('leather')) return new THREE.Color(0.4, 0.2, 0.1)
+    if (materialName.includes('bone')) return new THREE.Color(0.9, 0.9, 0.8)
+    if (materialName.includes('resin')) return new THREE.Color(0.7, 0.5, 0.2)
+    if (materialName.includes('scale')) return new THREE.Color(0.3, 0.5, 0.3)
+    
+    // Default fallback
+    return new THREE.Color(0.5, 0.4, 0.3)
+  }
+
+  // Get materials sorted by quantity (most abundant first)
+  const getSortedMaterials = () => {
+    return Object.entries(building.materials)
+      .filter(([_, quantity]) => quantity > 0)
+      .sort(([_, a], [__, b]) => b - a)
+  }
+
+  // Get color for specific building part based on material priority
+  const getPartColor = (partIndex: number) => {
+    const materials = getSortedMaterials()
+    if (materials.length === 0) return new THREE.Color(0.5, 0.5, 0.5)
+    
+    // Use modulo to cycle through available materials
+    const materialIndex = partIndex % materials.length
+    return getColorForMaterial(materials[materialIndex][0])
   }
 
   // Calculate opacity based on durability
@@ -44,7 +91,7 @@ export default function Building3D({ building, onClick }: Building3DProps) {
           building.dimensions.depth
         ]} />
         <meshLambertMaterial
-          color={getColor()}
+          color={getPartColor(0)}
           transparent
           opacity={opacity}
         />
@@ -57,7 +104,7 @@ export default function Building3D({ building, onClick }: Building3DProps) {
           0.8,
           4
         ]} />
-        <meshLambertMaterial color={new THREE.Color(0.6, 0.3, 0.2)} />
+        <meshLambertMaterial color={getPartColor(1)} />
       </mesh>
 
       {/* Door */}
@@ -67,7 +114,7 @@ export default function Building3D({ building, onClick }: Building3DProps) {
         0
       ]}>
         <boxGeometry args={[0.2, building.dimensions.height * 0.6, 0.8]} />
-        <meshLambertMaterial color={new THREE.Color(0.4, 0.2, 0.1)} />
+        <meshLambertMaterial color={getPartColor(2)} />
       </mesh>
 
       {/* Windows (if building is beautiful enough) */}
