@@ -38,6 +38,9 @@ export interface Building {
   // Occupancy
   currentOccupants: string[]; // animal IDs
   maxOccupants: number;
+
+  // Building features
+  features: string[]; // Array of feature types: "workshop", "garden", etc.
 }
 
 export interface BuildingAction {
@@ -46,6 +49,8 @@ export interface BuildingAction {
     | "make_taller"
     | "make_beautiful"
     | "add_room"
+    | "add_workshop"
+    | "add_garden"
     | "create_building"
     | "purchase_upgrade";
   name: string;
@@ -149,6 +154,36 @@ export const BUILDING_ACTIONS: Record<string, BuildingAction> = {
       dimensionChanges: { depth: 2, width: 1 },
       statChanges: { durability: -3 },
       capacityChange: 2,
+    },
+  },
+  add_workshop: {
+    type: "add_workshop",
+    name: "Add Workshop",
+    description: "Build a dedicated workspace for crafting and tool creation",
+    requiredMaterials: {
+      requiredQuantity: 3,
+      suitableTraits: ["durable"],
+      minTraitScore: 60,
+    },
+    skillRequirements: ["toolmaking: 1"],
+    effects: {
+      dimensionChanges: { width: 2, depth: 1 },
+      statChanges: { durability: -5, comfort: 5 },
+      capacityChange: 1,
+    },
+  },
+  add_garden: {
+    type: "add_garden",
+    name: "Add Garden",
+    description: "Create a peaceful outdoor space for growing plants and relaxation",
+    requiredMaterials: {
+      requiredQuantity: 2,
+      suitableTraits: ["fertile", "natural"],
+      minTraitScore: 40,
+    },
+    effects: {
+      dimensionChanges: { width: 1, depth: 2 },
+      statChanges: { beauty: 20, comfort: 10 },
     },
   },
   purchase_upgrade: {

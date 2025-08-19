@@ -192,6 +192,66 @@ export default function Building3D({ building, onClick }: Building3DProps) {
         </mesh>
       )}
 
+      {/* Workshop - tools and workbench */}
+      {building.features?.includes("workshop") && (
+        <group position={[-building.dimensions.width / 2 + 0.5, 0, 0]}>
+          {/* Workbench */}
+          <mesh position={[0, building.dimensions.height * 0.25, 0]}>
+            <boxGeometry args={[1, 0.5, 0.8]} />
+            <meshLambertMaterial color={new THREE.Color(0.4, 0.3, 0.2)} />
+          </mesh>
+          {/* Anvil */}
+          <mesh position={[0, building.dimensions.height * 0.35, 0]}>
+            <boxGeometry args={[0.4, 0.2, 0.3]} />
+            <meshLambertMaterial color={new THREE.Color(0.3, 0.3, 0.3)} />
+          </mesh>
+          {/* Tool rack */}
+          <mesh position={[0, building.dimensions.height * 0.6, -0.4]}>
+            <boxGeometry args={[0.8, 0.1, 0.1]} />
+            <meshLambertMaterial color={getPartColor(3)} />
+          </mesh>
+        </group>
+      )}
+
+      {/* Garden - plants and greenery */}
+      {building.features?.includes("garden") && (
+        <group position={[0, 0, building.dimensions.depth / 2 + 1]}>
+          {/* Garden bed */}
+          <mesh position={[0, 0.1, 0]}>
+            <boxGeometry args={[building.dimensions.width * 0.8, 0.2, 1.5]} />
+            <meshLambertMaterial color={new THREE.Color(0.3, 0.2, 0.1)} />
+          </mesh>
+          {/* Plants */}
+          {Array.from({ length: 6 }, (_, i) => (
+            <mesh
+              key={i}
+              position={[
+                (i - 2.5) * 0.5,
+                0.3,
+                Math.sin(i) * 0.3,
+              ]}
+            >
+              <coneGeometry args={[0.15, 0.4, 6]} />
+              <meshLambertMaterial color={new THREE.Color(0.2, 0.6, 0.2)} />
+            </mesh>
+          ))}
+          {/* Flowers */}
+          {Array.from({ length: 4 }, (_, i) => (
+            <mesh
+              key={i}
+              position={[
+                (i - 1.5) * 0.7,
+                0.35,
+                0.5,
+              ]}
+            >
+              <sphereGeometry args={[0.08, 6, 4]} />
+              <meshLambertMaterial color={new THREE.Color(0.8, 0.3, 0.6)} />
+            </mesh>
+          ))}
+        </group>
+      )}
+
       {/* Capacity indicator - small spheres for max occupants */}
       {Array.from({ length: building.maxOccupants }, (_, i) => (
         <mesh

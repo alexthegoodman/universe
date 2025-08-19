@@ -162,6 +162,7 @@ export class BuildingSystem {
       createdBy: animal.id,
       currentOccupants: [],
       maxOccupants: action.effects.capacityChange || 2,
+      features: [],
     };
 
     this.buildings.set(building.id, building);
@@ -347,6 +348,17 @@ export class BuildingSystem {
       building.maxOccupants += scaledCapacityChange;
       building.stats.capacity = building.maxOccupants;
       changes.capacity = building.maxOccupants;
+    }
+
+    // Add features for specific building actions
+    if (!building.features) {
+      building.features = [];
+    }
+    if (actionType === "add_workshop" && !building.features.includes("workshop")) {
+      building.features.push("workshop");
+    }
+    if (actionType === "add_garden" && !building.features.includes("garden")) {
+      building.features.push("garden");
     }
 
     // Update building materials used (add to existing materials) - only for material-based actions

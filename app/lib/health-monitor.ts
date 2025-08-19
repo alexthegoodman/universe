@@ -745,6 +745,7 @@ export class HealthMonitor {
             building.currentOccupants.length < building.maxOccupants &&
             distance <= 5,
           availableActions: availableActions.map((action) => action.type),
+          features: building.features || [], // Include features like workshops, gardens, etc.
         };
       })
       .filter((building) => building.distance <= SIGHT_RADIUS)

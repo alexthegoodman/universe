@@ -183,6 +183,7 @@ export interface NearbyBuilding {
   maxOccupants: number;
   canEnter: boolean;
   availableActions: string[];
+  features: string[]; // Array of feature types: "workshop", "garden", etc.
 }
 
 export interface NearbyBandit {

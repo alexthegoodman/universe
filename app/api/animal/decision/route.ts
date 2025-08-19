@@ -229,9 +229,12 @@ BUILDING SYSTEM:
   • "make_taller" - Increase building height (needs 2 durable materials, trait score ≥50)
   • "make_beautiful" - Add decorative elements (needs 2 beautiful materials, trait score ≥60)
   • "add_room" - Construct additional space (needs 2 durable materials, trait score ≥50)
+  • "add_workshop" - Build workspace for crafting (needs 3 durable materials, trait score ≥60, toolmaking skill)
+  • "add_garden" - Create peaceful outdoor space (needs 2 fertile/natural materials, trait score ≥40)
   • "purchase_upgrade" - Spend currency to instantly upgrade building size and appearance, the more you spend, the better the improvement
 - DURABLE materials include: granite, limestone, marble, oak_wood, cedar_wood, iron_ore, etc.
 - BEAUTIFUL materials include: marble, diamond, ruby, emerald, amethyst, silk, etc.
+- FERTILE/NATURAL materials include: soil, compost, seeds, plant fibers, berries, etc.
 - Consider building when you have collected enough suitable materials and want long-term shelter
 - Buildings help during sleep and provide protection from the elements
 - They increase your happiness metrics when you rest inside them
@@ -349,6 +352,28 @@ Make Beautiful...
   "reason": "Add decorative elements to improve happiness",
   "parameters": {{
     "action": "make_beautiful",
+    "buildingId": "building_123"
+  }}
+}}
+Add Workshop...
+{{
+  "action": "building",
+  "priority": 7,
+  "turnOffset": 4,
+  "reason": "Create workspace for crafting tools and items",
+  "parameters": {{
+    "action": "add_workshop",
+    "buildingId": "building_123"
+  }}
+}}
+Add Garden...
+{{
+  "action": "building",
+  "priority": 6,
+  "turnOffset": 2,
+  "reason": "Create peaceful outdoor space for relaxation and beauty",
+  "parameters": {{
+    "action": "add_garden",
     "buildingId": "building_123"
   }}
 }}

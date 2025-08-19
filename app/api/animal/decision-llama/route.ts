@@ -73,6 +73,8 @@ const PLAN_SCHEMA = {
                       "make_taller",
                       "make_beautiful",
                       "add_room",
+                      "add_workshop",
+                      "add_garden",
                     ],
                     description: "Specific building action",
                   },
