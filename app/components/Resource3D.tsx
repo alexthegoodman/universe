@@ -172,43 +172,43 @@ function Model3D({
   const gltf = useGLTF(`/models/${modelPath}`);
   const meshRef = useRef<Mesh>(null);
 
-  // Apply material modifications based on resource properties
-  const modifyMaterial = () => {
-    if (!gltf.scene) return;
+  // // Apply material modifications based on resource properties
+  // const modifyMaterial = () => {
+  //   if (!gltf.scene) return;
 
-    gltf.scene.traverse((child: any) => {
-      if (child.isMesh && child.material) {
-        // Adjust material based on resource rarity and quality
-        const rarityIntensity = {
-          common: 0.8,
-          uncommon: 0.9,
-          rare: 1.0,
-          epic: 1.1,
-          legendary: 1.2,
-        }[resource.rarity];
+  //   gltf.scene.traverse((child: any) => {
+  //     if (child.isMesh && child.material) {
+  //       // Adjust material based on resource rarity and quality
+  //       const rarityIntensity = {
+  //         common: 0.8,
+  //         uncommon: 0.9,
+  //         rare: 1.0,
+  //         epic: 1.1,
+  //         legendary: 1.2,
+  //       }[resource.rarity];
 
-        // Enhance materials for higher rarity
-        if (resource.rarity === "legendary" || resource.rarity === "epic") {
-          child.material.emissive.setHex(0x222244);
-          child.material.emissiveIntensity = 0.1 * rarityIntensity;
-        }
+  //       // Enhance materials for higher rarity
+  //       if (resource.rarity === "legendary" || resource.rarity === "epic") {
+  //         child.material.emissive.setHex(0x222244);
+  //         child.material.emissiveIntensity = 0.1 * rarityIntensity;
+  //       }
 
-        // Apply quality-based transparency
-        const opacity =
-          resource.quantity > 0 ? 0.85 + (resource.quality / 100) * 0.15 : 0.3;
-        child.material.transparent = true;
-        child.material.opacity = opacity;
+  //       // Apply quality-based transparency
+  //       const opacity =
+  //         resource.quantity > 0 ? 0.85 + (resource.quality / 100) * 0.15 : 0.3;
+  //       child.material.transparent = true;
+  //       child.material.opacity = opacity;
 
-        // Special effects for magical resources
-        if (resource.traits?.magical && resource.traits.magical > 70) {
-          child.material.emissive.setHex(0x8b5cf6);
-          child.material.emissiveIntensity = 0.2;
-        }
-      }
-    });
-  };
+  //       // Special effects for magical resources
+  //       if (resource.traits?.magical && resource.traits.magical > 70) {
+  //         child.material.emissive.setHex(0x8b5cf6);
+  //         child.material.emissiveIntensity = 0.2;
+  //       }
+  //     }
+  //   });
+  // };
 
-  modifyMaterial();
+  // modifyMaterial();
 
   return (
     <primitive
@@ -239,17 +239,17 @@ export function Resource3D({ resource, onClick }: Resource3DProps) {
     const categoryBase = (() => {
       switch (resource.category) {
         case "minerals_stones":
-          return 2.2;
+          return 1.7;
         case "organic_materials":
-          return 2.0;
-        case "edible_plants":
           return 1.8;
+        case "edible_plants":
+          return 2.8;
         case "medicinal_herbs":
-          return 1.6;
+          return 2.6;
         case "spices_seasonings":
           return 1.5;
         case "rare_elements":
-          return 2.0;
+          return 1.5;
         default:
           return 1.5;
       }

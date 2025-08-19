@@ -187,6 +187,7 @@ export default function ActionLog({ entries }: ActionLogProps) {
           <option value="exploring">Exploring</option>
           <option value="socializing">Socializing</option>
           <option value="building">Building</option>
+          <option value="crafting">Crafting</option>
         </select>
       </div>
 

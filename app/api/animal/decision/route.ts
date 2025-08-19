@@ -229,8 +229,8 @@ BUILDING SYSTEM:
   • "make_taller" - Increase building height (needs 2 durable materials, trait score ≥50)
   • "make_beautiful" - Add decorative elements (needs 2 beautiful materials, trait score ≥60)
   • "add_room" - Construct additional space (needs 2 durable materials, trait score ≥50)
-  • "add_workshop" - Build workspace for crafting (needs 3 durable materials, trait score ≥60, toolmaking skill)
-  • "add_garden" - Create peaceful outdoor space (needs 2 fertile/natural materials, trait score ≥40)
+  • "add_workshop" - Build workspace for crafting (needs 3 durable materials, trait score ≥60)
+  • "add_garden" - Create peaceful outdoor space (needs 2 nutritious materials, trait score ≥40)
   • "purchase_upgrade" - Spend currency to instantly upgrade building size and appearance, the more you spend, the better the improvement
 - DURABLE materials include: granite, limestone, marble, oak_wood, cedar_wood, iron_ore, etc.
 - BEAUTIFUL materials include: marble, diamond, ruby, emerald, amethyst, silk, etc.
@@ -515,31 +515,47 @@ ${animal.specialMemories
         .map(([skillName, level]) => {
           const levelNum = level as number;
           const skillDef = skillSystem.getSkillDefinition(skillName);
-          const displayName = skillDef?.name || skillName.replace(/([A-Z])/g, ' $1').trim();
+          const displayName =
+            skillDef?.name || skillName.replace(/([A-Z])/g, " $1").trim();
           const xp = animal.experience?.[skillName] || 0;
-          
+
           if (levelNum >= 100) {
-            return `- ${displayName}: MASTERED (Level 100) - ${skillDef?.description || 'Advanced skill'}`;
+            return `- ${displayName}: MASTERED (Level 100) - ${
+              skillDef?.description || "Advanced skill"
+            }`;
           } else {
             const nextLevelXP = skillSystem.calculateXPForLevel(levelNum + 1);
             const currentLevelXP = skillSystem.calculateXPForLevel(levelNum);
             const progressXP = xp - currentLevelXP;
             const neededXP = nextLevelXP - currentLevelXP;
             const progressPercent = Math.round((progressXP / neededXP) * 100);
-            
-            return `- ${displayName}: Level ${levelNum} (${progressPercent}% to ${levelNum + 1}) - ${skillDef?.description || 'Developing skill'}`;
+
+            return `- ${displayName}: Level ${levelNum} (${progressPercent}% to ${
+              levelNum + 1
+            }) - ${skillDef?.description || "Developing skill"}`;
           }
         })
         .join("\n");
 
-      const advancedPaths = animal.unlockedAdvancedPaths && animal.unlockedAdvancedPaths.length > 0
-        ? `\n\nAdvanced Paths Unlocked:\n${animal.unlockedAdvancedPaths.map((path: string) => `- ⭐ ${path}`).join("\n")}`
-        : "";
+      const advancedPaths =
+        animal.unlockedAdvancedPaths && animal.unlockedAdvancedPaths.length > 0
+          ? `\n\nAdvanced Paths Unlocked:\n${animal.unlockedAdvancedPaths
+              .map((path: string) => `- ⭐ ${path}`)
+              .join("\n")}`
+          : "";
 
       const availableSkills = skillSystem.getAvailableSkills(animal);
-      const canLearn = availableSkills.length > 0
-        ? `\n\nSkills Available to Learn: ${availableSkills.slice(0, 3).map((s: any) => s.name).join(", ")}${availableSkills.length > 3 ? ` and ${availableSkills.length - 3} more` : ""}`
-        : "";
+      const canLearn =
+        availableSkills.length > 0
+          ? `\n\nSkills Available to Learn: ${availableSkills
+              .slice(0, 3)
+              .map((s: any) => s.name)
+              .join(", ")}${
+              availableSkills.length > 3
+                ? ` and ${availableSkills.length - 3} more`
+                : ""
+            }`
+          : "";
 
       return `Current Skills:\n${skillsList}${advancedPaths}${canLearn}`;
     })();

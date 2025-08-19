@@ -165,7 +165,7 @@ export const BUILDING_ACTIONS: Record<string, BuildingAction> = {
       suitableTraits: ["durable"],
       minTraitScore: 60,
     },
-    skillRequirements: ["toolmaking: 1"],
+    // skillRequirements: ["toolmaking: 1"],
     effects: {
       dimensionChanges: { width: 2, depth: 1 },
       statChanges: { durability: -5, comfort: 5 },
@@ -175,10 +175,11 @@ export const BUILDING_ACTIONS: Record<string, BuildingAction> = {
   add_garden: {
     type: "add_garden",
     name: "Add Garden",
-    description: "Create a peaceful outdoor space for growing plants and relaxation",
+    description:
+      "Create a peaceful outdoor space for growing plants and relaxation",
     requiredMaterials: {
       requiredQuantity: 2,
-      suitableTraits: ["fertile", "natural"],
+      suitableTraits: ["nutritious"],
       minTraitScore: 40,
     },
     effects: {
