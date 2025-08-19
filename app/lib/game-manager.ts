@@ -1756,4 +1756,55 @@ export class GameManager {
   formatCurrency(amount: number): string {
     return CurrencySystem.formatCurrency(amount);
   }
+
+  // Player control methods
+
+  async executeAnimalAction(
+    animalId: string,
+    actionParams: any
+  ): Promise<boolean> {
+    const animal = this.healthMonitor.getAnimal(animalId);
+    if (!animal || !animal.isAlive) {
+      return false;
+    }
+
+    try {
+      // Import the MXPActionSystem here to execute actions
+      // const { MXPActionSystem } = await import('./mxp-actions');
+      // const actionSystem = new MXPActionSystem();
+      const actionSystem = this.healthMonitor.actionSystem;
+
+      // Execute the action through the MXP system
+      const result = await actionSystem.executeAction(
+        animal,
+        actionParams.action,
+        actionParams
+      );
+
+      if (result.success) {
+        // Update animal state with the action result
+        animalStateManager.updateFromActionResult(
+          animalId,
+          result,
+          actionParams.action,
+          "player-command"
+        );
+
+        this.addEvent(
+          "action",
+          `${animal.name} executed player action: ${actionParams.action}`,
+          animalId
+        );
+        console.log(
+          `🎮 Player commanded ${animal.name} to execute:`,
+          actionParams.action
+        );
+      }
+
+      return result.success;
+    } catch (error) {
+      console.error(`Failed to execute action for ${animal.name}:`, error);
+      return false;
+    }
+  }
 }

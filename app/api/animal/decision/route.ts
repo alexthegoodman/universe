@@ -134,6 +134,7 @@ SPECIAL MOVEMENT ACTIONS:
 ADDITIONAL NOTES:
   • There can only be 1 home per animal
   • There can only be 1 trading post and 1 hospital per map
+  • Remember that sleep is very powerful for restoring energy and health
 
 ALWAYS INCLUDE A JSON PLAN when creating new plans. Use this format and always return as JSON:
 {{

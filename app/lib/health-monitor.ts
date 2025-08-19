@@ -40,7 +40,7 @@ export interface HealthReport {
 
 export class HealthMonitor {
   private aiInstances: Map<string, AnimalAI> = new Map();
-  private actionSystem: MXPActionSystem;
+  actionSystem: MXPActionSystem;
   explorationSystem: ExplorationSystem;
   private healthCheckInterval: NodeJS.Timeout | null = null;
   private decisionStagger: Map<string, number> = new Map();

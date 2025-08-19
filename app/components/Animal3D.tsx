@@ -7,10 +7,11 @@ import * as THREE from 'three'
 
 interface Animal3DProps {
   animal: Animal
-  onClick?: (animal: Animal) => void
+  onClick?: (animal: Animal, ctrlKey?: boolean) => void
+  isSelected?: boolean
 }
 
-export default function Animal3D({ animal, onClick }: Animal3DProps) {
+export default function Animal3D({ animal, onClick, isSelected = false }: Animal3DProps) {
   const meshRef = useRef<THREE.Mesh>(null)
   const groupRef = useRef<THREE.Group>(null)
   const [hovered, setHovered] = useState(false)
@@ -163,7 +164,10 @@ export default function Animal3D({ animal, onClick }: Animal3DProps) {
   return (
     <group 
       ref={groupRef}
-      onClick={() => onClick?.(animal)}
+      onClick={(event) => {
+        event.stopPropagation();
+        onClick?.(animal, event.nativeEvent.ctrlKey || event.nativeEvent.metaKey);
+      }}
       onPointerOver={() => setHovered(true)}
       onPointerOut={() => setHovered(false)}
     >
@@ -172,7 +176,7 @@ export default function Animal3D({ animal, onClick }: Animal3DProps) {
         <sphereGeometry args={[1, 16, 16]} />
         <meshStandardMaterial 
           color={hovered ? getHealthColor() : animal.dna.color.primary}
-          emissive={hovered ? '#333' : '#000'}
+          emissive={isSelected ? '#4ade80' : (hovered ? '#333' : '#000')}
           roughness={0.7}
           metalness={0.1}
           opacity={animal.currentAction === 'sleeping' ? 0.8 : 1}
@@ -257,6 +261,14 @@ export default function Animal3D({ animal, onClick }: Animal3DProps) {
         <mesh position={[0, 0.1, 0]}>
           <ringGeometry args={[1, 1.2, 8]} />
           <meshBasicMaterial color="#06b6d4" transparent opacity={0.3} />
+        </mesh>
+      )}
+      
+      {/* Selection indicator */}
+      {isSelected && (
+        <mesh position={[0, 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[1.5, 1.8, 16]} />
+          <meshBasicMaterial color="#4ade80" transparent opacity={0.6} />
         </mesh>
       )}
       
