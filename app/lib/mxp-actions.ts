@@ -112,35 +112,45 @@ export class MXPActionSystem {
   ): ActionResult {
     // Initialize skills if not present
     const updatedAnimal = skillSystem.initializeAnimalSkills(animal);
-    
+
     // Generate XP for this action
-    const skillXPGains = skillSystem.generateActionXP(actionType, resourceType, quality);
-    
+    const skillXPGains = skillSystem.generateActionXP(
+      actionType,
+      resourceType,
+      quality
+    );
+
     let skillXP: Record<string, number> = {};
     let skillLevelUps: string[] = [];
     let unlockedAdvancedPaths: string[] = [];
-    
+
     // Apply XP gains and check for level ups
     for (const xpGain of skillXPGains) {
-      const levelUpResult = skillSystem.addSkillXP(updatedAnimal, xpGain.skillName, xpGain.xpGained);
-      
+      const levelUpResult = skillSystem.addSkillXP(
+        updatedAnimal,
+        xpGain.skillName,
+        xpGain.xpGained
+      );
+
       skillXP[xpGain.skillName] = xpGain.xpGained;
-      
+
       if (levelUpResult.leveledUp) {
-        skillLevelUps.push(`${xpGain.skillName} (${levelUpResult.oldLevel} → ${levelUpResult.newLevel})`);
+        skillLevelUps.push(
+          `${xpGain.skillName} (${levelUpResult.oldLevel} → ${levelUpResult.newLevel})`
+        );
       }
-      
+
       if (levelUpResult.unlockedAdvancedPaths.length > 0) {
         unlockedAdvancedPaths.push(...levelUpResult.unlockedAdvancedPaths);
       }
     }
-    
+
     // Update the result with skill information
     return {
       ...result,
       skillXP,
       skillLevelUps,
-      unlockedAdvancedPaths
+      unlockedAdvancedPaths,
     };
   }
 
@@ -908,18 +918,28 @@ export class MXPActionSystem {
     // Calculate success based on animal traits and skills
     const strengthMultiplier = animal.dna.strength / 100;
     const intelligenceMultiplier = animal.dna.intelligence / 100;
-    
+
     // Apply skill-based efficiency bonuses
     let skillEfficiency = 1.0;
     if (resource.type === "stone" || resource.type.includes("mineral")) {
       skillEfficiency = skillSystem.calculateSkillEfficiency(animal, "mining");
-    } else if (resource.type.includes("plant") || resource.type.includes("berry")) {
-      skillEfficiency = skillSystem.calculateSkillEfficiency(animal, "foraging");
-    } else if (resource.type.includes("fish") || resource.type.includes("water")) {
+    } else if (
+      resource.type.includes("plant") ||
+      resource.type.includes("berry")
+    ) {
+      skillEfficiency = skillSystem.calculateSkillEfficiency(
+        animal,
+        "foraging"
+      );
+    } else if (
+      resource.type.includes("fish") ||
+      resource.type.includes("water")
+    ) {
       skillEfficiency = skillSystem.calculateSkillEfficiency(animal, "fishing");
     }
-    
-    const effectiveness = ((strengthMultiplier + intelligenceMultiplier) / 2) * skillEfficiency;
+
+    const effectiveness =
+      ((strengthMultiplier + intelligenceMultiplier) / 2) * skillEfficiency;
 
     let energyCost = 3 + (resource.type === "stone" ? 1 : 0); // Stone is harder to harvest
 
@@ -978,7 +998,13 @@ export class MXPActionSystem {
       duration: 3000 + harvestAmount * 1000,
     };
 
-    return this.applySkillEffects(animal, "harvesting", baseResult, resource.type, resource.quality);
+    return this.applySkillEffects(
+      animal,
+      "harvesting",
+      baseResult,
+      resource.type,
+      resource.quality
+    );
   }
 
   private async executeBuilding(
@@ -986,7 +1012,7 @@ export class MXPActionSystem {
     params: any
   ): Promise<ActionResult> {
     const {
-      action = "create_building",
+      action = "create_home",
       buildingId,
       position,
       buildingName,
@@ -995,9 +1021,13 @@ export class MXPActionSystem {
 
     let result;
 
-    if (action === "create_building" || action === "create_home" || 
-        action === "create_trading_post" || action === "create_hospital" || 
-        action === "create_factory") {
+    if (
+      // action === "create_building" ||
+      action === "create_home" ||
+      action === "create_trading_post" ||
+      action === "create_hospital" ||
+      action === "create_factory"
+    ) {
       // Create a new building
       const buildPosition = position || {
         x: animal.position.x + (Math.random() - 0.5) * 10,
@@ -1006,7 +1036,7 @@ export class MXPActionSystem {
       };
 
       // Determine building type from action
-      let buildingType: string = "generic";
+      let buildingType: string = "home";
       if (action === "create_home") buildingType = "home";
       else if (action === "create_trading_post") buildingType = "trading_post";
       else if (action === "create_hospital") buildingType = "hospital";
@@ -1069,7 +1099,7 @@ export class MXPActionSystem {
       },
     };
 
-    return result.success 
+    return result.success
       ? this.applySkillEffects(animal, "building", baseResult)
       : baseResult;
   }
@@ -1231,7 +1261,13 @@ export class MXPActionSystem {
       duration,
     };
 
-    return this.applySkillEffects(animal, "crafting", baseResult, "crafted_item", craftedItem.quality);
+    return this.applySkillEffects(
+      animal,
+      "crafting",
+      baseResult,
+      "crafted_item",
+      craftedItem.quality
+    );
   }
 
   private generateCraftedItem(
@@ -1478,8 +1514,8 @@ export class MXPActionSystem {
 
     // Calculate distance to home
     const distance = Math.sqrt(
-      Math.pow(home.position.x - animal.position.x, 2) + 
-      Math.pow(home.position.z - animal.position.z, 2)
+      Math.pow(home.position.x - animal.position.x, 2) +
+        Math.pow(home.position.z - animal.position.z, 2)
     );
 
     // Calculate energy cost (minimum for going home since it's special)
@@ -1532,8 +1568,8 @@ export class MXPActionSystem {
 
     // Calculate distance to trading post
     const distance = Math.sqrt(
-      Math.pow(tradingPost.position.x - animal.position.x, 2) + 
-      Math.pow(tradingPost.position.z - animal.position.z, 2)
+      Math.pow(tradingPost.position.x - animal.position.x, 2) +
+        Math.pow(tradingPost.position.z - animal.position.z, 2)
     );
 
     // Calculate energy cost
@@ -1586,8 +1622,8 @@ export class MXPActionSystem {
 
     // Calculate distance to hospital
     const distance = Math.sqrt(
-      Math.pow(hospital.position.x - animal.position.x, 2) + 
-      Math.pow(hospital.position.z - animal.position.z, 2)
+      Math.pow(hospital.position.x - animal.position.x, 2) +
+        Math.pow(hospital.position.z - animal.position.z, 2)
     );
 
     // Calculate energy cost

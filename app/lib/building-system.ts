@@ -27,42 +27,42 @@ export class BuildingSystem {
   // Check if an animal already has a home
   private hasHome(animalId: string): boolean {
     return Array.from(this.buildings.values()).some(
-      building => building.type === "home" && building.createdBy === animalId
+      (building) => building.type === "home" && building.createdBy === animalId
     );
   }
 
   // Check if a building type already exists (for global limits)
   private hasGlobalBuilding(buildingType: BuildingType): boolean {
     return Array.from(this.buildings.values()).some(
-      building => building.type === buildingType
+      (building) => building.type === buildingType
     );
   }
 
   // Get the animal's home building
   getAnimalHome(animalId: string): Building | undefined {
     return Array.from(this.buildings.values()).find(
-      building => building.type === "home" && building.createdBy === animalId
+      (building) => building.type === "home" && building.createdBy === animalId
     );
   }
 
   // Get buildings by type
   getBuildingsByType(buildingType: BuildingType): Building[] {
     return Array.from(this.buildings.values()).filter(
-      building => building.type === buildingType
+      (building) => building.type === buildingType
     );
   }
 
   // Get the global trading post
   getTradingPost(): Building | undefined {
     return Array.from(this.buildings.values()).find(
-      building => building.type === "trading_post"
+      (building) => building.type === "trading_post"
     );
   }
 
   // Get the global hospital
   getHospital(): Building | undefined {
     return Array.from(this.buildings.values()).find(
-      building => building.type === "hospital"
+      (building) => building.type === "hospital"
     );
   }
 
@@ -138,15 +138,15 @@ export class BuildingSystem {
     animal: Animal,
     position: { x: number; y: number; z: number },
     name: string = "Animal Shelter",
-    buildingType: BuildingType = "generic"
+    buildingType: BuildingType = "home"
   ): BuildingActionResult {
     // Determine the action type based on buildingType
-    let actionKey = "create_building";
+    let actionKey = "create_home";
     if (buildingType === "home") actionKey = "create_home";
     else if (buildingType === "trading_post") actionKey = "create_trading_post";
     else if (buildingType === "hospital") actionKey = "create_hospital";
     else if (buildingType === "factory") actionKey = "create_factory";
-    
+
     const action = this.buildingActions[actionKey];
     if (!action) {
       return {
@@ -165,11 +165,16 @@ export class BuildingSystem {
       };
     }
 
-    if ((buildingType === "trading_post" || buildingType === "hospital") && 
-        this.hasGlobalBuilding(buildingType)) {
+    if (
+      (buildingType === "trading_post" || buildingType === "hospital") &&
+      this.hasGlobalBuilding(buildingType)
+    ) {
       return {
         success: false,
-        message: `There can only be one ${buildingType.replace('_', ' ')} on the map.`,
+        message: `There can only be one ${buildingType.replace(
+          "_",
+          " "
+        )} on the map.`,
         duration: 2000,
       };
     }
@@ -735,7 +740,12 @@ export class BuildingSystem {
 
         if (distance <= 5) {
           Object.values(this.buildingActions).forEach((action) => {
-            if (action.type !== "create_building") {
+            if (
+              action.type !== "create_home" &&
+              action.type !== "create_trading_post" &&
+              action.type !== "create_hospital" &&
+              action.type !== "create_factory"
+            ) {
               const canPerform = this.checkMaterials(
                 animal,
                 action.requiredMaterials

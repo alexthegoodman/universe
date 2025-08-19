@@ -21,7 +21,7 @@ export interface BuildingStats {
   comfort: number; // 0-100, affects rest quality
 }
 
-export type BuildingType = "home" | "trading_post" | "hospital" | "factory" | "generic";
+export type BuildingType = "home" | "trading_post" | "hospital" | "factory";
 
 export interface Building {
   id: string;
@@ -54,7 +54,7 @@ export interface BuildingAction {
     | "add_room"
     | "add_workshop"
     | "add_garden"
-    | "create_building"
+    // | "create_building"
     | "create_home"
     | "create_trading_post"
     | "create_hospital"
@@ -87,31 +87,31 @@ export interface BuildingActionResult {
 }
 
 export const BUILDING_ACTIONS: Record<string, BuildingAction> = {
-  create_building: {
-    type: "create_building",
-    name: "Create Building",
-    description: "Build a basic shelter structure",
-    requiredMaterials: {
-      requiredQuantity: 4,
-      suitableTraits: ["durable"],
-      minTraitScore: 50,
-    },
-    // skillRequirements: ["stoneKnapping: 1"], // lets make this available to all animals
-    effects: {
-      dimensionChanges: { width: 3, height: 2, depth: 3 },
-      statChanges: { durability: 60, beauty: 30, comfort: 50 },
-      capacityChange: 2,
-    },
-    buildingType: "generic",
-  },
+  // create_building: {
+  //   type: "create_building",
+  //   name: "Create Building",
+  //   description: "Build a basic shelter structure",
+  //   requiredMaterials: {
+  //     requiredQuantity: 4,
+  //     suitableTraits: ["durable"],
+  //     minTraitScore: 50,
+  //   },
+  //   // skillRequirements: ["stoneKnapping: 1"], // lets make this available to all animals
+  //   effects: {
+  //     dimensionChanges: { width: 3, height: 2, depth: 3 },
+  //     statChanges: { durability: 60, beauty: 30, comfort: 50 },
+  //     capacityChange: 2,
+  //   },
+  //   buildingType: "generic",
+  // },
   create_home: {
     type: "create_home",
     name: "Create Home",
     description: "Build a personal home where you can live and rest",
     requiredMaterials: {
-      requiredQuantity: 6,
+      requiredQuantity: 4,
       suitableTraits: ["durable"],
-      minTraitScore: 55,
+      minTraitScore: 50,
     },
     effects: {
       dimensionChanges: { width: 4, height: 3, depth: 4 },
@@ -122,14 +122,14 @@ export const BUILDING_ACTIONS: Record<string, BuildingAction> = {
   },
   create_trading_post: {
     type: "create_trading_post",
-    name: "Create Trading Post", 
+    name: "Create Trading Post",
     description: "Build a trading post for commerce and resource exchange",
     requiredMaterials: {
-      requiredQuantity: 12,
+      requiredQuantity: 8,
       suitableTraits: ["durable"],
-      minTraitScore: 60,
+      minTraitScore: 50,
     },
-    skillRequirements: ["masonry: 2"],
+    // skillRequirements: ["masonry: 2"],
     effects: {
       dimensionChanges: { width: 6, height: 4, depth: 6 },
       statChanges: { durability: 80, beauty: 50, comfort: 40 },
@@ -142,11 +142,11 @@ export const BUILDING_ACTIONS: Record<string, BuildingAction> = {
     name: "Create Hospital",
     description: "Build a hospital for healing and medical care",
     requiredMaterials: {
-      requiredQuantity: 10,
+      requiredQuantity: 8,
       suitableTraits: ["durable"],
-      minTraitScore: 65,
+      minTraitScore: 50,
     },
-    skillRequirements: ["masonry: 2"],
+    // skillRequirements: ["masonry: 2"],
     effects: {
       dimensionChanges: { width: 5, height: 3, depth: 5 },
       statChanges: { durability: 85, beauty: 60, comfort: 80 },
@@ -159,11 +159,11 @@ export const BUILDING_ACTIONS: Record<string, BuildingAction> = {
     name: "Create Factory",
     description: "Build a factory for mass production and manufacturing",
     requiredMaterials: {
-      requiredQuantity: 15,
+      requiredQuantity: 8,
       suitableTraits: ["durable"],
-      minTraitScore: 70,
+      minTraitScore: 50,
     },
-    skillRequirements: ["toolmaking: 3"],
+    // skillRequirements: ["toolmaking: 3"],
     effects: {
       dimensionChanges: { width: 8, height: 5, depth: 8 },
       statChanges: { durability: 90, beauty: 20, comfort: 30 },

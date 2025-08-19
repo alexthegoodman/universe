@@ -223,28 +223,14 @@ export default function Building3D({ building, onClick }: Building3DProps) {
           </mesh>
           {/* Plants */}
           {Array.from({ length: 6 }, (_, i) => (
-            <mesh
-              key={i}
-              position={[
-                (i - 2.5) * 0.5,
-                0.3,
-                Math.sin(i) * 0.3,
-              ]}
-            >
+            <mesh key={i} position={[(i - 2.5) * 0.5, 0.3, Math.sin(i) * 0.3]}>
               <coneGeometry args={[0.15, 0.4, 6]} />
               <meshLambertMaterial color={new THREE.Color(0.2, 0.6, 0.2)} />
             </mesh>
           ))}
           {/* Flowers */}
           {Array.from({ length: 4 }, (_, i) => (
-            <mesh
-              key={i}
-              position={[
-                (i - 1.5) * 0.7,
-                0.35,
-                0.5,
-              ]}
-            >
+            <mesh key={i} position={[(i - 1.5) * 0.7, 0.35, 0.5]}>
               <sphereGeometry args={[0.08, 6, 4]} />
               <meshLambertMaterial color={new THREE.Color(0.8, 0.3, 0.6)} />
             </mesh>
@@ -253,7 +239,7 @@ export default function Building3D({ building, onClick }: Building3DProps) {
       )}
 
       {/* Building Type-Specific Features */}
-      
+
       {/* Home - Welcome Mat and Cozy Elements */}
       {building.type === "home" && (
         <>
@@ -263,7 +249,13 @@ export default function Building3D({ building, onClick }: Building3DProps) {
             <meshLambertMaterial color={new THREE.Color(0.6, 0.3, 0.1)} />
           </mesh>
           {/* Chimney */}
-          <mesh position={[building.dimensions.width * 0.3, building.dimensions.height + 0.8, building.dimensions.depth * 0.3]}>
+          <mesh
+            position={[
+              building.dimensions.width * 0.3,
+              building.dimensions.height + 0.8,
+              building.dimensions.depth * 0.3,
+            ]}
+          >
             <boxGeometry args={[0.4, 1.2, 0.4]} />
             <meshLambertMaterial color={new THREE.Color(0.4, 0.2, 0.1)} />
           </mesh>
@@ -280,7 +272,10 @@ export default function Building3D({ building, onClick }: Building3DProps) {
         <>
           {/* Market stalls outside */}
           {Array.from({ length: 3 }, (_, i) => (
-            <group key={i} position={[(i - 1) * 2, 0, building.dimensions.depth / 2 + 1.5]}>
+            <group
+              key={i}
+              position={[(i - 1) * 2, 0, building.dimensions.depth / 2 + 1.5]}
+            >
               {/* Stall roof */}
               <mesh position={[0, 1.5, 0]}>
                 <boxGeometry args={[1.5, 0.1, 1.2]} />
@@ -309,21 +304,39 @@ export default function Building3D({ building, onClick }: Building3DProps) {
       {building.type === "hospital" && (
         <>
           {/* Red cross on front */}
-          <mesh position={[building.dimensions.width / 2 - 0.05, building.dimensions.height * 0.7, 0]}>
+          <mesh
+            position={[
+              building.dimensions.width / 2 - 0.05,
+              building.dimensions.height * 0.7,
+              0,
+            ]}
+          >
             <boxGeometry args={[0.1, 0.8, 0.2]} />
             <meshBasicMaterial color={new THREE.Color(1.0, 0.2, 0.2)} />
           </mesh>
-          <mesh position={[building.dimensions.width / 2 - 0.05, building.dimensions.height * 0.7, 0]}>
+          <mesh
+            position={[
+              building.dimensions.width / 2 - 0.05,
+              building.dimensions.height * 0.7,
+              0,
+            ]}
+          >
             <boxGeometry args={[0.1, 0.2, 0.8]} />
             <meshBasicMaterial color={new THREE.Color(1.0, 0.2, 0.2)} />
           </mesh>
           {/* Clean white exterior accent */}
           <mesh position={[0, building.dimensions.height / 2, 0]}>
-            <boxGeometry args={[building.dimensions.width * 1.05, building.dimensions.height * 1.05, building.dimensions.depth * 1.05]} />
-            <meshLambertMaterial 
-              color={new THREE.Color(0.95, 0.95, 0.95)} 
-              transparent 
-              opacity={0.3} 
+            <boxGeometry
+              args={[
+                building.dimensions.width * 1.05,
+                building.dimensions.height * 1.05,
+                building.dimensions.depth * 1.05,
+              ]}
+            />
+            <meshLambertMaterial
+              color={new THREE.Color(0.95, 0.95, 0.95)}
+              transparent
+              opacity={0.3}
             />
           </mesh>
           {/* Emergency beacon light */}
@@ -339,24 +352,44 @@ export default function Building3D({ building, onClick }: Building3DProps) {
         <>
           {/* Smokestacks */}
           {Array.from({ length: 2 }, (_, i) => (
-            <mesh key={i} position={[(i - 0.5) * building.dimensions.width * 0.4, building.dimensions.height + 1.5, building.dimensions.depth * 0.3]}>
+            <mesh
+              key={i}
+              position={[
+                (i - 0.5) * building.dimensions.width * 0.4,
+                building.dimensions.height + 1.5,
+                building.dimensions.depth * 0.3,
+              ]}
+            >
               <cylinderGeometry args={[0.3, 0.4, 3, 8]} />
               <meshLambertMaterial color={new THREE.Color(0.3, 0.3, 0.3)} />
             </mesh>
           ))}
           {/* Smoke particles */}
           {Array.from({ length: 4 }, (_, i) => (
-            <mesh key={i} position={[0, building.dimensions.height + 3 + i * 0.3, building.dimensions.depth * 0.3]}>
+            <mesh
+              key={i}
+              position={[
+                0,
+                building.dimensions.height + 3 + i * 0.3,
+                building.dimensions.depth * 0.3,
+              ]}
+            >
               <sphereGeometry args={[0.15 + i * 0.05, 6, 4]} />
-              <meshBasicMaterial 
-                color={new THREE.Color(0.6, 0.6, 0.6)} 
-                transparent 
-                opacity={0.4 - i * 0.08} 
+              <meshBasicMaterial
+                color={new THREE.Color(0.6, 0.6, 0.6)}
+                transparent
+                opacity={0.4 - i * 0.08}
               />
             </mesh>
           ))}
           {/* Industrial pipes */}
-          <mesh position={[building.dimensions.width / 2, building.dimensions.height * 0.8, -building.dimensions.depth / 2]}>
+          <mesh
+            position={[
+              building.dimensions.width / 2,
+              building.dimensions.height * 0.8,
+              -building.dimensions.depth / 2,
+            ]}
+          >
             <cylinderGeometry args={[0.1, 0.1, building.dimensions.width, 8]} />
             <meshLambertMaterial color={new THREE.Color(0.5, 0.5, 0.6)} />
           </mesh>
@@ -369,12 +402,12 @@ export default function Building3D({ building, onClick }: Building3DProps) {
       )}
 
       {/* Generic buildings get a simple flag */}
-      {building.type === "generic" && (
+      {/* {building.type === "generic" && (
         <mesh position={[0, building.dimensions.height + 1.0, 0]}>
           <boxGeometry args={[0.6, 0.4, 0.1]} />
           <meshBasicMaterial color={new THREE.Color(0.5, 0.7, 0.9)} />
         </mesh>
-      )}
+      )} */}
 
       {/* Capacity indicator - small spheres for max occupants */}
       {Array.from({ length: building.maxOccupants }, (_, i) => (

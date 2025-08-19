@@ -232,11 +232,10 @@ BUILDING SYSTEM:
 - Building accepts ANY material with appropriate traits - not just stone and wood!
 
 BUILDING TYPES AND ACTIONS:
-  • "create_building" - Build basic shelter (needs 4 durable materials, trait score ≥50)
-  • "create_home" - Build personal home (needs 6 durable materials, trait score ≥55) - LIMIT: Only 1 per animal
-  • "create_trading_post" - Build trading post (needs 12 durable materials, trait score ≥60, masonry: 2) - LIMIT: Only 1 per map
-  • "create_hospital" - Build hospital (needs 10 durable materials, trait score ≥65, masonry: 2) - LIMIT: Only 1 per map  
-  • "create_factory" - Build factory (needs 15 durable materials, trait score ≥70, toolmaking: 3)
+  • "create_home" - Build personal home (needs 4 durable materials, trait score ≥50) - LIMIT: Only 1 per animal
+  • "create_trading_post" - Build trading post (needs 8 durable materials, trait score ≥50) - LIMIT: Only 1 per map
+  • "create_hospital" - Build hospital (needs 8 durable materials, trait score ≥50) - LIMIT: Only 1 per map  
+  • "create_factory" - Build factory (needs 8 durable materials, trait score ≥50)
   
 BUILDING MODIFICATIONS:
   • "make_wider" - Expand building width (needs 2 durable materials, trait score ≥50)  
@@ -279,7 +278,7 @@ ALWAYS INCLUDE A JSON PLAN when creating new plans. Use this format and always r
         "turnOffset": 1,
         "reason": "Create shelter for sleeping",
         "parameters": {{
-          "action": "create_building",
+          "action": "create_home",
           "buildingName": "Survival Shelter"
         }}
       }},
@@ -336,7 +335,7 @@ For building steps, specify buildingAction in parameters:
   "turnOffset": 2,
   "reason": "Create shelter for sleeping",
   "parameters": {{
-    "action": "create_building",
+    "action": "create_home",
     "buildingName": "Survival Shelter"
   }}
 }}
@@ -585,10 +584,16 @@ ${animal.specialMemories
       const home = buildingSystem.getAnimalHome(animal.id);
       if (home) {
         const distance = Math.sqrt(
-          Math.pow(home.position.x - animal.position.x, 2) + 
-          Math.pow(home.position.z - animal.position.z, 2)
+          Math.pow(home.position.x - animal.position.x, 2) +
+            Math.pow(home.position.z - animal.position.z, 2)
         );
-        return `You have a HOME: "${home.name}" at position (${home.position.x.toFixed(1)}, ${home.position.z.toFixed(1)}) - Distance: ${distance.toFixed(1)} units away. Use "go_home" action to travel there.`;
+        return `You have a HOME: "${
+          home.name
+        }" at position (${home.position.x.toFixed(
+          1
+        )}, ${home.position.z.toFixed(1)}) - Distance: ${distance.toFixed(
+          1
+        )} units away. Use "go_home" action to travel there.`;
       } else {
         return "You do NOT have a home yet. Consider building one with the 'create_home' action for a personal shelter.";
       }
@@ -598,29 +603,45 @@ ${animal.specialMemories
     const specialBuildingsDescription = (() => {
       const tradingPost = buildingSystem.getTradingPost();
       const hospital = buildingSystem.getHospital();
-      
+
       let description = "";
-      
+
       if (tradingPost) {
         const distance = Math.sqrt(
-          Math.pow(tradingPost.position.x - animal.position.x, 2) + 
-          Math.pow(tradingPost.position.z - animal.position.z, 2)
+          Math.pow(tradingPost.position.x - animal.position.x, 2) +
+            Math.pow(tradingPost.position.z - animal.position.z, 2)
         );
-        description += `TRADING POST: "${tradingPost.name}" at position (${tradingPost.position.x.toFixed(1)}, ${tradingPost.position.z.toFixed(1)}) - Distance: ${distance.toFixed(1)} units. Use "visit_trading_post" to travel there.\n`;
+        description += `TRADING POST: "${
+          tradingPost.name
+        }" at position (${tradingPost.position.x.toFixed(
+          1
+        )}, ${tradingPost.position.z.toFixed(
+          1
+        )}) - Distance: ${distance.toFixed(
+          1
+        )} units. Use "visit_trading_post" to travel there.\n`;
       } else {
-        description += "NO TRADING POST exists yet. Someone could build one with 'create_trading_post' action.\n";
+        description +=
+          "NO TRADING POST exists yet. Someone could build one with 'create_trading_post' action.\n";
       }
-      
+
       if (hospital) {
         const distance = Math.sqrt(
-          Math.pow(hospital.position.x - animal.position.x, 2) + 
-          Math.pow(hospital.position.z - animal.position.z, 2)
+          Math.pow(hospital.position.x - animal.position.x, 2) +
+            Math.pow(hospital.position.z - animal.position.z, 2)
         );
-        description += `HOSPITAL: "${hospital.name}" at position (${hospital.position.x.toFixed(1)}, ${hospital.position.z.toFixed(1)}) - Distance: ${distance.toFixed(1)} units. Use "visit_hospital" to travel there for healing.`;
+        description += `HOSPITAL: "${
+          hospital.name
+        }" at position (${hospital.position.x.toFixed(
+          1
+        )}, ${hospital.position.z.toFixed(1)}) - Distance: ${distance.toFixed(
+          1
+        )} units. Use "visit_hospital" to travel there for healing.`;
       } else {
-        description += "NO HOSPITAL exists yet. Someone could build one with 'create_hospital' action for healing.";
+        description +=
+          "NO HOSPITAL exists yet. Someone could build one with 'create_hospital' action for healing.";
       }
-      
+
       return description;
     })();
 
@@ -723,6 +744,7 @@ ${animal.specialMemories
         },
       ],
       response_format: { type: "json_object" },
+      reasoning_effort: "minimal",
       // temperature: 0.7,
       // max_completion_tokens: 6000,
     });
