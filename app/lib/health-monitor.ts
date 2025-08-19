@@ -709,6 +709,7 @@ export class HealthMonitor {
         return {
           id: resource.id,
           type: resource.type,
+          category: resource.category,
           position: resource.position,
           distance: Math.round(distance * 10) / 10, // Round to 1 decimal
           quantity: resource.quantity,

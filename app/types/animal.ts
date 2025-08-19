@@ -1,3 +1,5 @@
+import { ResourceCategory } from "../lib/game-manager";
+
 export interface AnimalDNA {
   id: string;
   intelligence: number; // 0-100
@@ -147,6 +149,7 @@ export interface ActionResult {
 export interface NearbyResource {
   id: string;
   type: string;
+  category: ResourceCategory;
   position: AnimalPosition;
   distance: number; // Rounded to 1 decimal place
   quantity: number;

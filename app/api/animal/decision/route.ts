@@ -217,6 +217,39 @@ For building steps, specify buildingAction in parameters:
     "buildingName": "Survival Shelter"
   }}
 }}
+Build Trading Post...
+{{
+  "action": "building",
+  "priority": 9,
+  "turnOffset": 3,
+  "reason": "Establish trading post for resource exchange",
+  "parameters": {{
+    "action": "create_trading_post",
+    "buildingName": "Community Trading Post"
+  }}
+}}
+Build Hospital...
+{{
+  "action": "building",
+  "priority": 9,
+  "turnOffset": 3,
+  "reason": "Create hospital for healing and health checks",
+  "parameters": {{
+    "action": "create_hospital",
+    "buildingName": "Healing Center"
+  }}
+}}
+Build Factory...
+{{
+  "action": "building",
+  "priority": 8,
+  "turnOffset": 4,
+  "reason": "Establish factory for advanced crafting",
+  "parameters": {{
+    "action": "create_factory",
+    "buildingName": "Crafting Factory"
+  }}
+}}
 
 For building modifications, include buildingId:
 Make Wider...

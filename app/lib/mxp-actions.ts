@@ -953,7 +953,13 @@ export class MXPActionSystem {
     }
 
     // Calculate harvest amount
-    const baseAmount = Math.floor(1 + effectiveness * 2);
+    let baseAmount = Math.floor(2 + effectiveness * 2);
+
+    // harvest extra if food type
+    if (resource.category === "edible_plants") {
+      baseAmount += 4;
+    }
+
     const harvestAmount = Math.min(baseAmount, resource.quantity);
 
     // Check inventory capacity
