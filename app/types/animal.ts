@@ -96,6 +96,12 @@ export interface Animal {
 
   // Player-added memories and notes
   specialMemories?: SpecialMemory[];
+
+  // Skill system
+  skills: Record<string, number>; // skill name -> level (0-100)
+  experience: Record<string, number>; // skill name -> XP points
+  unlockedAdvancedPaths: string[]; // advanced path names that have been unlocked
+  skillPreferences: string[]; // preferred skill focus areas for AI decision making
 }
 
 export type AnimalAction =
@@ -126,6 +132,9 @@ export interface ActionResult {
   resourceId?: string; // ID of the resource that was harvested from
   offspring?: Animal; // Animal offspring created during breeding from socializing
   craftingResult?: CraftingResult; // Result of a crafting action
+  skillXP?: Record<string, number>; // XP gained for different skills from this action
+  skillLevelUps?: string[]; // Skills that leveled up from this action
+  unlockedAdvancedPaths?: string[]; // Advanced paths unlocked from this action
 }
 
 // Sight-based system interfaces
@@ -254,4 +263,35 @@ export interface CraftingParameters {
   ingredients: string[]; // Array of inventory item IDs to use
   craftingGoal: string; // What the animal is trying to create
   craftingMethod?: string; // Optional specific method description
+}
+
+// Skill system interfaces
+export interface SkillDefinition {
+  name: string;
+  maxLevel: number;
+  description: string;
+  prerequisites?: string[]; // Array of "skillName: level" requirements
+  advancedPaths?: AdvancedPath[];
+  category: string; // The skill tree this belongs to (stoneAge, bronzeAge, etc.)
+}
+
+export interface AdvancedPath {
+  name: string;
+  requirements: string[]; // Array of "skillName: level" requirements
+  description: string;
+  effects: string[]; // Gameplay effects this path provides
+}
+
+export interface SkillXPGain {
+  skillName: string;
+  xpGained: number;
+  actionType: string; // What action granted this XP
+  efficiency?: number; // Skill level efficiency bonus applied (1.0 = no bonus)
+}
+
+export interface SkillRequirement {
+  skillName: string;
+  requiredLevel: number;
+  currentLevel: number;
+  met: boolean;
 }

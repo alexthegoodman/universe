@@ -3,6 +3,7 @@
 import type { Animal, SpecialMemory } from "../types/animal";
 import { animalStateManager } from "../lib/animal-state-manager";
 import { CurrencySystem } from "../lib/currency-system";
+import { skillSystem } from "../lib/skill-system";
 import { useState } from "react";
 
 interface AnimalInfoProps {
@@ -225,6 +226,76 @@ export default function AnimalInfo({ animal, onClose }: AnimalInfoProps) {
             <div>Cautious: {animal.dna.personality.cautious}</div>
             <div>Nurturing: {animal.dna.personality.nurturing}</div>
           </div>
+        </div>
+
+        <div>
+          <div className="font-semibold mb-1">Skills & Technology</div>
+          {animal.skills && Object.keys(animal.skills).length > 0 ? (
+            <div className="text-sm max-h-32 overflow-y-auto">
+              <div className="space-y-1">
+                {Object.entries(animal.skills)
+                  .filter(([_, level]) => level > 0)
+                  .sort(([_, a], [__, b]) => b - a)
+                  .map(([skillName, level]) => {
+                    const xp = animal.experience?.[skillName] || 0;
+                    const nextLevelXP = skillSystem.calculateXPForLevel(level + 1);
+                    const currentLevelXP = skillSystem.calculateXPForLevel(level);
+                    const progressXP = xp - currentLevelXP;
+                    const neededXP = nextLevelXP - currentLevelXP;
+                    const progress = level >= 100 ? 100 : (progressXP / neededXP) * 100;
+                    
+                    return (
+                      <div key={skillName} className="p-1 bg-blue-50 rounded text-xs">
+                        <div className="flex justify-between items-center">
+                          <span className="capitalize font-medium">{skillName.replace(/([A-Z])/g, ' $1').trim()}</span>
+                          <span className="text-blue-600 font-bold">Lv.{level}</span>
+                        </div>
+                        {level < 100 && (
+                          <div className="mt-1">
+                            <div className="w-full bg-gray-200 rounded-full h-1.5">
+                              <div 
+                                className="bg-blue-600 h-1.5 rounded-full transition-all duration-300" 
+                                style={{ width: `${progress}%` }}
+                              />
+                            </div>
+                            <div className="text-xs text-gray-500 mt-0.5">
+                              {Math.round(progressXP)}/{Math.round(neededXP)} XP
+                            </div>
+                          </div>
+                        )}
+                        {level >= 100 && (
+                          <div className="text-xs text-green-600 font-bold">MASTERED</div>
+                        )}
+                      </div>
+                    );
+                  })}
+              </div>
+              
+              {animal.unlockedAdvancedPaths && animal.unlockedAdvancedPaths.length > 0 && (
+                <div className="mt-2 pt-2 border-t border-gray-200">
+                  <div className="text-xs font-semibold text-purple-600 mb-1">Advanced Paths:</div>
+                  <div className="space-y-1">
+                    {animal.unlockedAdvancedPaths.map((pathName) => (
+                      <div key={pathName} className="p-1 bg-purple-50 rounded text-xs text-purple-700 border border-purple-200">
+                        ⭐ {pathName}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              <div className="mt-2 pt-2 border-t border-gray-200 text-xs text-gray-600">
+                Total Skills: {Object.keys(animal.skills).filter(skill => animal.skills[skill] > 0).length}
+                {animal.unlockedAdvancedPaths && animal.unlockedAdvancedPaths.length > 0 && (
+                  <span> • Advanced Paths: {animal.unlockedAdvancedPaths.length}</span>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="text-sm text-gray-500 italic">
+              No skills learned yet. Skills are gained through actions like harvesting, crafting, and exploring.
+            </div>
+          )}
         </div>
 
         <div>

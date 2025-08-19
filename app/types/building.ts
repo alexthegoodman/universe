@@ -51,6 +51,7 @@ export interface BuildingAction {
   name: string;
   description: string;
   requiredMaterials: BuildingMaterial;
+  skillRequirements?: string[]; // Array of "skillName: level" requirements
   effects: {
     dimensionChanges?: Partial<BuildingDimensions>;
     statChanges?: Partial<BuildingStats>;
@@ -82,6 +83,7 @@ export const BUILDING_ACTIONS: Record<string, BuildingAction> = {
       suitableTraits: ["durable"],
       minTraitScore: 50,
     },
+    // skillRequirements: ["stoneKnapping: 1"], // lets make this available to all animals
     effects: {
       dimensionChanges: { width: 3, height: 2, depth: 3 },
       statChanges: { durability: 60, beauty: 30, comfort: 50 },
@@ -97,6 +99,7 @@ export const BUILDING_ACTIONS: Record<string, BuildingAction> = {
       suitableTraits: ["durable"],
       minTraitScore: 50,
     },
+    // skillRequirements: ["masonry: 1"],
     effects: {
       dimensionChanges: { width: 2 },
       statChanges: { durability: -5 },
@@ -112,6 +115,7 @@ export const BUILDING_ACTIONS: Record<string, BuildingAction> = {
       suitableTraits: ["durable"],
       minTraitScore: 50,
     },
+    // skillRequirements: ["masonry: 1"],
     effects: {
       dimensionChanges: { height: 1 },
       statChanges: { comfort: 10, beauty: 5 },
@@ -126,6 +130,7 @@ export const BUILDING_ACTIONS: Record<string, BuildingAction> = {
       suitableTraits: ["beautiful"],
       minTraitScore: 60,
     },
+    skillRequirements: ["masonry: 1"],
     effects: {
       statChanges: { beauty: 15, comfort: 5 },
     },
@@ -139,6 +144,7 @@ export const BUILDING_ACTIONS: Record<string, BuildingAction> = {
       suitableTraits: ["durable"],
       minTraitScore: 50,
     },
+    // skillRequirements: ["masonry: 1"],
     effects: {
       dimensionChanges: { depth: 2, width: 1 },
       statChanges: { durability: -3 },
@@ -148,7 +154,8 @@ export const BUILDING_ACTIONS: Record<string, BuildingAction> = {
   purchase_upgrade: {
     type: "purchase_upgrade",
     name: "Purchase Upgrade",
-    description: "Spend currency to instantly upgrade building size and appearance",
+    description:
+      "Spend currency to instantly upgrade building size and appearance",
     requiredMaterials: {
       requiredQuantity: 0,
       suitableTraits: [],

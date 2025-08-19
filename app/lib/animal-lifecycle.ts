@@ -6,6 +6,7 @@ import type {
   Inventory,
 } from "../types/animal";
 import { DNASystem } from "./dna-system";
+import { skillSystem } from "./skill-system";
 
 export class AnimalLifecycle {
   static createAnimal(
@@ -20,7 +21,7 @@ export class AnimalLifecycle {
       ? DNASystem.breedDNA(parentDNA[0], parentDNA[1])
       : DNASystem.generateRandomDNA();
 
-    return {
+    const animal = {
       id: uuidv4(),
       name,
       dna,
@@ -37,7 +38,15 @@ export class AnimalLifecycle {
         healthAtZero: 0,
         energyAtZero: 0,
       },
+      // Initialize skill system
+      skills: {},
+      experience: {},
+      unlockedAdvancedPaths: [],
+      skillPreferences: [],
     };
+
+    // Initialize skills for the new animal
+    return skillSystem.initializeAnimalSkills(animal);
   }
 
   static generateLifespan(): number {

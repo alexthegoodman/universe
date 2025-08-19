@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { serverPlanningHelper } from "../../../lib/server-planning-helper";
 import { CurrencySystem } from "../../../lib/currency-system";
+import { skillSystem } from "../../../lib/skill-system";
 import OpenAI from "openai";
 
 const openai = new OpenAI({
@@ -76,6 +77,9 @@ Current Action: {currentAction}
 
 Current Wealth: ✨{animalWealth} (Rank #{animalRank} out of {totalAnimals} animals)
 
+Skills & Technology Level:
+{skillsDescription}
+
 Most Important Commands (prioritize these in all of your plans):
 {specialMemories}
 `;
@@ -99,6 +103,16 @@ CURRENCY & WEALTH AWARENESS:
 - Higher wealth improves your social standing and opportunities
 - Consider crafting valuable items to increase your wealth ranking
 - Your current wealth and rank are shown above - use this to motivate your decisions
+
+SKILL & TECHNOLOGY SYSTEM:
+- You gain experience (XP) from performing actions: harvesting, crafting, building, exploring, combat, socializing
+- Higher skill levels make actions more efficient and unlock new abilities
+- Your current skills and available skills to learn are shown above
+- Advanced paths unlock at skill level 100 with specific prerequisites
+- Some actions and buildings require minimum skill levels to attempt
+- Plan your actions to develop skills that align with your goals and survival needs
+- Stone Age skills (stoneKnapping, firemaking) unlock Bronze Age skills (metalworking, clayWorking)
+- Technology progression follows historical ages: Stone → Bronze → Iron → Industrial → Information
 
 You MUST create strategic multi-step plans, NOT individual actions. Think about sequences like:
 - "gather materials → build shelter → sleep to restore energy"
@@ -458,6 +472,53 @@ ${animal.specialMemories
             )
             .join("\n");
 
+    // Format skills for the prompt
+    const skillsDescription = (() => {
+      if (!animal.skills || Object.keys(animal.skills).length === 0) {
+        return "No skills learned yet. Skills are gained through actions like harvesting, crafting, building, exploring, and combat. Start with basic actions to develop your first skills.";
+      }
+
+      const skillEntries = Object.entries(animal.skills)
+        .filter(([_, level]) => (level as number) > 0)
+        .sort(([_, a], [__, b]) => (b as number) - (a as number));
+
+      if (skillEntries.length === 0) {
+        return "No skills developed yet. Begin with basic actions like harvesting and crafting to develop your first skills.";
+      }
+
+      const skillsList = skillEntries
+        .map(([skillName, level]) => {
+          const levelNum = level as number;
+          const skillDef = skillSystem.getSkillDefinition(skillName);
+          const displayName = skillDef?.name || skillName.replace(/([A-Z])/g, ' $1').trim();
+          const xp = animal.experience?.[skillName] || 0;
+          
+          if (levelNum >= 100) {
+            return `- ${displayName}: MASTERED (Level 100) - ${skillDef?.description || 'Advanced skill'}`;
+          } else {
+            const nextLevelXP = skillSystem.calculateXPForLevel(levelNum + 1);
+            const currentLevelXP = skillSystem.calculateXPForLevel(levelNum);
+            const progressXP = xp - currentLevelXP;
+            const neededXP = nextLevelXP - currentLevelXP;
+            const progressPercent = Math.round((progressXP / neededXP) * 100);
+            
+            return `- ${displayName}: Level ${levelNum} (${progressPercent}% to ${levelNum + 1}) - ${skillDef?.description || 'Developing skill'}`;
+          }
+        })
+        .join("\n");
+
+      const advancedPaths = animal.unlockedAdvancedPaths && animal.unlockedAdvancedPaths.length > 0
+        ? `\n\nAdvanced Paths Unlocked:\n${animal.unlockedAdvancedPaths.map((path: string) => `- ⭐ ${path}`).join("\n")}`
+        : "";
+
+      const availableSkills = skillSystem.getAvailableSkills(animal);
+      const canLearn = availableSkills.length > 0
+        ? `\n\nSkills Available to Learn: ${availableSkills.slice(0, 3).map((s: any) => s.name).join(", ")}${availableSkills.length > 3 ? ` and ${availableSkills.length - 3} more` : ""}`
+        : "";
+
+      return `Current Skills:\n${skillsList}${advancedPaths}${canLearn}`;
+    })();
+
     // Format the user prompt with variables
     systemPrompt = systemPrompt
       .replace("{name}", animal.name)
@@ -481,6 +542,7 @@ ${animal.specialMemories
       .replace("{currentAction}", animal.currentAction)
       .replace("{inventory}", inventoryDescription)
       .replace("{specialMemories}", specialMemoriesDescription)
+      .replace("{skillsDescription}", skillsDescription)
       .replace("{sightRadius}", worldState.sightRadius.toString())
       .replace("{harvestRadius}", worldState.harvestRadius.toString())
       .replace(

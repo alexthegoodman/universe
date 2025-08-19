@@ -15,6 +15,7 @@ import { HARVEST_RADIUS } from "./health-monitor";
 import { buildingSystem } from "./building-system";
 import { RESOURCE_WEIGHTS } from "../types/weights";
 import { BreedingSystem } from "./breeding-system";
+import { skillSystem } from "./skill-system";
 
 export interface MXPAction {
   name: string;
@@ -99,6 +100,48 @@ export class MXPActionSystem {
     };
 
     this.explorationSystem = explorationSystem;
+  }
+
+  // Helper method to apply skill effects to action results
+  private applySkillEffects(
+    animal: Animal,
+    actionType: string,
+    result: ActionResult,
+    resourceType?: string,
+    quality?: number
+  ): ActionResult {
+    // Initialize skills if not present
+    const updatedAnimal = skillSystem.initializeAnimalSkills(animal);
+    
+    // Generate XP for this action
+    const skillXPGains = skillSystem.generateActionXP(actionType, resourceType, quality);
+    
+    let skillXP: Record<string, number> = {};
+    let skillLevelUps: string[] = [];
+    let unlockedAdvancedPaths: string[] = [];
+    
+    // Apply XP gains and check for level ups
+    for (const xpGain of skillXPGains) {
+      const levelUpResult = skillSystem.addSkillXP(updatedAnimal, xpGain.skillName, xpGain.xpGained);
+      
+      skillXP[xpGain.skillName] = xpGain.xpGained;
+      
+      if (levelUpResult.leveledUp) {
+        skillLevelUps.push(`${xpGain.skillName} (${levelUpResult.oldLevel} → ${levelUpResult.newLevel})`);
+      }
+      
+      if (levelUpResult.unlockedAdvancedPaths.length > 0) {
+        unlockedAdvancedPaths.push(...levelUpResult.unlockedAdvancedPaths);
+      }
+    }
+    
+    // Update the result with skill information
+    return {
+      ...result,
+      skillXP,
+      skillLevelUps,
+      unlockedAdvancedPaths
+    };
   }
 
   async executeAction(
@@ -631,7 +674,7 @@ export class MXPActionSystem {
         ? ` (remembering ${memories.length} nearby locations)`
         : "";
 
-    return {
+    const baseResult = {
       success: true,
       message: `${animal.name} ${goalReason}${discoveryMessage}${memoryContext}`,
       statChanges: {
@@ -641,6 +684,8 @@ export class MXPActionSystem {
       newPosition,
       duration: 8000 + distance * 500, // Duration based on distance traveled
     };
+
+    return this.applySkillEffects(animal, "exploring", baseResult);
   }
 
   private tryAutoBreedFromSocializing(
@@ -746,7 +791,7 @@ export class MXPActionSystem {
       offspring = breedingResult.offspring;
     }
 
-    return {
+    const baseResult = {
       success: true,
       message: `${animal.name} enjoyed socializing${
         companions.length > 0 ? ` with ${companions.length} companions` : ""
@@ -761,6 +806,8 @@ export class MXPActionSystem {
       duration: 6000 + companions.length * 2000,
       offspring: offspring,
     };
+
+    return this.applySkillEffects(animal, "socializing", baseResult);
   }
 
   private async executeMate(
@@ -852,10 +899,21 @@ export class MXPActionSystem {
       };
     }
 
-    // Calculate success based on animal traits
+    // Calculate success based on animal traits and skills
     const strengthMultiplier = animal.dna.strength / 100;
     const intelligenceMultiplier = animal.dna.intelligence / 100;
-    const effectiveness = (strengthMultiplier + intelligenceMultiplier) / 2;
+    
+    // Apply skill-based efficiency bonuses
+    let skillEfficiency = 1.0;
+    if (resource.type === "stone" || resource.type.includes("mineral")) {
+      skillEfficiency = skillSystem.calculateSkillEfficiency(animal, "mining");
+    } else if (resource.type.includes("plant") || resource.type.includes("berry")) {
+      skillEfficiency = skillSystem.calculateSkillEfficiency(animal, "foraging");
+    } else if (resource.type.includes("fish") || resource.type.includes("water")) {
+      skillEfficiency = skillSystem.calculateSkillEfficiency(animal, "fishing");
+    }
+    
+    const effectiveness = ((strengthMultiplier + intelligenceMultiplier) / 2) * skillEfficiency;
 
     let energyCost = 3 + (resource.type === "stone" ? 1 : 0); // Stone is harder to harvest
 
@@ -893,7 +951,7 @@ export class MXPActionSystem {
       };
     }
 
-    return {
+    const baseResult = {
       success: true,
       message: `${animal.name} harvested ${harvestAmount} ${
         resource.type
@@ -913,6 +971,8 @@ export class MXPActionSystem {
       resourceId: resourceId,
       duration: 3000 + harvestAmount * 1000,
     };
+
+    return this.applySkillEffects(animal, "harvesting", baseResult, resource.type, resource.quality);
   }
 
   private async executeBuilding(
@@ -978,7 +1038,7 @@ export class MXPActionSystem {
     const areaBonus = result.areaBonus || 0;
     const totalHappinessBonus = baseHappiness + areaBonus;
 
-    const actionResult: ActionResult = {
+    const baseResult: ActionResult = {
       success: result.success,
       message:
         result.success && areaBonus > 0
@@ -993,7 +1053,9 @@ export class MXPActionSystem {
       },
     };
 
-    return actionResult;
+    return result.success 
+      ? this.applySkillEffects(animal, "building", baseResult)
+      : baseResult;
   }
 
   private async executeIdeation(
@@ -1140,7 +1202,7 @@ export class MXPActionSystem {
           : "curiosity",
     };
 
-    return {
+    const baseResult = {
       success: true,
       message: `${animal.name} successfully crafted ${
         craftedItem.name
@@ -1152,6 +1214,8 @@ export class MXPActionSystem {
       craftingResult,
       duration,
     };
+
+    return this.applySkillEffects(animal, "crafting", baseResult, "crafted_item", craftedItem.quality);
   }
 
   private generateCraftedItem(
@@ -1372,12 +1436,14 @@ export class MXPActionSystem {
       )} health remaining.`;
     }
 
-    return {
+    const baseResult = {
       success: true,
       message: resultMessage,
       statChanges,
       duration: 3000, // Combat takes time
     };
+
+    return this.applySkillEffects(animal, "combat", baseResult);
   }
 
   private async executeIdle(

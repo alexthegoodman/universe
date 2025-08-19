@@ -11,6 +11,7 @@ import { GlobalPlanQueue, setGlobalPlanQueue } from "./global-plan-queue";
 import { RESOURCE_COUNTS, RESOURCE_WEIGHTS } from "../types/weights";
 import { CurrencySystem } from "./currency-system";
 import { HARVEST_RADIUS } from "./health-monitor";
+import { skillSystem } from "./skill-system";
 import { v4 as uuidv4 } from "uuid";
 
 export interface GameConfig {

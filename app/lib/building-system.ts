@@ -13,6 +13,7 @@ import { RESOURCE_WEIGHTS } from "../types/weights";
 import type { ResourceType, ResourceTraits } from "./game-manager";
 import { RESOURCE_TRAIT_MAP } from "./game-manager";
 import { CurrencySystem } from "./currency-system";
+import { skillSystem } from "./skill-system";
 
 export class BuildingSystem {
   private buildings: Map<string, Building> = new Map();
@@ -60,6 +61,32 @@ export class BuildingSystem {
     return { canBuild: true };
   }
 
+  // Check if animal meets skill requirements for a building action
+  private checkSkillRequirements(
+    animal: Animal,
+    skillRequirements?: string[]
+  ): { canBuild: boolean; message?: string } {
+    if (!skillRequirements || skillRequirements.length === 0) {
+      return { canBuild: true };
+    }
+
+    const unmetRequirements = skillSystem.checkSkillRequirements(animal, skillRequirements)
+      .filter(req => !req.met);
+
+    if (unmetRequirements.length > 0) {
+      const missingSkills = unmetRequirements.map(req => 
+        `${req.skillName}: ${req.currentLevel}/${req.requiredLevel}`
+      ).join(", ");
+
+      return {
+        canBuild: false,
+        message: `${animal.name} lacks the required skills. Missing: ${missingSkills}`
+      };
+    }
+
+    return { canBuild: true };
+  }
+
   // Create a new building
   createBuilding(
     animal: Animal,
@@ -67,6 +94,16 @@ export class BuildingSystem {
     name: string = "Animal Shelter"
   ): BuildingActionResult {
     const action = this.buildingActions.create_building;
+
+    // Check skill requirements first
+    const skillCheck = this.checkSkillRequirements(animal, action.skillRequirements);
+    if (!skillCheck.canBuild) {
+      return {
+        success: false,
+        message: skillCheck.message!,
+        duration: 2000,
+      };
+    }
 
     // Check if animal has required materials
     const materialCheck = this.checkMaterials(animal, action.requiredMaterials);
@@ -169,6 +206,16 @@ export class BuildingSystem {
         success: false,
         message: `${animal.name} doesn't know how to perform that building action`,
         duration: 1000,
+      };
+    }
+
+    // Check skill requirements
+    const skillCheck = this.checkSkillRequirements(animal, action.skillRequirements);
+    if (!skillCheck.canBuild) {
+      return {
+        success: false,
+        message: skillCheck.message!,
+        duration: 2000,
       };
     }
 
