@@ -295,8 +295,8 @@ export class ExplorationSystem {
           // Balance distance and recency
           return distanceA + recencyA / 10000 - (distanceB + recencyB / 10000);
         })
-        .slice(0, 14)
-    ); // Limit to top 14 most relevant
+        .slice(0, 12)
+    ); // Limit to top 12 most relevant
   }
 
   // Helper methods
