@@ -102,6 +102,9 @@ export interface Animal {
   experience: Record<string, number>; // skill name -> XP points
   unlockedAdvancedPaths: string[]; // advanced path names that have been unlocked
   skillPreferences: string[]; // preferred skill focus areas for AI decision making
+
+  // Building ownership
+  homeId?: string; // ID of the animal's personal home
 }
 
 export type AnimalAction =
@@ -117,6 +120,9 @@ export type AnimalAction =
   | "mating"
   | "harvesting"
   | "building"
+  | "go_home"
+  | "visit_trading_post"
+  | "visit_hospital"
   | "ideation"
   | "crafting"
   | "combat";

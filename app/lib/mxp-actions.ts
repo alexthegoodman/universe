@@ -179,6 +179,12 @@ export class MXPActionSystem {
           return await this.executeCrafting(animal, parameters);
         case "combat":
           return await this.executeCombat(animal, parameters);
+        case "go_home":
+          return await this.executeGoHome(animal, parameters);
+        case "visit_trading_post":
+          return await this.executeVisitTradingPost(animal, parameters);
+        case "visit_hospital":
+          return await this.executeVisitHospital(animal, parameters);
         default:
           return await this.executeIdle(animal, parameters);
       }
@@ -989,7 +995,9 @@ export class MXPActionSystem {
 
     let result;
 
-    if (action === "create_building") {
+    if (action === "create_building" || action === "create_home" || 
+        action === "create_trading_post" || action === "create_hospital" || 
+        action === "create_factory") {
       // Create a new building
       const buildPosition = position || {
         x: animal.position.x + (Math.random() - 0.5) * 10,
@@ -997,10 +1005,18 @@ export class MXPActionSystem {
         z: animal.position.z + (Math.random() - 0.5) * 10,
       };
 
+      // Determine building type from action
+      let buildingType: string = "generic";
+      if (action === "create_home") buildingType = "home";
+      else if (action === "create_trading_post") buildingType = "trading_post";
+      else if (action === "create_hospital") buildingType = "hospital";
+      else if (action === "create_factory") buildingType = "factory";
+
       result = buildingSystem.createBuilding(
         animal,
         buildPosition,
-        buildingName
+        buildingName,
+        buildingType as any
       );
 
       if (!result.success) {
@@ -1444,6 +1460,172 @@ export class MXPActionSystem {
     };
 
     return this.applySkillEffects(animal, "combat", baseResult);
+  }
+
+  private async executeGoHome(
+    animal: Animal,
+    params: any
+  ): Promise<ActionResult> {
+    // Check if animal has a home
+    const home = buildingSystem.getAnimalHome(animal.id);
+    if (!home) {
+      return {
+        success: false,
+        message: `${animal.name} doesn't have a home yet. Build a home first!`,
+        duration: 1000,
+      };
+    }
+
+    // Calculate distance to home
+    const distance = Math.sqrt(
+      Math.pow(home.position.x - animal.position.x, 2) + 
+      Math.pow(home.position.z - animal.position.z, 2)
+    );
+
+    // Calculate energy cost (minimum for going home since it's special)
+    const energyCost = Math.max(3, distance * 0.5);
+
+    if (animal.stats.energy < energyCost) {
+      return {
+        success: false,
+        message: `${animal.name} is too tired to travel home`,
+        duration: 1000,
+      };
+    }
+
+    // Create new position at home
+    const newPosition: AnimalPosition = {
+      x: home.position.x,
+      y: animal.position.y,
+      z: home.position.z,
+      rotation: Math.atan2(
+        home.position.z - animal.position.z,
+        home.position.x - animal.position.x
+      ),
+    };
+
+    return {
+      success: true,
+      message: `${animal.name} traveled home and feels safe and comfortable`,
+      statChanges: {
+        energy: Math.max(0, animal.stats.energy - energyCost),
+        happiness: Math.min(100, animal.stats.happiness + 8), // Home gives happiness
+      },
+      newPosition,
+      duration: Math.max(2000, distance * 200), // Fast travel home
+    };
+  }
+
+  private async executeVisitTradingPost(
+    animal: Animal,
+    params: any
+  ): Promise<ActionResult> {
+    // Check if trading post exists
+    const tradingPost = buildingSystem.getTradingPost();
+    if (!tradingPost) {
+      return {
+        success: false,
+        message: `${animal.name} cannot find a trading post. One must be built first!`,
+        duration: 1000,
+      };
+    }
+
+    // Calculate distance to trading post
+    const distance = Math.sqrt(
+      Math.pow(tradingPost.position.x - animal.position.x, 2) + 
+      Math.pow(tradingPost.position.z - animal.position.z, 2)
+    );
+
+    // Calculate energy cost
+    const energyCost = Math.max(5, distance * 0.8);
+
+    if (animal.stats.energy < energyCost) {
+      return {
+        success: false,
+        message: `${animal.name} is too tired to travel to the trading post`,
+        duration: 1000,
+      };
+    }
+
+    // Create new position at trading post
+    const newPosition: AnimalPosition = {
+      x: tradingPost.position.x,
+      y: animal.position.y,
+      z: tradingPost.position.z,
+      rotation: Math.atan2(
+        tradingPost.position.z - animal.position.z,
+        tradingPost.position.x - animal.position.x
+      ),
+    };
+
+    return {
+      success: true,
+      message: `${animal.name} visited the trading post and feels inspired by commerce`,
+      statChanges: {
+        energy: Math.max(0, animal.stats.energy - energyCost),
+        happiness: Math.min(100, animal.stats.happiness + 5),
+      },
+      newPosition,
+      duration: Math.max(3000, distance * 300),
+    };
+  }
+
+  private async executeVisitHospital(
+    animal: Animal,
+    params: any
+  ): Promise<ActionResult> {
+    // Check if hospital exists
+    const hospital = buildingSystem.getHospital();
+    if (!hospital) {
+      return {
+        success: false,
+        message: `${animal.name} cannot find a hospital. One must be built first!`,
+        duration: 1000,
+      };
+    }
+
+    // Calculate distance to hospital
+    const distance = Math.sqrt(
+      Math.pow(hospital.position.x - animal.position.x, 2) + 
+      Math.pow(hospital.position.z - animal.position.z, 2)
+    );
+
+    // Calculate energy cost
+    const energyCost = Math.max(5, distance * 0.8);
+
+    if (animal.stats.energy < energyCost) {
+      return {
+        success: false,
+        message: `${animal.name} is too tired to travel to the hospital`,
+        duration: 1000,
+      };
+    }
+
+    // Create new position at hospital
+    const newPosition: AnimalPosition = {
+      x: hospital.position.x,
+      y: animal.position.y,
+      z: hospital.position.z,
+      rotation: Math.atan2(
+        hospital.position.z - animal.position.z,
+        hospital.position.x - animal.position.x
+      ),
+    };
+
+    // Hospital visit provides healing
+    const healingBonus = 15;
+
+    return {
+      success: true,
+      message: `${animal.name} visited the hospital and received medical care`,
+      statChanges: {
+        energy: Math.max(0, animal.stats.energy - energyCost),
+        health: Math.min(100, animal.stats.health + healingBonus),
+        happiness: Math.min(100, animal.stats.happiness + 3),
+      },
+      newPosition,
+      duration: Math.max(4000, distance * 300),
+    };
   }
 
   private async executeIdle(

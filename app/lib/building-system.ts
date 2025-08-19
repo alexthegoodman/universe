@@ -6,6 +6,7 @@ import type {
   BuildingMaterial,
   BuildingMaterialsUsed,
   BuildingStats,
+  BuildingType,
 } from "../types/building";
 import { BUILDING_ACTIONS } from "../types/building";
 import type { Animal, InventoryItem } from "../types/animal";
@@ -21,6 +22,48 @@ export class BuildingSystem {
 
   constructor() {
     this.buildingActions = BUILDING_ACTIONS;
+  }
+
+  // Check if an animal already has a home
+  private hasHome(animalId: string): boolean {
+    return Array.from(this.buildings.values()).some(
+      building => building.type === "home" && building.createdBy === animalId
+    );
+  }
+
+  // Check if a building type already exists (for global limits)
+  private hasGlobalBuilding(buildingType: BuildingType): boolean {
+    return Array.from(this.buildings.values()).some(
+      building => building.type === buildingType
+    );
+  }
+
+  // Get the animal's home building
+  getAnimalHome(animalId: string): Building | undefined {
+    return Array.from(this.buildings.values()).find(
+      building => building.type === "home" && building.createdBy === animalId
+    );
+  }
+
+  // Get buildings by type
+  getBuildingsByType(buildingType: BuildingType): Building[] {
+    return Array.from(this.buildings.values()).filter(
+      building => building.type === buildingType
+    );
+  }
+
+  // Get the global trading post
+  getTradingPost(): Building | undefined {
+    return Array.from(this.buildings.values()).find(
+      building => building.type === "trading_post"
+    );
+  }
+
+  // Get the global hospital
+  getHospital(): Building | undefined {
+    return Array.from(this.buildings.values()).find(
+      building => building.type === "hospital"
+    );
   }
 
   // Calculate total building area (used for size-based rewards)
@@ -94,9 +137,42 @@ export class BuildingSystem {
   createBuilding(
     animal: Animal,
     position: { x: number; y: number; z: number },
-    name: string = "Animal Shelter"
+    name: string = "Animal Shelter",
+    buildingType: BuildingType = "generic"
   ): BuildingActionResult {
-    const action = this.buildingActions.create_building;
+    // Determine the action type based on buildingType
+    let actionKey = "create_building";
+    if (buildingType === "home") actionKey = "create_home";
+    else if (buildingType === "trading_post") actionKey = "create_trading_post";
+    else if (buildingType === "hospital") actionKey = "create_hospital";
+    else if (buildingType === "factory") actionKey = "create_factory";
+    
+    const action = this.buildingActions[actionKey];
+    if (!action) {
+      return {
+        success: false,
+        message: `Unknown building type: ${buildingType}`,
+        duration: 1000,
+      };
+    }
+
+    // Check building type constraints
+    if (buildingType === "home" && this.hasHome(animal.id)) {
+      return {
+        success: false,
+        message: `${animal.name} already has a home. Each animal can only have one home.`,
+        duration: 2000,
+      };
+    }
+
+    if ((buildingType === "trading_post" || buildingType === "hospital") && 
+        this.hasGlobalBuilding(buildingType)) {
+      return {
+        success: false,
+        message: `There can only be one ${buildingType.replace('_', ' ')} on the map.`,
+        duration: 2000,
+      };
+    }
 
     // Check skill requirements first
     const skillCheck = this.checkSkillRequirements(
@@ -149,6 +225,7 @@ export class BuildingSystem {
     const building: Building = {
       id: `building_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       name,
+      type: buildingType,
       position,
       dimensions: {
         width: action.effects.dimensionChanges?.width || 3,
@@ -172,6 +249,11 @@ export class BuildingSystem {
     };
 
     this.buildings.set(building.id, building);
+
+    // Update animal's home reference if this is a home
+    if (buildingType === "home") {
+      animal.homeId = building.id;
+    }
 
     // Calculate area bonus for the new building
     const currentArea = this.calculateBuildingArea(building.dimensions);

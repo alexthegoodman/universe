@@ -21,9 +21,12 @@ export interface BuildingStats {
   comfort: number; // 0-100, affects rest quality
 }
 
+export type BuildingType = "home" | "trading_post" | "hospital" | "factory" | "generic";
+
 export interface Building {
   id: string;
   name: string;
+  type: BuildingType;
   position: { x: number; y: number; z: number };
   dimensions: BuildingDimensions;
   materials: BuildingMaterialsUsed;
@@ -52,6 +55,10 @@ export interface BuildingAction {
     | "add_workshop"
     | "add_garden"
     | "create_building"
+    | "create_home"
+    | "create_trading_post"
+    | "create_hospital"
+    | "create_factory"
     | "purchase_upgrade";
   name: string;
   description: string;
@@ -63,6 +70,7 @@ export interface BuildingAction {
     capacityChange?: number;
   };
   currencyCost?: number; // For purchase_upgrade action
+  buildingType?: BuildingType; // For create_* actions
 }
 
 export interface BuildingActionResult {
@@ -94,6 +102,74 @@ export const BUILDING_ACTIONS: Record<string, BuildingAction> = {
       statChanges: { durability: 60, beauty: 30, comfort: 50 },
       capacityChange: 2,
     },
+    buildingType: "generic",
+  },
+  create_home: {
+    type: "create_home",
+    name: "Create Home",
+    description: "Build a personal home where you can live and rest",
+    requiredMaterials: {
+      requiredQuantity: 6,
+      suitableTraits: ["durable"],
+      minTraitScore: 55,
+    },
+    effects: {
+      dimensionChanges: { width: 4, height: 3, depth: 4 },
+      statChanges: { durability: 70, beauty: 40, comfort: 70 },
+      capacityChange: 1,
+    },
+    buildingType: "home",
+  },
+  create_trading_post: {
+    type: "create_trading_post",
+    name: "Create Trading Post", 
+    description: "Build a trading post for commerce and resource exchange",
+    requiredMaterials: {
+      requiredQuantity: 12,
+      suitableTraits: ["durable"],
+      minTraitScore: 60,
+    },
+    skillRequirements: ["masonry: 2"],
+    effects: {
+      dimensionChanges: { width: 6, height: 4, depth: 6 },
+      statChanges: { durability: 80, beauty: 50, comfort: 40 },
+      capacityChange: 8,
+    },
+    buildingType: "trading_post",
+  },
+  create_hospital: {
+    type: "create_hospital",
+    name: "Create Hospital",
+    description: "Build a hospital for healing and medical care",
+    requiredMaterials: {
+      requiredQuantity: 10,
+      suitableTraits: ["durable"],
+      minTraitScore: 65,
+    },
+    skillRequirements: ["masonry: 2"],
+    effects: {
+      dimensionChanges: { width: 5, height: 3, depth: 5 },
+      statChanges: { durability: 85, beauty: 60, comfort: 80 },
+      capacityChange: 6,
+    },
+    buildingType: "hospital",
+  },
+  create_factory: {
+    type: "create_factory",
+    name: "Create Factory",
+    description: "Build a factory for mass production and manufacturing",
+    requiredMaterials: {
+      requiredQuantity: 15,
+      suitableTraits: ["durable"],
+      minTraitScore: 70,
+    },
+    skillRequirements: ["toolmaking: 3"],
+    effects: {
+      dimensionChanges: { width: 8, height: 5, depth: 8 },
+      statChanges: { durability: 90, beauty: 20, comfort: 30 },
+      capacityChange: 12,
+    },
+    buildingType: "factory",
   },
   make_wider: {
     type: "make_wider",

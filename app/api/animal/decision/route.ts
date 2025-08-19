@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { serverPlanningHelper } from "../../../lib/server-planning-helper";
 import { CurrencySystem } from "../../../lib/currency-system";
 import { skillSystem } from "../../../lib/skill-system";
+import { buildingSystem } from "../../../lib/building-system";
 import OpenAI from "openai";
 
 const openai = new OpenAI({
@@ -75,6 +76,12 @@ Current Stats:
 Current Age: {age}% of lifespan
 Current Action: {currentAction}
 
+Building Status:
+{buildingStatus}
+
+Special Buildings Available:
+{specialBuildings}
+
 Current Wealth: ✨{animalWealth} (Rank #{animalRank} out of {totalAnimals} animals)
 
 Skills & Technology Level:
@@ -130,7 +137,7 @@ Throughout your life, if you socialize with someone else, consider breeding with
 
 Be wise. For example, if you are in need of one or more resources, then you will want to travel nearby each resource before harvesting each resource.
 
-Available plan actions: idle, moving, eating, drinking, sleeping, playing, exploring, socializing, working, mating, harvesting, building, ideation, crafting, combat
+Available plan actions: idle, moving, eating, drinking, sleeping, playing, exploring, socializing, working, mating, harvesting, building, ideation, crafting, combat, go_home, visit_trading_post, visit_hospital
 
 IMPORTANT SURVIVAL RULES:
 - You can only eat/drink if you have food/water items in your inventory  
@@ -223,15 +230,28 @@ BUILDING SYSTEM:
 - Check nearbyBuildings to see structures you can interact with or enter
 - You can create new buildings or modify existing ones if you have suitable materials
 - Building accepts ANY material with appropriate traits - not just stone and wood!
-- Available building actions:
-  • "create_building" - Build new shelter (needs 4 durable materials, trait score ≥50)
+
+BUILDING TYPES AND ACTIONS:
+  • "create_building" - Build basic shelter (needs 4 durable materials, trait score ≥50)
+  • "create_home" - Build personal home (needs 6 durable materials, trait score ≥55) - LIMIT: Only 1 per animal
+  • "create_trading_post" - Build trading post (needs 12 durable materials, trait score ≥60, masonry: 2) - LIMIT: Only 1 per map
+  • "create_hospital" - Build hospital (needs 10 durable materials, trait score ≥65, masonry: 2) - LIMIT: Only 1 per map  
+  • "create_factory" - Build factory (needs 15 durable materials, trait score ≥70, toolmaking: 3)
+  
+BUILDING MODIFICATIONS:
   • "make_wider" - Expand building width (needs 2 durable materials, trait score ≥50)  
   • "make_taller" - Increase building height (needs 2 durable materials, trait score ≥50)
   • "make_beautiful" - Add decorative elements (needs 2 beautiful materials, trait score ≥60)
   • "add_room" - Construct additional space (needs 2 durable materials, trait score ≥50)
   • "add_workshop" - Build workspace for crafting (needs 3 durable materials, trait score ≥60)
   • "add_garden" - Create peaceful outdoor space (needs 2 nutritious materials, trait score ≥40)
-  • "purchase_upgrade" - Spend currency to instantly upgrade building size and appearance, the more you spend, the better the improvement
+  • "purchase_upgrade" - Spend currency to instantly upgrade building size and appearance
+
+SPECIAL MOVEMENT ACTIONS:
+  • "go_home" - Travel to your personal home (if you have one) - provides happiness and fast travel
+  • "visit_trading_post" - Travel to the trading post (if one exists) - provides commerce opportunities
+  • "visit_hospital" - Travel to the hospital (if one exists) - provides healing (+15 health)
+
 - DURABLE materials include: granite, limestone, marble, oak_wood, cedar_wood, iron_ore, etc.
 - BEAUTIFUL materials include: marble, diamond, ruby, emerald, amethyst, silk, etc.
 - FERTILE/NATURAL materials include: soil, compost, seeds, plant fibers, berries, etc.
@@ -560,6 +580,50 @@ ${animal.specialMemories
       return `Current Skills:\n${skillsList}${advancedPaths}${canLearn}`;
     })();
 
+    // Format building status for the prompt
+    const buildingStatusDescription = (() => {
+      const home = buildingSystem.getAnimalHome(animal.id);
+      if (home) {
+        const distance = Math.sqrt(
+          Math.pow(home.position.x - animal.position.x, 2) + 
+          Math.pow(home.position.z - animal.position.z, 2)
+        );
+        return `You have a HOME: "${home.name}" at position (${home.position.x.toFixed(1)}, ${home.position.z.toFixed(1)}) - Distance: ${distance.toFixed(1)} units away. Use "go_home" action to travel there.`;
+      } else {
+        return "You do NOT have a home yet. Consider building one with the 'create_home' action for a personal shelter.";
+      }
+    })();
+
+    // Format special buildings for the prompt
+    const specialBuildingsDescription = (() => {
+      const tradingPost = buildingSystem.getTradingPost();
+      const hospital = buildingSystem.getHospital();
+      
+      let description = "";
+      
+      if (tradingPost) {
+        const distance = Math.sqrt(
+          Math.pow(tradingPost.position.x - animal.position.x, 2) + 
+          Math.pow(tradingPost.position.z - animal.position.z, 2)
+        );
+        description += `TRADING POST: "${tradingPost.name}" at position (${tradingPost.position.x.toFixed(1)}, ${tradingPost.position.z.toFixed(1)}) - Distance: ${distance.toFixed(1)} units. Use "visit_trading_post" to travel there.\n`;
+      } else {
+        description += "NO TRADING POST exists yet. Someone could build one with 'create_trading_post' action.\n";
+      }
+      
+      if (hospital) {
+        const distance = Math.sqrt(
+          Math.pow(hospital.position.x - animal.position.x, 2) + 
+          Math.pow(hospital.position.z - animal.position.z, 2)
+        );
+        description += `HOSPITAL: "${hospital.name}" at position (${hospital.position.x.toFixed(1)}, ${hospital.position.z.toFixed(1)}) - Distance: ${distance.toFixed(1)} units. Use "visit_hospital" to travel there for healing.`;
+      } else {
+        description += "NO HOSPITAL exists yet. Someone could build one with 'create_hospital' action for healing.";
+      }
+      
+      return description;
+    })();
+
     // Format the user prompt with variables
     systemPrompt = systemPrompt
       .replace("{name}", animal.name)
@@ -584,6 +648,8 @@ ${animal.specialMemories
       .replace("{inventory}", inventoryDescription)
       .replace("{specialMemories}", specialMemoriesDescription)
       .replace("{skillsDescription}", skillsDescription)
+      .replace("{buildingStatus}", buildingStatusDescription)
+      .replace("{specialBuildings}", specialBuildingsDescription)
       .replace("{sightRadius}", worldState.sightRadius.toString())
       .replace("{harvestRadius}", worldState.harvestRadius.toString())
       .replace(
