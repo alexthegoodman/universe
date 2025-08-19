@@ -440,7 +440,12 @@ export class HealthMonitor {
     };
 
     // Execute the step action
-    await this.executeAnimalAction(animal, step.action as any, actionParams);
+    await this.executeAnimalAction(
+      animal,
+      step.action as any,
+      actionParams,
+      step.reason
+    );
   }
 
   // NOTE: createNewPlan method removed - all plan creation now handled by Global Plan Queue
@@ -476,7 +481,8 @@ export class HealthMonitor {
   async executeAnimalAction(
     animal: Animal,
     action: any,
-    customParams?: any
+    customParams?: any,
+    reason?: string
   ): Promise<void> {
     try {
       // Capture stats before action for logging
@@ -633,7 +639,14 @@ export class HealthMonitor {
       const statsAfter = { ...updatedAnimal.stats };
 
       // Log the action with before/after stats
-      actionLogger.logAction(animal, action, result, statsBefore, statsAfter);
+      actionLogger.logAction(
+        animal,
+        action,
+        result,
+        statsBefore,
+        statsAfter,
+        reason
+      );
 
       // Update planning system - mark current step as completed
       clientPlanningManager.completeCurrentStep(animal.id, result.success);
@@ -782,14 +795,14 @@ export class HealthMonitor {
       .filter((bandit) => bandit.distance <= SIGHT_RADIUS)
       .sort((a, b) => a.distance - b.distance);
 
-    const resourceSummary: ResourceSummary = {
-      foodSources: nearbyResources.filter(
-        (r) => r.type === "food" || r.type === "berries"
-      ).length,
-      waterSources: nearbyResources.filter((r) => r.type === "water").length,
-      canHarvestNow: nearbyResources.filter((r) => r.canHarvestNow),
-      needToMoveCloserTo: nearbyResources.filter((r) => r.tooFarToHarvest),
-    };
+    // const resourceSummary: ResourceSummary = {
+    //   foodSources: nearbyResources.filter(
+    //     (r) => r.type === "food" || r.type === "berries"
+    //   ).length,
+    //   waterSources: nearbyResources.filter((r) => r.type === "water").length,
+    //   canHarvestNow: nearbyResources.filter((r) => r.canHarvestNow),
+    //   needToMoveCloserTo: nearbyResources.filter((r) => r.tooFarToHarvest),
+    // };
 
     // Get relevant memories for the animal
     const memories = this.explorationSystem.getRelevantMemories(
@@ -832,7 +845,7 @@ export class HealthMonitor {
       nearbyBuildings,
       nearbyBandits,
       environment,
-      resourceSummary,
+      // resourceSummary,
       memories: {
         recentFailures: failureMemories.map((m) => ({
           action: m.description.split(":")[0].replace("Failed to ", ""),

@@ -719,14 +719,44 @@ export class BuildingSystem {
   getAvailableActions(animal: Animal, buildingId?: string): BuildingAction[] {
     const actions: BuildingAction[] = [];
 
-    // Always available: create new building
-    const createAction = this.buildingActions.create_building;
-    const canCreate = this.checkMaterials(
+    // Always available: create new home
+    const createAction1 = this.buildingActions.create_home; // Default to home creation
+    const canCreate1 = this.checkMaterials(
       animal,
-      createAction.requiredMaterials
+      createAction1.requiredMaterials
     );
-    if (canCreate.success) {
-      actions.push(createAction);
+    if (canCreate1.success) {
+      actions.push(createAction1);
+    }
+
+    // Always available: create new trading post
+    const createAction2 = this.buildingActions.create_trading_post; // Default to home creation
+    const canCreate2 = this.checkMaterials(
+      animal,
+      createAction2.requiredMaterials
+    );
+    if (canCreate2.success) {
+      actions.push(createAction2);
+    }
+
+    // Always available: create new hospital
+    const createAction3 = this.buildingActions.create_hospital; // Default to home creation
+    const canCreate3 = this.checkMaterials(
+      animal,
+      createAction3.requiredMaterials
+    );
+    if (canCreate3.success) {
+      actions.push(createAction3);
+    }
+
+    // Always available: create new factpry
+    const createAction4 = this.buildingActions.create_factory; // Default to home creation
+    const canCreate4 = this.checkMaterials(
+      animal,
+      createAction4.requiredMaterials
+    );
+    if (canCreate4.success) {
+      actions.push(createAction4);
     }
 
     // Building modification actions (only if near a building)

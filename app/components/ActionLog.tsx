@@ -247,13 +247,21 @@ export default function ActionLog({ entries }: ActionLogProps) {
                   {entry.result.message}
                 </div>
 
-                {/* Health implications - condensed */}
+                {/* Reasoning - Condensed */}
                 <div
+                  className="text-xs text-gray-600 truncate"
+                  title={entry.reasoning}
+                >
+                  {entry.reasoning}
+                </div>
+
+                {/* Health implications - condensed */}
+                {/* <div
                   className="text-xs text-gray-600 truncate"
                   title={healthImplications}
                 >
                   {healthImplications}
-                </div>
+                </div> */}
 
                 {/* Skill XP and level ups */}
                 {entry.result.skillXP &&

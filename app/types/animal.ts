@@ -219,7 +219,7 @@ export interface SightBasedWorldState {
     weather: string;
     temperature: number;
   };
-  resourceSummary: ResourceSummary;
+  // resourceSummary: ResourceSummary;
   memories: {
     recentFailures: Array<{
       action: string;

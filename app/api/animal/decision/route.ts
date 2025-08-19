@@ -101,143 +101,23 @@ Current Wealth Leaderboard (Top 5):
 World State:
 {worldState}
 
-Based on your traits, current needs, and the world around you, what PLAN should you create for the next 3-7 turns?
+Your current position is: {currentPosition}
 
-CURRENCY & WEALTH AWARENESS:
-- All resources and crafted items have currency values
-- Raw materials have base values, crafted items are worth 2.5x more
-- Quality, rarity, and traits affect item values significantly
-- Higher wealth improves your social standing and opportunities
-- Consider crafting valuable items to increase your wealth ranking
-- Your current wealth and rank are shown above - use this to motivate your decisions
-
-SKILL & TECHNOLOGY SYSTEM:
-- You gain experience (XP) from performing actions: harvesting, crafting, building, exploring, combat, socializing
-- Higher skill levels make actions more efficient and unlock new abilities
-- Your current skills and available skills to learn are shown above
-- Advanced paths unlock at skill level 100 with specific prerequisites
-- Some actions and buildings require minimum skill levels to attempt
-- Plan your actions to develop skills that align with your goals and survival needs
-- Stone Age skills (stoneKnapping, firemaking) unlock Bronze Age skills (metalworking, clayWorking)
-- Technology progression follows historical ages: Stone → Bronze → Iron → Industrial → Information
-
-You MUST create strategic multi-step plans, NOT individual actions. Think about sequences like:
-- "gather materials → build shelter → sleep to restore energy"
-- "find water → drink → explore for food → eat"
-- "harvest granite → harvest oak_wood → create building → improve building"
-- "harvest marble → harvest diamond → make building beautiful"
-- "harvest sharp materials → craft weapon → combat bandit → claim territory"
-
-Consider your recent failures and avoid repeating mistakes. Plan around your constraints:
-- Full inventory means you need to consume items before harvesting more
-- Low energy requires shelter building before you can sleep
-- Critical needs (thirst/hunger) should be prioritized in your plan
-
-Throughout your life, if you socialize with someone else, consider breeding with them also. There are many benefits to breeding.
-
-Be wise. For example, if you are in need of one or more resources, then you will want to travel nearby each resource before harvesting each resource.
+Based on everything you know, what PLAN should you create for the next 3-10 turns?
 
 Available plan actions: idle, moving, eating, drinking, sleeping, playing, exploring, socializing, working, mating, harvesting, building, ideation, crafting, combat, go_home, visit_trading_post, visit_hospital
 
-IMPORTANT SURVIVAL RULES:
-- You can only eat/drink if you have food/water items in your inventory  
-- You can see resources within {sightRadius} units of your position
-- You can harvest resources when within {harvestRadius} units
-- Check nearbyResources for what you can see around you
-- Look for resources marked as "canHarvestNow: true" to harvest immediately
-- Resources marked as "tooFarToHarvest: true" need you to move closer first
-- Only choose "eating" if you have food items in inventory (specify which item by ID or type)
-- Only choose "drinking" if you have water in inventory
-- Choose "harvesting" when you see canHarvestNow resources and need them (specify which resource by ID)
-- Choose "exploring" to search for resources when you can't see any suitable ones
-- Use resourceSummary to quickly understand what's available nearby
-- You feel good and satisfied about your stats if they are above 30/100 (this is when you begin to consider various actions)
+Each step should have a clear purpose that builds toward your goals.
 
-CRITICAL SLEEPING CONSTRAINT:
-{sleepConstraint}
-- Sleep provides MASSIVE energy restoration (40+ energy points) but requires shelter
-- If you need to sleep but lack shelter, prioritize building or finding buildings IMMEDIATELY
-- Energy below 30 without shelter is a CRISIS requiring urgent building action
+Always be mindful of your health, hunger, energy, and safety because if you are at 0 health or energy for too long, you will die. Balance these concerns with the Most Important Commands.
 
-PLANNING PRIORITY:
-1. SURVIVAL PLANS: Address critical needs (thirst>70, hunger>70, energy<30, health<30) 
-2. BUILDING PLANS: If you have materials or can gather them, plan shelter construction
-3. RESOURCE GATHERING PLANS: Plan sequences to collect materials (some are durable including granite, oak_wood, etc., some are beautiful including marble, diamond, etc., and some are consumable including berries, water, etc.)
-4. EXPLORATION PLANS: Systematic exploration for resources and opportunities  
-5. SOCIAL/RECREATION PLANS: When survival needs are met, plan social activities
-
-PLAN STRUCTURE: Each step should have a clear purpose that builds toward your goals.
-
-EXPLORATION GUIDANCE:
-Your current position is: {currentPosition}
-If you choose "exploring", specify where to go by providing coordinates. It's okay to try to explore distant areas.
-It's important to explore often and far, but also to balance it with your other needs. You might go to a specific resource location, or just explore in a direction that seems promising.
-Consider moving towards areas you haven't explored, towards distant resources, or in directions that match your goals.
-
-MEMORY & EXPERIENCE:
-Check your memories.recentFailures before attempting actions that have recently failed.
-- If you recently failed to harvest due to low energy, consider sleeping or eating first
-- If you failed due to being too far, move closer before attempting again
-- If you failed due to full inventory, consider eating/drinking items to make space
-- Learn from your past failures and avoid repeating the same mistakes in the same locations
-
-Check your memories.ideations to see your past creative thoughts and dreams.
-- These are your personal visions and ideas about your world and life
-- You can build upon previous ideas or create entirely new ones
-- Ideation helps you think about future goals and possibilities
-- Use ideation when you have some energy and want to be creative or contemplative
-
-IDEATION ACTION:
-Use the "ideation" action to have creative thoughts about your world and life.
-- This action stores your ideas as memories that influence future decisions
-- Be creative! Think about dreams, goals, inventions, or philosophical thoughts
-- Ideas should reflect your personality and current situation
-- Consider various kinds of structures, tools, machines, or social systems you might want to create
-- Consider what might be most valuable in a marketplace
-- There's no need for your ideas to be relevant to your plan
-
-CRAFTING ACTION:
-Use the "crafting" action to combine inventory items into new, more useful items.
-- Combine materials to create tools, food, decorative items, or unique resources
-- Consider the traits of your ingredients - they influence the final result
-- Higher quality ingredients produce higher quality crafted items
-- Traits like "durable", "beautiful", "nutritious", or "energizing" can be combined creatively
-- Be innovative! Create items that solve problems or enhance your abilities
-- Examples: combine berries + herbs = healing potion, stone + wood = hammer, rare materials = jewelry
-- Only use items you actually have in inventory - specify exact item IDs
-- Describe your crafting goal and method clearly
-
-COMBAT ACTION:
-Use the "combat" action to fight bandits and defend yourself.
-- You can attack bandits within {harvestRadius} units using your fists or weapons
-- Check nearbyBandits to see hostile entities in your area
-- Items with "sharp" or "durable" traits make effective weapons (specify weaponId)
-- Combat drains energy (15 points) and may cause damage to your health
-- Defeating bandits rewards you with their loot and increases happiness
-- Bandits will counter-attack, so ensure you're healthy before engaging
-- Consider your strength stat - higher strength deals more damage
-- Combat with bandits is necessary because they will attack you
-
-PLANNING SYSTEM:
-- You should think 3-10 turns ahead and create strategic plans
-- Consider the consequences of your current action choice
-- Balance immediate needs with longer-term goals like shelter, safety, and comfort
-- Plan building projects when you have or can gather sufficient materials
-- Remember that sleeping gives huge benefits but requires shelter - plan accordingly!
-
-BUILDING SYSTEM:
-- Buildings provide shelter, comfort, and happiness bonuses when you rest inside them
-- Check nearbyBuildings to see structures you can interact with or enter
-- You can create new buildings or modify existing ones if you have suitable materials
-- Building accepts ANY material with appropriate traits - not just stone and wood!
-
-BUILDING TYPES AND ACTIONS:
+PRIMARY BUILDING PARAMETERS:
   • "create_home" - Build personal home (needs 4 durable materials, trait score ≥50) - LIMIT: Only 1 per animal
   • "create_trading_post" - Build trading post (needs 8 durable materials, trait score ≥50) - LIMIT: Only 1 per map
   • "create_hospital" - Build hospital (needs 8 durable materials, trait score ≥50) - LIMIT: Only 1 per map  
   • "create_factory" - Build factory (needs 8 durable materials, trait score ≥50)
   
-BUILDING MODIFICATIONS:
+ADDITIONAL BUILDING PARAMETERS:
   • "make_wider" - Expand building width (needs 2 durable materials, trait score ≥50)  
   • "make_taller" - Increase building height (needs 2 durable materials, trait score ≥50)
   • "make_beautiful" - Add decorative elements (needs 2 beautiful materials, trait score ≥60)
@@ -247,17 +127,13 @@ BUILDING MODIFICATIONS:
   • "purchase_upgrade" - Spend currency to instantly upgrade building size and appearance
 
 SPECIAL MOVEMENT ACTIONS:
-  • "go_home" - Travel to your personal home (if you have one) - provides happiness and fast travel
-  • "visit_trading_post" - Travel to the trading post (if one exists) - provides commerce opportunities
-  • "visit_hospital" - Travel to the hospital (if one exists) - provides healing (+15 health)
+  • "go_home" - Travel to your personal home (if you have one)
+  • "visit_trading_post" - Travel to the trading post (if one exists)
+  • "visit_hospital" - Travel to the hospital (if one exists)
 
-- DURABLE materials include: granite, limestone, marble, oak_wood, cedar_wood, iron_ore, etc.
-- BEAUTIFUL materials include: marble, diamond, ruby, emerald, amethyst, silk, etc.
-- FERTILE/NATURAL materials include: soil, compost, seeds, plant fibers, berries, etc.
-- Consider building when you have collected enough suitable materials and want long-term shelter
-- Buildings help during sleep and provide protection from the elements
-- They increase your happiness metrics when you rest inside them
-- The larger and more complex the building, the more happiness it provides
+ADDITIONAL NOTES:
+  • There can only be 1 home per animal
+  • There can only be 1 trading post and 1 hospital per map
 
 ALWAYS INCLUDE A JSON PLAN when creating new plans. Use this format and always return as JSON:
 {{
@@ -463,16 +339,10 @@ For combat steps, specify target bandit and optional weapon in parameters:
     "weaponId": "item_67890"
   }}
 }}
-
-Consider:
-- Plan sequences that solve problems efficiently
-- Account for action duration and delays between steps  
-- Build contingencies for potential failures
-- Balance immediate needs with long-term goals
-- Create plans that work toward shelter construction when possible
 `;
 
     // Format inventory for the prompt
+    // TODO: mention traits? Simply stringify?
     const inventoryDescription =
       animal.inventory.items.length === 0
         ? "Empty inventory (0 items)"
