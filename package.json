@@ -18,22 +18,26 @@
     "@types/three": "^0.179.0",
     "@types/uuid": "^10.0.0",
     "@types/ws": "^8.18.1",
+    "dotenv": "^17.2.1",
     "langchain": "^0.3.30",
     "next": "15.4.6",
+    "node-fetch": "^3.3.2",
     "nodemon": "^3.1.10",
     "openai": "^5.12.2",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "replicate": "^1.0.1",
     "three": "^0.179.1",
     "uuid": "^11.1.0",
     "ws": "^8.18.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
+    "@types/node": "^20.19.11",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "tailwindcss": "^4",
+    "tsx": "^4.20.4",
     "typescript": "^5"
   }
 }
