@@ -1497,7 +1497,7 @@ export class GameManager {
     const harvestedItem = {
       id: `${baseId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       type: getItemType(resource.category),
-      name: itemName,
+      name: baseId,
       quantity: amount,
       quality: resource.quality,
       harvestedAt: Date.now(),

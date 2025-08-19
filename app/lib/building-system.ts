@@ -70,17 +70,20 @@ export class BuildingSystem {
       return { canBuild: true };
     }
 
-    const unmetRequirements = skillSystem.checkSkillRequirements(animal, skillRequirements)
-      .filter(req => !req.met);
+    const unmetRequirements = skillSystem
+      .checkSkillRequirements(animal, skillRequirements)
+      .filter((req) => !req.met);
 
     if (unmetRequirements.length > 0) {
-      const missingSkills = unmetRequirements.map(req => 
-        `${req.skillName}: ${req.currentLevel}/${req.requiredLevel}`
-      ).join(", ");
+      const missingSkills = unmetRequirements
+        .map(
+          (req) => `${req.skillName}: ${req.currentLevel}/${req.requiredLevel}`
+        )
+        .join(", ");
 
       return {
         canBuild: false,
-        message: `${animal.name} lacks the required skills. Missing: ${missingSkills}`
+        message: `${animal.name} lacks the required skills. Missing: ${missingSkills}`,
       };
     }
 
@@ -96,7 +99,10 @@ export class BuildingSystem {
     const action = this.buildingActions.create_building;
 
     // Check skill requirements first
-    const skillCheck = this.checkSkillRequirements(animal, action.skillRequirements);
+    const skillCheck = this.checkSkillRequirements(
+      animal,
+      action.skillRequirements
+    );
     if (!skillCheck.canBuild) {
       return {
         success: false,
@@ -211,7 +217,10 @@ export class BuildingSystem {
     }
 
     // Check skill requirements
-    const skillCheck = this.checkSkillRequirements(animal, action.skillRequirements);
+    const skillCheck = this.checkSkillRequirements(
+      animal,
+      action.skillRequirements
+    );
     if (!skillCheck.canBuild) {
       return {
         success: false,
@@ -242,7 +251,7 @@ export class BuildingSystem {
       // Handle currency-based upgrade with variable amount
       const spendAmount = amount || 100;
       const currentWealth = CurrencySystem.calculateAnimalWealth(animal);
-      
+
       if (currentWealth < spendAmount) {
         return {
           success: false,
@@ -309,15 +318,18 @@ export class BuildingSystem {
         if (change) {
           const scaledChange = change * effectMultiplier;
           const dimensionKey = key as keyof BuildingDimensions;
-          
+
           // Apply the change
           building.dimensions[dimensionKey] += scaledChange;
-          
+
           // Apply limits: clamp width and depth to maximum of 10, but allow height to scale infinitely
-          if (dimensionKey === 'width' || dimensionKey === 'depth') {
-            building.dimensions[dimensionKey] = Math.min(10, building.dimensions[dimensionKey]);
+          if (dimensionKey === "width" || dimensionKey === "depth") {
+            building.dimensions[dimensionKey] = Math.min(
+              10,
+              building.dimensions[dimensionKey]
+            );
           }
-          
+
           changes.dimensions = changes.dimensions || {};
           changes.dimensions[key] = building.dimensions[dimensionKey];
         }
@@ -354,7 +366,10 @@ export class BuildingSystem {
     if (!building.features) {
       building.features = [];
     }
-    if (actionType === "add_workshop" && !building.features.includes("workshop")) {
+    if (
+      actionType === "add_workshop" &&
+      !building.features.includes("workshop")
+    ) {
       building.features.push("workshop");
     }
     if (actionType === "add_garden" && !building.features.includes("garden")) {
@@ -397,7 +412,7 @@ export class BuildingSystem {
 
     // Find items that have all required traits with sufficient scores
     const suitableItems = inventory.filter((item) => {
-      if (item.type !== "material") return false;
+      // if (item.type !== "material") return false;
 
       // Get the resource traits for this item
       const resourceTraits = RESOURCE_TRAIT_MAP[item.name as ResourceType];
@@ -486,31 +501,42 @@ export class BuildingSystem {
   consumeMaterialsForCurrency(
     animal: Animal,
     targetAmount: number
-  ): { success: boolean; materialsUsed: BuildingMaterialsUsed; totalValue: number } {
+  ): {
+    success: boolean;
+    materialsUsed: BuildingMaterialsUsed;
+    totalValue: number;
+  } {
     const inventory = animal.inventory.items;
     const materialsUsed: BuildingMaterialsUsed = {};
     let totalValueConsumed = 0;
 
     // Create list of items with their values, sorted by value per unit (most valuable first)
     const itemsWithValues = inventory
-      .filter(item => item.type === "material" && item.quantity > 0)
-      .map(item => ({
+      .filter((item) => item.type === "material" && item.quantity > 0)
+      .map((item) => ({
         item,
-        valuePerUnit: CurrencySystem.calculateItemValue({...item, quantity: 1}),
-        totalValue: CurrencySystem.calculateItemValue(item)
+        valuePerUnit: CurrencySystem.calculateItemValue({
+          ...item,
+          quantity: 1,
+        }),
+        totalValue: CurrencySystem.calculateItemValue(item),
       }))
       .sort((a, b) => b.valuePerUnit - a.valuePerUnit);
 
     // Consume items starting with most valuable until we reach target amount
-    for (let i = inventory.length - 1; i >= 0 && totalValueConsumed < targetAmount; i--) {
+    for (
+      let i = inventory.length - 1;
+      i >= 0 && totalValueConsumed < targetAmount;
+      i--
+    ) {
       const item = inventory[i];
-      const itemValueData = itemsWithValues.find(ivd => ivd.item === item);
-      
+      const itemValueData = itemsWithValues.find((ivd) => ivd.item === item);
+
       if (!itemValueData || item.quantity <= 0) continue;
 
       const remainingNeeded = targetAmount - totalValueConsumed;
       const valuePerUnit = itemValueData.valuePerUnit;
-      
+
       // Calculate how much of this item we need
       const quantityNeeded = Math.min(
         item.quantity,
@@ -519,13 +545,14 @@ export class BuildingSystem {
 
       if (quantityNeeded > 0) {
         const valueConsumed = quantityNeeded * valuePerUnit;
-        
+
         // Update item quantity
         item.quantity -= quantityNeeded;
         totalValueConsumed += valueConsumed;
 
         // Track what was consumed
-        materialsUsed[item.name] = (materialsUsed[item.name] || 0) + quantityNeeded;
+        materialsUsed[item.name] =
+          (materialsUsed[item.name] || 0) + quantityNeeded;
 
         // Update weight using the appropriate resource weight
         const resourceWeight =
@@ -542,7 +569,7 @@ export class BuildingSystem {
     return {
       success: totalValueConsumed >= targetAmount,
       materialsUsed,
-      totalValue: totalValueConsumed
+      totalValue: totalValueConsumed,
     };
   }
 
