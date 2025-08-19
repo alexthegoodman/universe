@@ -145,6 +145,8 @@ function getActionColor(action: string, success: boolean): string {
       return "text-pink-600";
     case "working":
       return "text-orange-600";
+    case "building":
+      return "text-teal-600";
     default:
       return "text-gray-600";
   }
@@ -183,6 +185,8 @@ export default function ActionLog({ entries }: ActionLogProps) {
           <option value="sleeping">Sleeping</option>
           <option value="harvesting">Harvesting</option>
           <option value="exploring">Exploring</option>
+          <option value="socializing">Socializing</option>
+          <option value="building">Building</option>
         </select>
       </div>
 
@@ -251,49 +255,54 @@ export default function ActionLog({ entries }: ActionLogProps) {
                 </div>
 
                 {/* Skill XP and level ups */}
-                {entry.result.skillXP && Object.keys(entry.result.skillXP).length > 0 && (
-                  <div className="mt-1 flex flex-wrap gap-1 text-xs">
-                    {Object.entries(entry.result.skillXP).map(([skill, xp]) => (
-                      <span
-                        key={skill}
-                        className="px-1 rounded bg-blue-100 text-blue-700"
-                        title={`Gained ${xp} XP in ${skill}`}
-                      >
-                        {skill.replace(/([A-Z])/g, ' $1').trim()}: +{xp}XP
-                      </span>
-                    ))}
-                  </div>
-                )}
+                {entry.result.skillXP &&
+                  Object.keys(entry.result.skillXP).length > 0 && (
+                    <div className="mt-1 flex flex-wrap gap-1 text-xs">
+                      {Object.entries(entry.result.skillXP).map(
+                        ([skill, xp]) => (
+                          <span
+                            key={skill}
+                            className="px-1 rounded bg-blue-100 text-blue-700"
+                            title={`Gained ${xp} XP in ${skill}`}
+                          >
+                            {skill.replace(/([A-Z])/g, " $1").trim()}: +{xp}XP
+                          </span>
+                        )
+                      )}
+                    </div>
+                  )}
 
                 {/* Level ups */}
-                {entry.result.skillLevelUps && entry.result.skillLevelUps.length > 0 && (
-                  <div className="mt-1 text-xs">
-                    {entry.result.skillLevelUps.map((levelUp, index) => (
-                      <span
-                        key={index}
-                        className="inline-block px-1 rounded bg-yellow-100 text-yellow-800 mr-1"
-                        title="Skill Level Up!"
-                      >
-                        📈 {levelUp}
-                      </span>
-                    ))}
-                  </div>
-                )}
+                {entry.result.skillLevelUps &&
+                  entry.result.skillLevelUps.length > 0 && (
+                    <div className="mt-1 text-xs">
+                      {entry.result.skillLevelUps.map((levelUp, index) => (
+                        <span
+                          key={index}
+                          className="inline-block px-1 rounded bg-yellow-100 text-yellow-800 mr-1"
+                          title="Skill Level Up!"
+                        >
+                          📈 {levelUp}
+                        </span>
+                      ))}
+                    </div>
+                  )}
 
                 {/* Advanced paths unlocked */}
-                {entry.result.unlockedAdvancedPaths && entry.result.unlockedAdvancedPaths.length > 0 && (
-                  <div className="mt-1 text-xs">
-                    {entry.result.unlockedAdvancedPaths.map((path, index) => (
-                      <span
-                        key={index}
-                        className="inline-block px-1 rounded bg-purple-100 text-purple-800 mr-1"
-                        title="Advanced Path Unlocked!"
-                      >
-                        ⭐ {path}
-                      </span>
-                    ))}
-                  </div>
-                )}
+                {entry.result.unlockedAdvancedPaths &&
+                  entry.result.unlockedAdvancedPaths.length > 0 && (
+                    <div className="mt-1 text-xs">
+                      {entry.result.unlockedAdvancedPaths.map((path, index) => (
+                        <span
+                          key={index}
+                          className="inline-block px-1 rounded bg-purple-100 text-purple-800 mr-1"
+                          title="Advanced Path Unlocked!"
+                        >
+                          ⭐ {path}
+                        </span>
+                      ))}
+                    </div>
+                  )}
 
                 {/* Condensed stats if available */}
                 {entry.statsBefore && entry.statsAfter && (
