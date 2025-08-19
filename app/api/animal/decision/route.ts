@@ -134,7 +134,8 @@ SPECIAL MOVEMENT ACTIONS:
 ADDITIONAL NOTES:
   • There can only be 1 home per animal
   • There can only be 1 trading post and 1 hospital per map
-  • Remember that sleep is very powerful for restoring energy and health
+  • Remember that sleep is very powerful for restoring energy and health, but you need a home to sleep in
+  • Exploration has low energy cost and can yield valuable discoveries
 
 ALWAYS INCLUDE A JSON PLAN when creating new plans. Use this format and always return as JSON:
 {{
@@ -530,11 +531,11 @@ ${animal.specialMemories
       .replace("{playful}", animal.dna.personality.playful.toString())
       .replace("{cautious}", animal.dna.personality.cautious.toString())
       .replace("{nurturing}", animal.dna.personality.nurturing.toString())
-      .replace("{health}", animal.stats.health.toString())
-      .replace("{hunger}", animal.stats.hunger.toString())
-      .replace("{energy}", animal.stats.energy.toString())
-      .replace("{happiness}", animal.stats.happiness.toString())
-      .replace("{thirst}", animal.stats.thirst.toString())
+      .replace("{health}", animal.stats.health?.toString())
+      .replace("{hunger}", animal.stats.hunger?.toString())
+      .replace("{energy}", animal.stats.energy?.toString())
+      .replace("{happiness}", animal.stats.happiness?.toString())
+      .replace("{thirst}", animal.stats.thirst?.toString())
       .replace("{age}", Math.round(animal.age * 100).toString())
       .replace("{currentAction}", animal.currentAction)
       .replace("{inventory}", inventoryDescription)
@@ -577,32 +578,7 @@ ${animal.specialMemories
       )
       .replace("{sleepConstraint}", sleepCheck.reason);
 
-    // Call OpenAI API directly
-    // const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    //   method: "POST",
-    //   headers: {
-    //     "Content-Type": "application/json",
-    //     Authorization: `Bearer ${apiKey}`,
-    //   },
-    //   body: JSON.stringify({
-    //     model: "gpt-5-nano",
-    //     messages: [
-    //       {
-    //         role: "system",
-    //         content: systemPrompt,
-    //       },
-    //       {
-    //         role: "user",
-    //         content: userPrompt,
-    //       },
-    //     ],
-    //     response_format: { type: "json_object" },
-    //     temperature: 0.7,
-    //     max_tokens: 4000,
-    //   }),
-    // });
-
-    const response = await openai.chat.completions.create({
+    const responseData = await openai.chat.completions.create({
       model: "gpt-5-nano",
       messages: [
         {
@@ -616,16 +592,7 @@ ${animal.specialMemories
       ],
       response_format: { type: "json_object" },
       reasoning_effort: "minimal",
-      // temperature: 0.7,
-      // max_completion_tokens: 6000,
     });
-
-    // if (!response.ok) {
-    //   throw new Error(`OpenAI API error: ${response.status}`);
-    // }
-
-    // const responseData = await response.json();
-    const responseData = response;
 
     const responseText = responseData.choices[0].message.content;
 
@@ -667,113 +634,9 @@ ${animal.specialMemories
       return NextResponse.json({ action });
     }
 
-    const action = parsedResponse.action;
-    let explorationTarget = null;
-
-    // Validate action
-    const validActions = [
-      "moving",
-      "eating",
-      "drinking",
-      "sleeping",
-      "playing",
-      "exploring",
-      "socializing",
-      "working",
-      "mating",
-      "harvesting",
-      "building",
-      "ideation",
-      "crafting",
-      "combat",
-      "idle",
-    ];
-
-    const finalAction = validActions.includes(action) ? action : "idle";
-
-    // Handle exploration target if present
-    if (finalAction === "exploring" && parsedResponse.target) {
-      const targetX = parseFloat(parsedResponse.target.x);
-      const targetZ = parseFloat(parsedResponse.target.z);
-
-      const maxDistance = 35; // Maximum distance for exploration
-
-      if (!isNaN(targetX) && !isNaN(targetZ)) {
-        // Validate coordinates are within 20 units of current position
-        const distance = Math.sqrt(
-          Math.pow(targetX - animal.position.x, 2) +
-            Math.pow(targetZ - animal.position.z, 2)
-        );
-
-        if (distance <= maxDistance) {
-          explorationTarget = { x: targetX, z: targetZ };
-        } else {
-          // Limit to 20 units in the direction of the target
-          const angle = Math.atan2(
-            targetZ - animal.position.z,
-            targetX - animal.position.x
-          );
-          explorationTarget = {
-            x: animal.position.x + Math.cos(angle) * maxDistance,
-            z: animal.position.z + Math.sin(angle) * maxDistance,
-          };
-        }
-      }
-    }
-
     const result: any = {
-      action: finalAction,
       reasoning: parsedResponse.reasoning || "No reasoning provided",
     };
-
-    if (finalAction === "exploring" && explorationTarget) {
-      result.explorationTarget = explorationTarget;
-    }
-
-    if (finalAction === "harvesting" && parsedResponse.resourceId) {
-      result.resourceId = parsedResponse.resourceId;
-    }
-
-    if (finalAction === "eating" && parsedResponse.resourceId) {
-      result.resourceId = parsedResponse.resourceId;
-    }
-
-    if (finalAction === "building") {
-      if (parsedResponse.buildingAction) {
-        result.buildingAction = parsedResponse.buildingAction;
-      }
-      if (parsedResponse.buildingId) {
-        result.buildingId = parsedResponse.buildingId;
-      }
-      if (parsedResponse.buildingName) {
-        result.buildingName = parsedResponse.buildingName;
-      }
-    }
-
-    if (finalAction === "ideation" && parsedResponse.idea) {
-      result.idea = parsedResponse.idea;
-    }
-
-    if (finalAction === "crafting") {
-      if (parsedResponse.ingredients) {
-        result.ingredients = parsedResponse.ingredients;
-      }
-      if (parsedResponse.craftingGoal) {
-        result.craftingGoal = parsedResponse.craftingGoal;
-      }
-      if (parsedResponse.craftingMethod) {
-        result.craftingMethod = parsedResponse.craftingMethod;
-      }
-    }
-
-    if (finalAction === "combat") {
-      if (parsedResponse.targetId) {
-        result.targetId = parsedResponse.targetId;
-      }
-      if (parsedResponse.weaponId) {
-        result.weaponId = parsedResponse.weaponId;
-      }
-    }
 
     // Include plan in response for client-side storage
     if (parsedResponse.plan && shouldCreateNewPlan) {

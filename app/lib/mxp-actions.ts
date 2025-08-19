@@ -615,10 +615,7 @@ export class MXPActionSystem {
       Math.pow(newPosition.x - animal.position.x, 2) +
         Math.pow(newPosition.z - animal.position.z, 2)
     );
-    const energyCost = Math.max(
-      5,
-      Math.min(4 + distance * 2, animal.stats.energy * 0.3)
-    );
+    const energyCost = Math.max(2, Math.min(4, animal.stats.energy * 0.1)); // Low-cost exploration
     const happiness = 10 * curiosityMultiplier + (explorationTarget ? 5 : 3); // AI-driven exploration gives more happiness
 
     // Check for discoveries based on world state and exploration goal
@@ -652,27 +649,27 @@ export class MXPActionSystem {
       }
 
       // Random discoveries
-      if (Math.random() < 0.2) {
-        const randomDiscoveries = [
-          "interesting scent trail",
-          "good hiding spot",
-          "comfortable resting area",
-          "unusual tracks",
-          "sheltered area",
-        ];
-        const discovery =
-          randomDiscoveries[
-            Math.floor(Math.random() * randomDiscoveries.length)
-          ];
-        discoveries.push(discovery);
+      // if (Math.random() < 0.2) {
+      //   const randomDiscoveries = [
+      //     "interesting scent trail",
+      //     "good hiding spot",
+      //     "comfortable resting area",
+      //     "unusual tracks",
+      //     "sheltered area",
+      //   ];
+      //   const discovery =
+      //     randomDiscoveries[
+      //       Math.floor(Math.random() * randomDiscoveries.length)
+      //     ];
+      //   discoveries.push(discovery);
 
-        this.explorationSystem.addMemory(animal.id, {
-          position: { x: newPosition.x, y: newPosition.y, z: newPosition.z },
-          discoveryType: "interesting",
-          description: `Found ${discovery}`,
-          reliability: 0.6,
-        });
-      }
+      //   this.explorationSystem.addMemory(animal.id, {
+      //     position: { x: newPosition.x, y: newPosition.y, z: newPosition.z },
+      //     discoveryType: "interesting",
+      //     description: `Found ${discovery}`,
+      //     reliability: 0.6,
+      //   });
+      // }
 
       if (discoveries.length > 0) {
         discoveryMessage = ` and ${discoveries.join(" and ")}`;
