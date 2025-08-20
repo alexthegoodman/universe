@@ -16,6 +16,8 @@ import { buildingSystem } from "./building-system";
 import { RESOURCE_WEIGHTS } from "../types/weights";
 import { BreedingSystem } from "./breeding-system";
 import { skillSystem } from "./skill-system";
+import type { TerrainGenerator } from "./terrain-generator";
+import { ElevationUtils } from "./elevation-utils";
 
 export interface MXPAction {
   name: string;
@@ -61,6 +63,8 @@ export class MXPActionSystem {
   private explorationSystem: ExplorationSystem;
   private breedingSystem?: BreedingSystem;
   private getAllAnimals?: () => Animal[];
+  private terrainGenerator?: TerrainGenerator;
+  private elevationUtils: ElevationUtils;
 
   constructor(breedingSystem?: BreedingSystem, getAllAnimals?: () => Animal[]) {
     this.breedingSystem = breedingSystem;
@@ -100,6 +104,12 @@ export class MXPActionSystem {
     };
 
     this.explorationSystem = explorationSystem;
+    this.elevationUtils = new ElevationUtils();
+  }
+
+  setTerrainGenerator(terrainGenerator: TerrainGenerator) {
+    this.terrainGenerator = terrainGenerator;
+    this.elevationUtils = new ElevationUtils(terrainGenerator);
   }
 
   // Helper method to apply skill effects to action results
@@ -218,15 +228,10 @@ export class MXPActionSystem {
     const { targetX = 0, targetZ = 0, speed = 1 } = params;
 
     // World bounds check - prevent movement outside map bounds
-    const worldBounds = { width: 100, height: 10, depth: 100 }; // Match game-manager.ts config
-    const halfWidth = worldBounds.width / 2;
-    const halfDepth = worldBounds.depth / 2;
+    const worldBounds = { width: 200, depth: 200 }; // Match game-manager.ts config
 
     if (
-      targetX < -halfWidth ||
-      targetX > halfWidth ||
-      targetZ < -halfDepth ||
-      targetZ > halfDepth
+      !this.elevationUtils.isWithinWorldBounds(targetX, targetZ, worldBounds)
     ) {
       return {
         success: false,
@@ -239,16 +244,16 @@ export class MXPActionSystem {
     const agilityMultiplier = animal.dna.agility / 100;
     const actualSpeed = speed * agilityMultiplier;
 
-    // Calculate energy cost based on distance and size
-    const distance = Math.sqrt(
-      Math.pow(targetX - animal.position.x, 2) +
-        Math.pow(targetZ - animal.position.z, 2)
-    );
-
-    const energyCost = Math.max(
-      5,
+    // Calculate energy cost using elevation utilities
+    const energyCost = Math.min(
+      6,
       Math.min(
-        this.config.move.energyCost * (distance / 10) * animal.dna.size,
+        this.elevationUtils.calculateMovementEnergyCost(
+          animal,
+          targetX,
+          targetZ,
+          this.config.move.energyCost
+        ),
         animal.stats.energy
       )
     );
@@ -261,16 +266,20 @@ export class MXPActionSystem {
       };
     }
 
-    // Calculate new position (simplified for now)
-    const newPosition: AnimalPosition = {
-      x: targetX,
-      y: animal.position.y,
-      z: targetZ,
-      rotation: Math.atan2(
-        targetZ - animal.position.z,
-        targetX - animal.position.x
-      ),
-    };
+    // Calculate new position with terrain elevation using utilities
+    const newPosition = this.elevationUtils.createElevatedPosition(
+      animal.position,
+      targetX,
+      targetZ
+    );
+
+    // Calculate horizontal distance for duration
+    const distance = this.elevationUtils.calculateHorizontalDistance(
+      animal.position.x,
+      animal.position.z,
+      targetX,
+      targetZ
+    );
 
     return {
       success: true,
@@ -561,16 +570,12 @@ export class MXPActionSystem {
     let goalReason = "Exploring based on curiosity";
 
     if (explorationTarget) {
-      // Use AI-provided exploration target
-      newPosition = {
-        x: explorationTarget.x,
-        y: animal.position.y,
-        z: explorationTarget.z,
-        rotation: Math.atan2(
-          explorationTarget.z - animal.position.z,
-          explorationTarget.x - animal.position.x
-        ),
-      };
+      // Use AI-provided exploration target with elevation
+      newPosition = this.elevationUtils.createElevatedPosition(
+        animal.position,
+        explorationTarget.x,
+        explorationTarget.z
+      );
       goalReason = "Exploring towards AI-chosen destination";
     } else {
       // Fallback to exploration system for intelligent exploration
@@ -586,9 +591,7 @@ export class MXPActionSystem {
     }
 
     // World bounds check - prevent exploration outside map bounds
-    const worldBounds = { width: 100, height: 10, depth: 100 }; // Match game-manager.ts config
-    const halfWidth = worldBounds.width / 2;
-    const halfDepth = worldBounds.depth / 2;
+    const worldBounds = { width: 200, depth: 200 }; // Match game-manager.ts config
 
     console.info(
       "Exploring new position",
@@ -598,10 +601,11 @@ export class MXPActionSystem {
     );
 
     if (
-      newPosition.x < -halfWidth ||
-      newPosition.x > halfWidth ||
-      newPosition.z < -halfDepth ||
-      newPosition.z > halfDepth
+      !this.elevationUtils.isWithinWorldBounds(
+        newPosition.x,
+        newPosition.z,
+        worldBounds
+      )
     ) {
       return {
         success: false,
@@ -610,12 +614,15 @@ export class MXPActionSystem {
       };
     }
 
-    // Calculate energy cost and happiness gain
-    const distance = Math.sqrt(
-      Math.pow(newPosition.x - animal.position.x, 2) +
-        Math.pow(newPosition.z - animal.position.z, 2)
+    // Calculate energy cost using elevation utilities
+    const baseEnergyCost = Math.max(2, Math.min(4, animal.stats.energy * 0.1)); // Low-cost exploration
+    const energyCost = this.elevationUtils.calculateElevationEnergyCost(
+      animal.position.x,
+      animal.position.z,
+      newPosition.x,
+      newPosition.z,
+      baseEnergyCost
     );
-    const energyCost = Math.max(2, Math.min(4, animal.stats.energy * 0.1)); // Low-cost exploration
     const happiness = 10 * curiosityMultiplier + (explorationTarget ? 5 : 3); // AI-driven exploration gives more happiness
 
     // Check for discoveries based on world state and exploration goal
@@ -686,6 +693,14 @@ export class MXPActionSystem {
       memories.length > 0
         ? ` (remembering ${memories.length} nearby locations)`
         : "";
+
+    // Calculate distance for duration
+    const distance = this.elevationUtils.calculateHorizontalDistance(
+      animal.position.x,
+      animal.position.z,
+      newPosition.x,
+      newPosition.z
+    );
 
     const baseResult = {
       success: true,
@@ -1515,14 +1530,25 @@ export class MXPActionSystem {
       };
     }
 
-    // Calculate distance to home
-    const distance = Math.sqrt(
-      Math.pow(home.position.x - animal.position.x, 2) +
-        Math.pow(home.position.z - animal.position.z, 2)
-    );
+    // Calculate energy cost using elevation utilities (reduced cost for going home)
+    const baseEnergyCost =
+      this.elevationUtils.calculateHorizontalDistance(
+        animal.position.x,
+        animal.position.z,
+        home.position.x,
+        home.position.z
+      ) * 0.5;
 
-    // Calculate energy cost (minimum for going home since it's special)
-    const energyCost = Math.max(3, distance * 0.5);
+    const energyCost = Math.min(
+      6,
+      this.elevationUtils.calculateElevationEnergyCost(
+        animal.position.x,
+        animal.position.z,
+        home.position.x,
+        home.position.z,
+        baseEnergyCost
+      )
+    );
 
     if (animal.stats.energy < energyCost) {
       return {
@@ -1532,16 +1558,20 @@ export class MXPActionSystem {
       };
     }
 
-    // Create new position at home
-    const newPosition: AnimalPosition = {
-      x: home.position.x,
-      y: animal.position.y,
-      z: home.position.z,
-      rotation: Math.atan2(
-        home.position.z - animal.position.z,
-        home.position.x - animal.position.x
-      ),
-    };
+    // Create new position at home with elevation
+    const newPosition = this.elevationUtils.createElevatedPosition(
+      animal.position,
+      home.position.x,
+      home.position.z
+    );
+
+    // Calculate distance for duration
+    const distance = this.elevationUtils.calculateHorizontalDistance(
+      animal.position.x,
+      animal.position.z,
+      home.position.x,
+      home.position.z
+    );
 
     return {
       success: true,
@@ -1569,14 +1599,25 @@ export class MXPActionSystem {
       };
     }
 
-    // Calculate distance to trading post
-    const distance = Math.sqrt(
-      Math.pow(tradingPost.position.x - animal.position.x, 2) +
-        Math.pow(tradingPost.position.z - animal.position.z, 2)
-    );
+    // Calculate energy cost using elevation utilities
+    const baseEnergyCost =
+      this.elevationUtils.calculateHorizontalDistance(
+        animal.position.x,
+        animal.position.z,
+        tradingPost.position.x,
+        tradingPost.position.z
+      ) * 0.8;
 
-    // Calculate energy cost
-    const energyCost = Math.max(5, distance * 0.8);
+    const energyCost = Math.min(
+      6,
+      this.elevationUtils.calculateElevationEnergyCost(
+        animal.position.x,
+        animal.position.z,
+        tradingPost.position.x,
+        tradingPost.position.z,
+        baseEnergyCost
+      )
+    );
 
     if (animal.stats.energy < energyCost) {
       return {
@@ -1586,16 +1627,20 @@ export class MXPActionSystem {
       };
     }
 
-    // Create new position at trading post
-    const newPosition: AnimalPosition = {
-      x: tradingPost.position.x,
-      y: animal.position.y,
-      z: tradingPost.position.z,
-      rotation: Math.atan2(
-        tradingPost.position.z - animal.position.z,
-        tradingPost.position.x - animal.position.x
-      ),
-    };
+    // Create new position at trading post with elevation
+    const newPosition = this.elevationUtils.createElevatedPosition(
+      animal.position,
+      tradingPost.position.x,
+      tradingPost.position.z
+    );
+
+    // Calculate distance for duration
+    const distance = this.elevationUtils.calculateHorizontalDistance(
+      animal.position.x,
+      animal.position.z,
+      tradingPost.position.x,
+      tradingPost.position.z
+    );
 
     return {
       success: true,
@@ -1623,14 +1668,25 @@ export class MXPActionSystem {
       };
     }
 
-    // Calculate distance to hospital
-    const distance = Math.sqrt(
-      Math.pow(hospital.position.x - animal.position.x, 2) +
-        Math.pow(hospital.position.z - animal.position.z, 2)
-    );
+    // Calculate energy cost using elevation utilities
+    const baseEnergyCost =
+      this.elevationUtils.calculateHorizontalDistance(
+        animal.position.x,
+        animal.position.z,
+        hospital.position.x,
+        hospital.position.z
+      ) * 0.8;
 
-    // Calculate energy cost
-    const energyCost = Math.max(5, distance * 0.8);
+    const energyCost = Math.min(
+      6,
+      this.elevationUtils.calculateElevationEnergyCost(
+        animal.position.x,
+        animal.position.z,
+        hospital.position.x,
+        hospital.position.z,
+        baseEnergyCost
+      )
+    );
 
     if (animal.stats.energy < energyCost) {
       return {
@@ -1640,16 +1696,20 @@ export class MXPActionSystem {
       };
     }
 
-    // Create new position at hospital
-    const newPosition: AnimalPosition = {
-      x: hospital.position.x,
-      y: animal.position.y,
-      z: hospital.position.z,
-      rotation: Math.atan2(
-        hospital.position.z - animal.position.z,
-        hospital.position.x - animal.position.x
-      ),
-    };
+    // Create new position at hospital with elevation
+    const newPosition = this.elevationUtils.createElevatedPosition(
+      animal.position,
+      hospital.position.x,
+      hospital.position.z
+    );
+
+    // Calculate distance for duration
+    const distance = this.elevationUtils.calculateHorizontalDistance(
+      animal.position.x,
+      animal.position.z,
+      hospital.position.x,
+      hospital.position.z
+    );
 
     // Hospital visit provides healing
     const healingBonus = 15;

@@ -64,6 +64,11 @@ export class HealthMonitor {
         gameManager.getBreedingSystem(),
         () => this.getAllAnimals()
       );
+      
+      // Set terrain generator reference if available
+      if (gameManager.terrainGenerator) {
+        this.actionSystem.setTerrainGenerator(gameManager.terrainGenerator);
+      }
     }
   }
 

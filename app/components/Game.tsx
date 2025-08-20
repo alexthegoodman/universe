@@ -25,6 +25,7 @@ import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useRef, useState as useReactState } from "react";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
+import { TerrainMesh, useTerrainGenerator } from "./TerrainMesh";
 
 interface SceneProps {
   animals: Animal[];
@@ -113,16 +114,21 @@ function Scene({
   onBuildingClick,
   onBanditClick,
 }: SceneProps) {
+  const terrainGenerator = useTerrainGenerator();
+
   return (
     <>
       {/* Lighting */}
       <ambientLight intensity={0.4} />
-      <directionalLight position={[10, 10, 5]} intensity={1} />
+      <directionalLight position={[10, 10, 5]} intensity={1} castShadow />
 
-      {/* Ground - Clickable for movement */}
+      {/* Terrain */}
+      <TerrainMesh terrainGenerator={terrainGenerator} />
+      
+      {/* Invisible clickable plane for ground interactions */}
       <mesh
         rotation={[-Math.PI / 2, 0, 0]}
-        position={[0, -0.6, 0]}
+        position={[0, 15, 0]}
         onClick={(event) => {
           event.stopPropagation();
           const position = new THREE.Vector3(event.point.x, 0, event.point.z);
@@ -132,16 +138,18 @@ function Scene({
         <planeGeometry args={[200, 200]} />
         <meshBasicMaterial transparent opacity={0} />
       </mesh>
+      
+      {/* Optional grid overlay */}
       <Grid
         args={[50, 50]}
-        position={[0, -0.5, 0]}
-        cellSize={2}
+        position={[0, 15.1, 0]}
+        cellSize={4}
         cellThickness={0.5}
         cellColor="#6f6f6f"
-        sectionSize={10}
+        sectionSize={20}
         sectionThickness={1}
         sectionColor="#9d4b4b"
-        fadeDistance={100}
+        fadeDistance={150}
         fadeStrength={1}
         followCamera
         infiniteGrid
@@ -346,7 +354,7 @@ export default function Game() {
 
   return (
     <div className="w-full h-screen relative">
-      <Canvas camera={{ position: [15, 15, 15], fov: 50 }}>
+      <Canvas camera={{ position: [50, 35, 50], fov: 60 }}>
         <Suspense fallback={null}>
           <Scene
             animals={animals}
@@ -365,11 +373,12 @@ export default function Game() {
             enableZoom={true}
             enableRotate={true}
             maxPolarAngle={Math.PI / 2}
-            minDistance={5}
-            maxDistance={100}
+            minDistance={10}
+            maxDistance={200}
             enableDamping={true}
-            dampingFactor={0.1} // Adjust for desired damping
-            rotateSpeed={0.5} // Adjust for desired rotation sensitivity
+            dampingFactor={0.1}
+            rotateSpeed={0.5}
+            target={[0, 10, 0]}
             zoomSpeed={0.35} // Adjust for desired zoom sensitivity
             panSpeed={0.5} // Adjust for desired pan sensitivity
           />

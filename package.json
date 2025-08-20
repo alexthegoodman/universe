@@ -23,6 +23,7 @@
     "next": "15.4.6",
     "node-fetch": "^3.3.2",
     "nodemon": "^3.1.10",
+    "open-simplex-noise": "^2.5.0",
     "openai": "^5.12.2",
     "react": "19.1.0",
     "react-dom": "19.1.0",

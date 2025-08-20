@@ -13,6 +13,7 @@ import { CurrencySystem } from "./currency-system";
 import { HARVEST_RADIUS } from "./health-monitor";
 import { skillSystem } from "./skill-system";
 import { v4 as uuidv4 } from "uuid";
+import { TerrainGenerator, defaultTerrainConfig } from "./terrain-generator";
 
 export interface GameConfig {
   maxAnimals: number;
@@ -406,6 +407,7 @@ export class GameManager {
   private breedingSystem: BreedingSystem;
   private worldState: WorldState;
   private websocketServer: any;
+  public terrainGenerator: TerrainGenerator;
   private gameRunning: boolean = false;
 
   private getItemWeight(item: any): number {
@@ -438,7 +440,7 @@ export class GameManager {
     this.config = {
       maxAnimals: 50,
       startingAnimals: 3,
-      worldSize: { width: 100, height: 10, depth: 100 },
+      worldSize: { width: 200, height: 30, depth: 200 },
       enableWebSocket: true,
       webSocketPort: 8080,
       ...config,
@@ -446,6 +448,7 @@ export class GameManager {
 
     this.healthMonitor = new HealthMonitor();
     this.breedingSystem = new BreedingSystem();
+    this.terrainGenerator = new TerrainGenerator(defaultTerrainConfig);
 
     this.healthMonitor.setGameManagerReference(this);
 
@@ -491,29 +494,57 @@ export class GameManager {
     const existingPositions: Array<{ x: number; z: number }> = [];
     const minDistance = 15;
 
-    const getValidPosition = (): { x: number; y: number; z: number } => {
+    const getValidPosition = (preferredBiomes?: string[]): { x: number; y: number; z: number } => {
       let attempts = 0;
       let position: { x: number; z: number };
+      let bestPosition: { x: number; z: number } | null = null;
+      let bestScore = -1;
 
       do {
         position = {
           x: (Math.random() - 0.5) * width * 1.0,
           z: (Math.random() - 0.5) * depth * 1.0,
         };
-        attempts++;
-      } while (
-        attempts < 50 &&
-        existingPositions.some(
+        
+        // Check distance from existing positions
+        const tooClose = existingPositions.some(
           (existing) =>
             Math.sqrt(
               Math.pow(existing.x - position.x, 2) +
                 Math.pow(existing.z - position.z, 2)
             ) < minDistance
-        )
-      );
+        );
+        
+        if (!tooClose) {
+          // Score position based on biome preference
+          const biome = this.terrainGenerator.getBiomeAt(position.x, position.z);
+          let score = 1; // Base score
+          
+          if (preferredBiomes && preferredBiomes.includes(biome.type)) {
+            score += 2; // Bonus for preferred biomes
+          }
+          
+          // Avoid water for most resources
+          if (biome.type === 'water' && !preferredBiomes?.includes('water')) {
+            score = 0;
+          }
+          
+          if (score > bestScore) {
+            bestScore = score;
+            bestPosition = position;
+          }
+        }
+        
+        attempts++;
+      } while (attempts < 50 && (bestScore === -1 || (preferredBiomes && bestScore < 2)));
 
-      existingPositions.push(position);
-      return { x: position.x, y: 0, z: position.z };
+      const finalPosition = bestPosition || position;
+      existingPositions.push(finalPosition);
+      
+      // Get terrain height at this position
+      const terrainHeight = this.terrainGenerator.getHeightAt(finalPosition.x, finalPosition.z);
+      
+      return { x: finalPosition.x, y: terrainHeight, z: finalPosition.z };
     };
 
     const createResource = (
@@ -522,12 +553,13 @@ export class GameManager {
       category: ResourceCategory,
       rarity: "common" | "uncommon" | "rare" | "epic" | "legendary",
       baseQuantity: number,
-      regenerates: boolean
+      regenerates: boolean,
+      preferredBiomes?: string[]
     ): WorldResource => ({
       id,
       type,
       category,
-      position: getValidPosition(),
+      position: getValidPosition(preferredBiomes),
       quantity: baseQuantity + Math.random() * baseQuantity * 0.5,
       harvestable: true,
       regeneratesOverTime: regenerates,
@@ -564,6 +596,9 @@ export class GameManager {
 
     commonStones.forEach((stone, i) => {
       for (let j = 0; j < 8; j++) {
+        const biomes = stone === 'salt' ? ['water', 'beach'] : 
+                      stone === 'coal' ? ['hills', 'mountains'] :
+                      ['hills', 'mountains', 'plains'];
         resources.push(
           createResource(
             `${stone}_${i}_${j}`,
@@ -571,7 +606,8 @@ export class GameManager {
             "minerals_stones",
             "common",
             8,
-            false
+            false,
+            biomes
           )
         );
       }
@@ -579,6 +615,9 @@ export class GameManager {
 
     uncommonStones.forEach((stone, i) => {
       for (let j = 0; j < 3; j++) {
+        const biomes = stone === 'marble' ? ['mountains', 'peaks'] :
+                      stone === 'obsidian' ? ['mountains', 'peaks'] :
+                      ['mountains', 'hills'];
         resources.push(
           createResource(
             `${stone}_${i}_${j}`,
@@ -586,7 +625,8 @@ export class GameManager {
             "minerals_stones",
             "uncommon",
             5,
-            false
+            false,
+            biomes
           )
         );
       }
@@ -600,7 +640,8 @@ export class GameManager {
           "minerals_stones",
           "rare",
           3,
-          false
+          false,
+          ['mountains', 'peaks']
         )
       );
     });
@@ -703,6 +744,10 @@ export class GameManager {
 
     commonEdibles.forEach((edible, i) => {
       for (let j = 0; j < 8; j++) {
+        const biomes = edible.includes('berries') ? ['forest', 'plains'] :
+                      edible.includes('mushrooms') ? ['forest'] :
+                      edible.includes('rice') || edible.includes('wild_') ? ['plains', 'forest'] :
+                      ['plains', 'forest'];
         resources.push(
           createResource(
             `${edible}_${i}_${j}`,
@@ -710,7 +755,8 @@ export class GameManager {
             "edible_plants",
             "common",
             4,
-            true
+            true,
+            biomes
           )
         );
       }
@@ -725,7 +771,8 @@ export class GameManager {
             "edible_plants",
             "uncommon",
             3,
-            true
+            true,
+            ['forest', 'hills']
           )
         );
       }
