@@ -81,7 +81,9 @@ export default function Building3D({ building, onClick }: Building3DProps) {
   const opacity = 0.7;
 
   return (
-    <group position={[building.position.x, 0, building.position.z]}>
+    <group
+      position={[building.position.x, building.position.y, building.position.z]}
+    >
       {/* Main building structure */}
       <mesh
         ref={meshRef}

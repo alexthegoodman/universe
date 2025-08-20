@@ -175,7 +175,8 @@ export class ExplorationSystem {
   // Generate a smart exploration position
   generateExplorationPosition(
     animal: Animal,
-    goal: ExplorationGoal
+    goal: ExplorationGoal,
+    terrainGenerator?: any
   ): AnimalPosition {
     // World bounds to ensure exploration stays within map
     const worldBounds = { width: 100, height: 10, depth: 100 }; // Match game-manager.ts config
@@ -197,28 +198,43 @@ export class ExplorationSystem {
         z: (goal.targetPosition.z - animal.position.z) / distance,
       };
 
+      const targetX = animal.position.x + direction.x * moveDistance;
+      const targetZ = animal.position.z + direction.z * moveDistance;
+      const terrainHeight = terrainGenerator?.getHeightAt?.(targetX, targetZ) || 0;
+      
       newPosition = {
-        x: animal.position.x + direction.x * moveDistance,
-        y: animal.position.y,
-        z: animal.position.z + direction.z * moveDistance,
+        x: targetX,
+        y: terrainHeight + 1, // Place 1 unit above terrain
+        z: targetZ,
         rotation: Math.atan2(direction.z, direction.x),
       };
     } else {
       // Random exploration with some intelligence
       const range = this.getExplorationRange(animal);
       const angle = Math.random() * Math.PI * 2;
+      const targetX = animal.position.x + Math.cos(angle) * range * Math.random();
+      const targetZ = animal.position.z + Math.sin(angle) * range * Math.random();
+      const terrainHeight = terrainGenerator?.getHeightAt?.(targetX, targetZ) || 0;
 
       newPosition = {
-        x: animal.position.x + Math.cos(angle) * range * Math.random(),
-        y: animal.position.y,
-        z: animal.position.z + Math.sin(angle) * range * Math.random(),
+        x: targetX,
+        y: terrainHeight + 1, // Place 1 unit above terrain
+        z: targetZ,
         rotation: angle,
       };
     }
 
     // Clamp position to world bounds
-    newPosition.x = Math.max(-halfWidth, Math.min(halfWidth, newPosition.x));
-    newPosition.z = Math.max(-halfDepth, Math.min(halfDepth, newPosition.z));
+    const clampedX = Math.max(-halfWidth, Math.min(halfWidth, newPosition.x));
+    const clampedZ = Math.max(-halfDepth, Math.min(halfDepth, newPosition.z));
+    
+    // Recalculate terrain height if position was clamped
+    if (clampedX !== newPosition.x || clampedZ !== newPosition.z) {
+      const clampedTerrainHeight = terrainGenerator?.getHeightAt?.(clampedX, clampedZ) || 0;
+      newPosition.x = clampedX;
+      newPosition.z = clampedZ;
+      newPosition.y = clampedTerrainHeight + 1;
+    }
 
     return newPosition;
   }

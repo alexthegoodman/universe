@@ -41,65 +41,65 @@ interface SceneProps {
 }
 
 function GroundGlowRing({ selectedAnimals }: { selectedAnimals: Animal[] }) {
-  const ringRef = useRef<THREE.Mesh>(null)
-  const { camera, gl } = useThree()
-  const [mousePosition, setMousePosition] = useReactState<THREE.Vector3>(new THREE.Vector3(0, 0, 0))
-  const raycaster = useRef(new THREE.Raycaster())
-  const mouse = useRef(new THREE.Vector2())
-  
+  const ringRef = useRef<THREE.Mesh>(null);
+  const { camera, gl } = useThree();
+  const [mousePosition, setMousePosition] = useReactState<THREE.Vector3>(
+    new THREE.Vector3(0, 0, 0)
+  );
+  const raycaster = useRef(new THREE.Raycaster());
+  const mouse = useRef(new THREE.Vector2());
+
   // Track mouse movement
   useEffect(() => {
-    if (selectedAnimals.length === 0) return
-    
+    if (selectedAnimals.length === 0) return;
+
     const handleMouseMove = (event: MouseEvent) => {
-      const rect = gl.domElement.getBoundingClientRect()
-      mouse.current.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
-      mouse.current.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
-      
-      raycaster.current.setFromCamera(mouse.current, camera)
-      
+      const rect = gl.domElement.getBoundingClientRect();
+      mouse.current.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.current.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycaster.current.setFromCamera(mouse.current, camera);
+
       // Create a plane at y = -0.5 (ground level)
-      const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0.5)
-      const intersection = new THREE.Vector3()
-      
+      const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0.5);
+      const intersection = new THREE.Vector3();
+
       if (raycaster.current.ray.intersectPlane(groundPlane, intersection)) {
-        setMousePosition(intersection)
+        setMousePosition(intersection);
       }
-    }
-    
-    gl.domElement.addEventListener('mousemove', handleMouseMove)
-    return () => gl.domElement.removeEventListener('mousemove', handleMouseMove)
-  }, [selectedAnimals.length, camera, gl])
-  
+    };
+
+    gl.domElement.addEventListener("mousemove", handleMouseMove);
+    return () =>
+      gl.domElement.removeEventListener("mousemove", handleMouseMove);
+  }, [selectedAnimals.length, camera, gl]);
+
   useFrame((state) => {
     if (ringRef.current && selectedAnimals.length > 0) {
       // Gentle pulsing animation
-      const pulse = 0.8 + Math.sin(state.clock.elapsedTime * 2) * 0.1
-      ringRef.current.scale.setScalar(pulse)
-      const material = ringRef.current.material as THREE.MeshBasicMaterial
-      material.opacity = 0.2 + Math.sin(state.clock.elapsedTime * 3) * 0.1
-      
+      const pulse = 0.8 + Math.sin(state.clock.elapsedTime * 2) * 0.1;
+      ringRef.current.scale.setScalar(pulse);
+      const material = ringRef.current.material as THREE.MeshBasicMaterial;
+      material.opacity = 0.2 + Math.sin(state.clock.elapsedTime * 3) * 0.1;
+
       // Follow mouse position
-      ringRef.current.position.set(mousePosition.x, -0.45, mousePosition.z)
+      ringRef.current.position.set(mousePosition.x, -0.45, mousePosition.z);
     }
-  })
-  
-  if (selectedAnimals.length === 0) return null
-  
+  });
+
+  if (selectedAnimals.length === 0) return null;
+
   return (
-    <mesh 
-      ref={ringRef}
-      rotation={[-Math.PI / 2, 0, 0]}
-    >
+    <mesh ref={ringRef} rotation={[-Math.PI / 2, 0, 0]}>
       <ringGeometry args={[2, 3, 16]} />
-      <meshBasicMaterial 
-        color="#4ade80" 
-        transparent 
+      <meshBasicMaterial
+        color="#4ade80"
+        transparent
         opacity={0.3}
         side={THREE.DoubleSide}
       />
     </mesh>
-  )
+  );
 }
 
 function Scene({
@@ -124,7 +124,7 @@ function Scene({
 
       {/* Terrain */}
       <TerrainMesh terrainGenerator={terrainGenerator} />
-      
+
       {/* Invisible clickable plane for ground interactions */}
       <mesh
         rotation={[-Math.PI / 2, 0, 0]}
@@ -138,7 +138,7 @@ function Scene({
         <planeGeometry args={[200, 200]} />
         <meshBasicMaterial transparent opacity={0} />
       </mesh>
-      
+
       {/* Optional grid overlay */}
       <Grid
         args={[50, 50]}
@@ -306,10 +306,13 @@ export default function Game() {
     }
   }, []);
 
-  const handleAnimalClickAndCenter = useCallback((animal: Animal, ctrlKey = false) => {
-    handleAnimalClick(animal, ctrlKey);
-    centerOnAnimal(animal);
-  }, [handleAnimalClick, centerOnAnimal]);
+  const handleAnimalClickAndCenter = useCallback(
+    (animal: Animal, ctrlKey = false) => {
+      handleAnimalClick(animal, ctrlKey);
+      centerOnAnimal(animal);
+    },
+    [handleAnimalClick, centerOnAnimal]
+  );
 
   const handleGroundClick = useCallback(
     async (position: THREE.Vector3) => {
@@ -321,6 +324,7 @@ export default function Game() {
           const targetZ = position.z + Math.sin(index) * offset;
 
           // Use proper movement action for energy cost and memory tracking
+          // TODO: use executeAnimalAction from healthMonitor
           await gameManager.executeAnimalAction(animal.id, {
             action: "moving",
             targetX,
@@ -469,9 +473,9 @@ export default function Game() {
 
       {/* Currency Leaderboard */}
       <div className="absolute top-4 right-4 w-80">
-        <CurrencyLeaderboard 
-          animals={animals} 
-          maxEntries={10} 
+        <CurrencyLeaderboard
+          animals={animals}
+          maxEntries={10}
           onAnimalClick={handleAnimalClickAndCenter}
         />
       </div>

@@ -1274,10 +1274,13 @@ export class GameManager {
 
   private getRandomSafePosition() {
     const { width, depth } = this.config.worldSize;
+    const x = (Math.random() - 0.5) * width * 0.8;
+    const z = (Math.random() - 0.5) * depth * 0.8;
+    const terrainHeight = this.terrainGenerator.getHeightAt(x, z);
     return {
-      x: (Math.random() - 0.5) * width * 0.8,
-      y: 0,
-      z: (Math.random() - 0.5) * depth * 0.8,
+      x,
+      y: terrainHeight + 1, // Place 1 unit above terrain
+      z,
       rotation: Math.random() * Math.PI * 2,
     };
   }

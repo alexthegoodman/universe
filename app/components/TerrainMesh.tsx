@@ -67,24 +67,11 @@ export function TerrainMesh({ terrainGenerator }: TerrainMeshProps) {
         // vertices[i + 1] = height; // Y coordinate
         vertices[i + 2] = height; // Y coordinate
 
-        // Simple color based on height
-        const normalizedHeight = height / config.height;
-        if (normalizedHeight < 0.3) {
-          // Water/low areas - blue
-          colors[i] = 0.2;
-          colors[i + 1] = 0.4;
-          colors[i + 2] = 0.8;
-        } else if (normalizedHeight < 0.6) {
-          // Plains - green
-          colors[i] = 0.4;
-          colors[i + 1] = 0.6;
-          colors[i + 2] = 0.2;
-        } else {
-          // Mountains - brown
-          colors[i] = 0.6;
-          colors[i + 1] = 0.4;
-          colors[i + 2] = 0.3;
-        }
+        // Get biome color using getBiomeAtGrid
+        const biome = terrainGenerator.getBiomeAtGrid(hmX, hmZ);
+        colors[i] = biome.color[0];
+        colors[i + 1] = biome.color[1];
+        colors[i + 2] = biome.color[2];
       } else {
         // Fallback color
         colors[i] = 1.0;

@@ -120,13 +120,16 @@ export class TerrainGenerator {
         const worldX = (x / resolution - 0.5) * width;
         const worldZ = (z / resolution - 0.5) * depth;
 
-        const heightValue = this.perlinNoise(worldX * 0.01, worldZ * 0.01);
+        const heightOffset = 0.1;
+        const heightValue =
+          this.perlinNoise(worldX * 0.01, worldZ * 0.01) + heightOffset;
         const moistureValue = this.perlinNoise(
           worldX * 0.02 + 1000,
           worldZ * 0.02 + 1000
         );
 
         const index = x + z * resolution;
+
         this.heightMap[index] = heightValue * height;
         this.moistureMap[index] = moistureValue;
 
@@ -136,21 +139,22 @@ export class TerrainGenerator {
   }
 
   private determineBiome(elevation: number, moisture: number): BiomeData {
-    if (elevation < 0.15) {
+    // console.info("elevation", elevation, moisture);
+    if (elevation < -0.1) {
       return {
         type: "water",
         elevation,
         moisture,
         color: [0.2, 0.4, 0.8],
       };
-    } else if (elevation < 0.25) {
+    } else if (elevation < -0) {
       return {
         type: "beach",
         elevation,
         moisture,
         color: [0.9, 0.8, 0.6],
       };
-    } else if (elevation < 0.4) {
+    } else if (elevation < 0.1) {
       if (moisture < 0.3) {
         return {
           type: "plains",
@@ -166,7 +170,7 @@ export class TerrainGenerator {
           color: [0.4, 0.6, 0.2],
         };
       }
-    } else if (elevation < 0.6) {
+    } else if (elevation < 0.3) {
       if (moisture < 0.4) {
         return {
           type: "hills",
@@ -182,7 +186,7 @@ export class TerrainGenerator {
           color: [0.2, 0.5, 0.2],
         };
       }
-    } else if (elevation < 0.8) {
+    } else if (elevation < 0.5) {
       return {
         type: "mountains",
         elevation,
@@ -232,16 +236,22 @@ export class TerrainGenerator {
     const x = Math.floor((worldX / width + 0.5) * resolution);
     const z = Math.floor((worldZ / depth + 0.5) * resolution);
 
-    if (x < 0 || z < 0 || x >= resolution || z >= resolution) {
-      return {
-        type: "water",
-        elevation: 0,
-        moisture: 0,
-        color: [0.2, 0.4, 0.8],
-      };
-    }
+    // if (x < 0 || z < 0 || x >= resolution || z >= resolution) {
+    //   return {
+    //     type: "water",
+    //     elevation: 0,
+    //     moisture: 0,
+    //     color: [0.2, 0.4, 0.8],
+    //   };
+    // }
 
     return this.biomeMap[x + z * resolution];
+  }
+
+  public getBiomeAtGrid(gridX: number, gridZ: number): BiomeData {
+    const { resolution, width, depth } = this.config;
+
+    return this.biomeMap[gridX + gridZ * resolution];
   }
 
   public getHeightMap(): Float32Array {

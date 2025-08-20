@@ -585,7 +585,8 @@ export class MXPActionSystem {
       );
       newPosition = this.explorationSystem.generateExplorationPosition(
         animal,
-        explorationGoal
+        explorationGoal,
+        this.terrainGenerator
       );
       goalReason = explorationGoal.reason;
     }
@@ -641,7 +642,8 @@ export class MXPActionSystem {
         this.explorationSystem.addMemory(animal.id, {
           position: {
             x: resource.position?.x || 0,
-            y: 0,
+            // y: 0,
+            y: resource.position?.y || 0,
             z: resource.position?.z || 0,
           },
           discoveryType: resource.type as any,
@@ -1047,11 +1049,18 @@ export class MXPActionSystem {
       action === "create_factory"
     ) {
       // Create a new building
-      const buildPosition = position || {
+      const flatPosition = position || {
         x: animal.position.x + (Math.random() - 0.5) * 10,
         y: 0,
         z: animal.position.z + (Math.random() - 0.5) * 10,
       };
+
+      // Create new position at home with elevation
+      const buildPosition = this.elevationUtils.createElevatedPosition(
+        animal.position,
+        flatPosition.x,
+        flatPosition.z
+      );
 
       // Determine building type from action
       let buildingType: string = "home";
