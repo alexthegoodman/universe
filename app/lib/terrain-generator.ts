@@ -275,7 +275,7 @@ export const defaultTerrainConfig: TerrainConfig = {
   width: 200,
   depth: 200,
   height: 100,
-  resolution: 16,
+  resolution: 64,
   seed: Math.random() * 1000,
   octaves: 6,
   persistence: 0.5,
