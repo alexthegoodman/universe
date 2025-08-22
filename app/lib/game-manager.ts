@@ -14,6 +14,8 @@ import { HARVEST_RADIUS } from "./health-monitor";
 import { skillSystem } from "./skill-system";
 import { v4 as uuidv4 } from "uuid";
 import { TerrainGenerator, defaultTerrainConfig } from "./terrain-generator";
+import { nationSystem } from "./nation-system";
+import type { Nation, TerritoryInfo } from "../types/nation";
 
 export interface GameConfig {
   maxAnimals: number;
@@ -224,6 +226,8 @@ export interface WorldState {
   resources: WorldResource[];
   buildings: Building[];
   bandits: Bandit[];
+  nations: Nation[];
+  territories: TerritoryInfo[];
   environment: {
     temperature: number;
     humidity: number;
@@ -478,6 +482,8 @@ export class GameManager {
       resources: this.generateInitialResources(),
       buildings: [],
       bandits: this.generateInitialBandits(),
+      nations: nationSystem.getAllNations(),
+      territories: nationSystem.getTerritories(),
       environment: {
         temperature: 72,
         humidity: 0.6,
@@ -494,7 +500,9 @@ export class GameManager {
     const existingPositions: Array<{ x: number; z: number }> = [];
     const minDistance = 15;
 
-    const getValidPosition = (preferredBiomes?: string[]): { x: number; y: number; z: number } => {
+    const getValidPosition = (
+      preferredBiomes?: string[]
+    ): { x: number; y: number; z: number } => {
       let attempts = 0;
       let position: { x: number; z: number };
       let bestPosition: { x: number; z: number } | null = null;
@@ -505,7 +513,7 @@ export class GameManager {
           x: (Math.random() - 0.5) * width * 1.0,
           z: (Math.random() - 0.5) * depth * 1.0,
         };
-        
+
         // Check distance from existing positions
         const tooClose = existingPositions.some(
           (existing) =>
@@ -514,36 +522,45 @@ export class GameManager {
                 Math.pow(existing.z - position.z, 2)
             ) < minDistance
         );
-        
+
         if (!tooClose) {
           // Score position based on biome preference
-          const biome = this.terrainGenerator.getBiomeAt(position.x, position.z);
+          const biome = this.terrainGenerator.getBiomeAt(
+            position.x,
+            position.z
+          );
           let score = 1; // Base score
-          
+
           if (preferredBiomes && preferredBiomes.includes(biome.type)) {
             score += 2; // Bonus for preferred biomes
           }
-          
+
           // Avoid water for most resources
-          if (biome.type === 'water' && !preferredBiomes?.includes('water')) {
+          if (biome.type === "water" && !preferredBiomes?.includes("water")) {
             score = 0;
           }
-          
+
           if (score > bestScore) {
             bestScore = score;
             bestPosition = position;
           }
         }
-        
+
         attempts++;
-      } while (attempts < 50 && (bestScore === -1 || (preferredBiomes && bestScore < 2)));
+      } while (
+        attempts < 50 &&
+        (bestScore === -1 || (preferredBiomes && bestScore < 2))
+      );
 
       const finalPosition = bestPosition || position;
       existingPositions.push(finalPosition);
-      
+
       // Get terrain height at this position
-      const terrainHeight = this.terrainGenerator.getHeightAt(finalPosition.x, finalPosition.z);
-      
+      const terrainHeight = this.terrainGenerator.getHeightAt(
+        finalPosition.x,
+        finalPosition.z
+      );
+
       return { x: finalPosition.x, y: terrainHeight, z: finalPosition.z };
     };
 
@@ -596,9 +613,12 @@ export class GameManager {
 
     commonStones.forEach((stone, i) => {
       for (let j = 0; j < 8; j++) {
-        const biomes = stone === 'salt' ? ['water', 'beach'] : 
-                      stone === 'coal' ? ['hills', 'mountains'] :
-                      ['hills', 'mountains', 'plains'];
+        const biomes =
+          stone === "salt"
+            ? ["water", "beach"]
+            : stone === "coal"
+            ? ["hills", "mountains"]
+            : ["hills", "mountains", "plains"];
         resources.push(
           createResource(
             `${stone}_${i}_${j}`,
@@ -615,9 +635,12 @@ export class GameManager {
 
     uncommonStones.forEach((stone, i) => {
       for (let j = 0; j < 3; j++) {
-        const biomes = stone === 'marble' ? ['mountains', 'peaks'] :
-                      stone === 'obsidian' ? ['mountains', 'peaks'] :
-                      ['mountains', 'hills'];
+        const biomes =
+          stone === "marble"
+            ? ["mountains", "peaks"]
+            : stone === "obsidian"
+            ? ["mountains", "peaks"]
+            : ["mountains", "hills"];
         resources.push(
           createResource(
             `${stone}_${i}_${j}`,
@@ -641,7 +664,7 @@ export class GameManager {
           "rare",
           3,
           false,
-          ['mountains', 'peaks']
+          ["mountains", "peaks"]
         )
       );
     });
@@ -744,10 +767,13 @@ export class GameManager {
 
     commonEdibles.forEach((edible, i) => {
       for (let j = 0; j < 8; j++) {
-        const biomes = edible.includes('berries') ? ['forest', 'plains'] :
-                      edible.includes('mushrooms') ? ['forest'] :
-                      edible.includes('rice') || edible.includes('wild_') ? ['plains', 'forest'] :
-                      ['plains', 'forest'];
+        const biomes = edible.includes("berries")
+          ? ["forest", "plains"]
+          : edible.includes("mushrooms")
+          ? ["forest"]
+          : edible.includes("rice") || edible.includes("wild_")
+          ? ["plains", "forest"]
+          : ["plains", "forest"];
         resources.push(
           createResource(
             `${edible}_${i}_${j}`,
@@ -772,7 +798,7 @@ export class GameManager {
             "uncommon",
             3,
             true,
-            ['forest', 'hills']
+            ["forest", "hills"]
           )
         );
       }
@@ -1135,6 +1161,7 @@ export class GameManager {
     this.startEnvironmentUpdates();
     this.startResourceRegeneration();
     this.startBanditAI();
+    this.startTaxationCycle();
     // this.startBreedingCycles();
 
     console.log(
@@ -1166,6 +1193,9 @@ export class GameManager {
     const position = this.getRandomSafePosition();
 
     const animal = AnimalLifecycle.createAnimal(name, position);
+
+    // Assign animal to a nation
+    nationSystem.assignAnimalToNation(animal);
 
     // Register with health monitor (which will add to state manager)
     this.healthMonitor.addAnimal(animal);
@@ -1209,6 +1239,19 @@ export class GameManager {
       parent1.dna,
       parent2.dna,
     ]);
+
+    // Assign animal to a nation (inherit from parents if same nation, otherwise choose smallest)
+    if (parent1.nationId === parent2.nationId && parent1.nationId) {
+      animal.nationId = parent1.nationId;
+      const nation = nationSystem.getNation(parent1.nationId);
+      if (nation && nation.citizenIds.length < nation.maxCitizens) {
+        nation.citizenIds.push(animal.id);
+      } else {
+        nationSystem.assignAnimalToNation(animal);
+      }
+    } else {
+      nationSystem.assignAnimalToNation(animal);
+    }
 
     // Only use health monitor - it will handle state manager updates
     this.healthMonitor.addAnimal(animal);
@@ -1258,6 +1301,9 @@ export class GameManager {
 
     const animal = this.worldState.animals[animalIndex];
     this.worldState.animals.splice(animalIndex, 1);
+
+    // Remove animal from nation
+    nationSystem.removeAnimalFromNation(animalId);
 
     this.healthMonitor.removeAnimal(animalId);
 
@@ -1319,6 +1365,15 @@ export class GameManager {
 
       this.processBanditAI();
     }, 45000 + Math.random() * 45000); // 45-90 seconds
+  }
+
+  private startTaxationCycle(): void {
+    // Taxation every 2 minutes
+    setInterval(() => {
+      if (!this.gameRunning) return;
+
+      this.performTaxation();
+    }, 2 * 60 * 1000); // 2 minutes
   }
 
   private updateEnvironment(): void {
@@ -1516,13 +1571,37 @@ export class GameManager {
     });
   }
 
+  private performTaxation(): void {
+    const allAnimals = this.getAllAnimals();
+    nationSystem.performAutoTaxation(allAnimals);
+    this.addEvent("taxation", "Nations collected taxes from their citizens");
+  }
+
   harvestResource(
     resourceId: string,
-    amount: number = 1
-  ): { success: boolean; item?: any } {
+    amount: number = 1,
+    animalId?: string
+  ): { success: boolean; item?: any; reason?: string } {
     const resource = this.worldState.resources.find((r) => r.id === resourceId);
     if (!resource || !resource.harvestable || resource.quantity < amount) {
-      return { success: false };
+      return {
+        success: false,
+        reason: "Resource not available or insufficient quantity",
+      };
+    }
+
+    // Check territory restrictions if animal ID is provided
+    if (animalId) {
+      const territoryCheck = nationSystem.canAnimalHarvestAt(
+        animalId,
+        resource.position
+      );
+      if (!territoryCheck.canHarvest) {
+        return {
+          success: false,
+          reason: territoryCheck.reason || "Cannot harvest in this territory",
+        };
+      }
     }
 
     resource.quantity -= amount;
@@ -1673,6 +1752,11 @@ export class GameManager {
   getWorldState(): WorldState {
     // Sync buildings from building system
     this.worldState.buildings = buildingSystem.getAllBuildings();
+
+    // Sync nations and territories from nation system
+    this.worldState.nations = nationSystem.getAllNations();
+    this.worldState.territories = nationSystem.getTerritories();
+
     return { ...this.worldState };
   }
 
@@ -1858,5 +1942,26 @@ export class GameManager {
       console.error(`Failed to execute action for ${animal.name}:`, error);
       return false;
     }
+  }
+
+  // Nation management methods
+  setNationTaxRate(nationId: string, rate: number): boolean {
+    return nationSystem.setTaxRate(nationId, rate);
+  }
+
+  getNationStats(nationId: string): any {
+    return nationSystem.getNationStats(nationId);
+  }
+
+  getAllNations(): Nation[] {
+    return nationSystem.getAllNations();
+  }
+
+  createSettlement(
+    nationId: string,
+    building: Building,
+    radius: number = 25
+  ): boolean {
+    return nationSystem.createSettlement(nationId, building, radius);
   }
 }

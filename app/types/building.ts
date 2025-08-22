@@ -21,7 +21,7 @@ export interface BuildingStats {
   comfort: number; // 0-100, affects rest quality
 }
 
-export type BuildingType = "home" | "trading_post" | "hospital" | "factory";
+export type BuildingType = "home" | "trading_post" | "hospital" | "factory" | "settlement";
 
 export interface Building {
   id: string;
@@ -44,6 +44,10 @@ export interface Building {
 
   // Building features
   features: string[]; // Array of feature types: "workshop", "garden", etc.
+
+  // Nation-specific properties
+  nationId?: string; // ID of the nation that owns this building
+  territoryRadius?: number; // For settlements, defines territory sphere radius
 }
 
 export interface BuildingAction {
@@ -59,6 +63,7 @@ export interface BuildingAction {
     | "create_trading_post"
     | "create_hospital"
     | "create_factory"
+    | "create_settlement"
     | "purchase_upgrade";
   name: string;
   description: string;
@@ -170,6 +175,22 @@ export const BUILDING_ACTIONS: Record<string, BuildingAction> = {
       capacityChange: 12,
     },
     buildingType: "factory",
+  },
+  create_settlement: {
+    type: "create_settlement",
+    name: "Create Settlement",
+    description: "Establish a settlement that defines your nation's territory",
+    requiredMaterials: {
+      requiredQuantity: 12,
+      suitableTraits: ["durable"],
+      minTraitScore: 60,
+    },
+    effects: {
+      dimensionChanges: { width: 6, height: 4, depth: 6 },
+      statChanges: { durability: 95, beauty: 70, comfort: 60 },
+      capacityChange: 4,
+    },
+    buildingType: "settlement",
   },
   make_wider: {
     type: "make_wider",

@@ -21,17 +21,23 @@ import CurrencyLeaderboard, {
   LeaderboardPodium,
 } from "./CurrencyLeaderboard";
 import EventsPanel, { type GameEvent } from "./EventsPanel";
+import NationPanel from "./NationPanel";
+import TreasuryDisplay from "./TreasuryDisplay";
+import TabInterface from "./TabInterface";
 import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useRef, useState as useReactState } from "react";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { TerrainMesh, useTerrainGenerator } from "./TerrainMesh";
+import Territory3D from "./Territory3D";
+import type { Nation, TerritoryInfo } from "../types/nation";
 
 interface SceneProps {
   animals: Animal[];
   resources: WorldResource[];
   buildings: Building[];
   bandits: Bandit[];
+  territories: TerritoryInfo[];
   selectedAnimals: Animal[];
   onAnimalClick: (animal: Animal, ctrlKey?: boolean) => void;
   onGroundClick: (position: THREE.Vector3) => void;
@@ -107,6 +113,7 @@ function Scene({
   resources,
   buildings,
   bandits,
+  territories,
   selectedAnimals,
   onAnimalClick,
   onGroundClick,
@@ -161,6 +168,11 @@ function Scene({
       {/* Ground glow ring for selected animals */}
       <GroundGlowRing selectedAnimals={selectedAnimals} />
 
+      {/* Nation Territories */}
+      {territories.map((territory) => (
+        <Territory3D key={territory.settlementId} territory={territory} />
+      ))}
+
       {/* Animals */}
       {animals.map((animal) => (
         <Animal3D
@@ -203,6 +215,8 @@ export default function Game() {
   const [resources, setResources] = useState<WorldResource[]>([]);
   const [buildings, setBuildings] = useState<Building[]>([]);
   const [bandits, setBandits] = useState<Bandit[]>([]);
+  const [nations, setNations] = useState<Nation[]>([]);
+  const [territories, setTerritories] = useState<TerritoryInfo[]>([]);
   const [selectedAnimals, setSelectedAnimals] = useState<Animal[]>([]);
   const [selectedAnimal, setSelectedAnimal] = useState<Animal | null>(null);
   const [gameStarted, setGameStarted] = useState(false);
@@ -214,9 +228,8 @@ export default function Game() {
 
   useEffect(() => {
     const manager = new GameManager({
-      startingAnimals: 16, // 1 for testing smollm3
-      // startingAnimals: 10,
-      maxAnimals: 50,
+      startingAnimals: 36, // 6 nations × 6 animals each
+      maxAnimals: 100, // Increased to accommodate all nations
       enableWebSocket: false, // Disable for now to avoid server dependency
     });
 
@@ -251,6 +264,8 @@ export default function Game() {
         setResources([...worldState.resources]);
         setBuildings([...worldState.buildings]);
         setBandits([...worldState.bandits.filter((b) => b.isAlive)]);
+        setNations([...worldState.nations]);
+        setTerritories([...worldState.territories]);
         setEvents([...worldState.events]);
         setVersion((v) => v + 1);
 
@@ -356,6 +371,22 @@ export default function Game() {
     }
   }, [gameManager]);
 
+  const handleSetTaxRate = useCallback(
+    (nationId: string, rate: number) => {
+      if (gameManager) {
+        const success = gameManager.setNationTaxRate(nationId, rate);
+        if (success) {
+          console.log(
+            `Successfully set tax rate for nation ${nationId} to ${rate}%`
+          );
+        } else {
+          console.error(`Failed to set tax rate for nation ${nationId}`);
+        }
+      }
+    },
+    [gameManager]
+  );
+
   return (
     <div className="w-full h-screen relative">
       <Canvas camera={{ position: [50, 35, 50], fov: 60 }}>
@@ -365,6 +396,7 @@ export default function Game() {
             resources={resources}
             buildings={buildings}
             bandits={bandits}
+            territories={territories}
             selectedAnimals={selectedAnimals}
             onAnimalClick={handleAnimalClick}
             onGroundClick={handleGroundClick}
@@ -434,6 +466,25 @@ export default function Game() {
                 <div>
                   Alive Bandits: {bandits.filter((b) => b.isAlive).length}
                 </div>
+                <div>Nations: {nations.length}</div>
+                <div>Territories: {territories.length}</div>
+                <div className="border-t pt-2 mt-2">
+                  <div className="font-medium text-sm">Nation Treasuries:</div>
+                  {nations.slice(0, 3).map((nation) => (
+                    <div
+                      key={nation.id}
+                      className="text-xs"
+                      style={{ color: nation.color.primary }}
+                    >
+                      {nation.name}: {Math.floor(nation.treasury)}💰
+                    </div>
+                  ))}
+                  {nations.length > 3 && (
+                    <div className="text-xs text-gray-500">
+                      +{nations.length - 3} more nations...
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
             <button
@@ -466,17 +517,43 @@ export default function Game() {
       />
 
       {/* Action Log */}
-      <ActionLog entries={actionLogs} />
+      <ActionLog entries={actionLogs} animals={animals} nations={nations} />
 
       {/* Events Panel */}
       <EventsPanel events={events} />
 
-      {/* Currency Leaderboard */}
-      <div className="absolute top-4 right-4 w-80">
-        <CurrencyLeaderboard
-          animals={animals}
-          maxEntries={10}
-          onAnimalClick={handleAnimalClickAndCenter}
+      {/* Tabbed Interface for Nation/Treasury/Leaderboard */}
+      <div className="absolute top-4 right-4 w-96">
+        <TabInterface
+          tabs={[
+            {
+              id: "nations",
+              label: "Nations",
+              content: (
+                <NationPanel
+                  nations={nations}
+                  animals={animals}
+                  onSetTaxRate={handleSetTaxRate}
+                />
+              ),
+            },
+            {
+              id: "treasury",
+              label: "Treasury",
+              content: <TreasuryDisplay nations={nations} />,
+            },
+            {
+              id: "leaderboard",
+              label: "Leaderboard",
+              content: (
+                <CurrencyLeaderboard
+                  animals={animals}
+                  maxEntries={10}
+                  onAnimalClick={handleAnimalClickAndCenter}
+                />
+              ),
+            },
+          ]}
         />
       </div>
 

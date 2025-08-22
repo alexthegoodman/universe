@@ -64,7 +64,7 @@ export class HealthMonitor {
         gameManager.getBreedingSystem(),
         () => this.getAllAnimals()
       );
-      
+
       // Set terrain generator reference if available
       if (gameManager.terrainGenerator) {
         this.actionSystem.setTerrainGenerator(gameManager.terrainGenerator);
@@ -554,10 +554,11 @@ export class HealthMonitor {
 
         // Handle harvested items if any
         if (result.harvestedItem && result.resourceId && this.gameManagerRef) {
-          // First harvest the resource from the world
+          // First harvest the resource from the world (with territory check)
           const harvestResult = this.gameManagerRef.harvestResource(
             result.resourceId,
-            result.harvestedItem.quantity
+            result.harvestedItem.quantity,
+            animal.id
           );
 
           if (harvestResult.success && harvestResult.item) {
@@ -572,6 +573,19 @@ export class HealthMonitor {
                 `⚠️ ${animal.name} couldn't carry the harvested items - inventory full`
               );
             }
+          } else if (!harvestResult.success && harvestResult.reason) {
+            // Log territory restriction or other harvest failure
+            console.warn(
+              `⚠️ ${animal.name} couldn't harvest: ${harvestResult.reason}`
+            );
+
+            // Add memory about the failed harvest attempt
+            this.explorationSystem.addMemory(animal.id, {
+              discoveryType: "failure",
+              description: `Failed to harvest due to: ${harvestResult.reason}`,
+              position: { ...animal.position },
+              reliability: 0.9,
+            });
           }
         }
 

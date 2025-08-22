@@ -107,6 +107,9 @@ export interface Animal {
 
   // Building ownership
   homeId?: string; // ID of the animal's personal home
+
+  // Nation membership
+  nationId?: string; // ID of the nation this animal belongs to
 }
 
 export type AnimalAction =

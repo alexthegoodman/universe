@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import type { Animal, ActionResult, AnimalStats } from "../types/animal";
+import type { Nation } from "../types/nation";
 
 export interface ActionLogEntry {
   id: string;
@@ -18,6 +19,8 @@ export interface ActionLogEntry {
 
 interface ActionLogProps {
   entries: ActionLogEntry[];
+  animals?: Animal[]; // Needed to determine animal nations
+  nations?: Nation[]; // Available nations for filtering
 }
 
 function getHealthImplication(
@@ -152,8 +155,9 @@ function getActionColor(action: string, success: boolean): string {
   }
 }
 
-export default function ActionLog({ entries }: ActionLogProps) {
+export default function ActionLog({ entries, animals, nations }: ActionLogProps) {
   const [filter, setFilter] = useState<string>("all");
+  const [selectedNationId, setSelectedNationId] = useState<string>("all");
 
   const filteredEntries = entries
     .filter((entry) => {
@@ -163,32 +167,55 @@ export default function ActionLog({ entries }: ActionLogProps) {
         (filter === "success" && entry.result.success) ||
         (filter === "failed" && !entry.result.success);
 
-      return matchesFilter;
+      // Filter by nation if a specific nation is selected
+      const matchesNation = selectedNationId === "all" || !animals || 
+        animals.find(animal => animal.id === entry.animalId)?.nationId === selectedNationId;
+
+      return matchesFilter && matchesNation;
     })
     .slice(0, 10); // Show only the 10 most recent entries
 
   return (
     <div className="fixed bottom-4 right-4 w-80 h-96 bg-white/95 backdrop-blur-sm border border-gray-300 rounded-lg shadow-lg flex flex-col z-40">
       {/* Header */}
-      <div className="flex items-center justify-between p-3 border-b bg-gray-50 rounded-t-lg">
-        <h3 className="font-semibold text-gray-900">Recent Actions</h3>
-        <select
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          className="text-xs px-2 py-1 border rounded"
-        >
-          <option value="all">All</option>
-          <option value="success">Success</option>
-          <option value="failed">Failed</option>
-          <option value="eating">Eating</option>
-          <option value="drinking">Drinking</option>
-          <option value="sleeping">Sleeping</option>
-          <option value="harvesting">Harvesting</option>
-          <option value="exploring">Exploring</option>
-          <option value="socializing">Socializing</option>
-          <option value="building">Building</option>
-          <option value="crafting">Crafting</option>
-        </select>
+      <div className="p-3 border-b bg-gray-50 rounded-t-lg">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="font-semibold text-gray-900">Recent Actions</h3>
+          <select
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            className="text-xs px-2 py-1 border rounded"
+          >
+            <option value="all">All</option>
+            <option value="success">Success</option>
+            <option value="failed">Failed</option>
+            <option value="eating">Eating</option>
+            <option value="drinking">Drinking</option>
+            <option value="sleeping">Sleeping</option>
+            <option value="harvesting">Harvesting</option>
+            <option value="exploring">Exploring</option>
+            <option value="socializing">Socializing</option>
+            <option value="building">Building</option>
+            <option value="crafting">Crafting</option>
+          </select>
+        </div>
+        {nations && nations.length > 0 && (
+          <div className="mb-2">
+            <label className="block text-xs text-gray-700 mb-1">Nation Filter:</label>
+            <select
+              value={selectedNationId}
+              onChange={(e) => setSelectedNationId(e.target.value)}
+              className="w-full text-xs px-2 py-1 border rounded"
+            >
+              <option value="all">All Nations</option>
+              {nations.map(nation => (
+                <option key={nation.id} value={nation.id}>
+                  {nation.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {/* Log entries */}
