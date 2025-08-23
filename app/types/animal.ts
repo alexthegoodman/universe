@@ -130,7 +130,8 @@ export type AnimalAction =
   | "visit_hospital"
   | "ideation"
   | "crafting"
-  | "combat";
+  | "combat"
+  | "interact";
 
 export interface ActionResult {
   success: boolean;
@@ -179,6 +180,15 @@ export interface ResourceSummary {
   needToMoveCloserTo: NearbyResource[]; // Resources visible but too far
 }
 
+export interface BuildingInteractionOption {
+  key: string; // "option_1", "option_2", etc.
+  label: string; // "Trade Goods with Merchant"
+  description: string; // Brief explanation
+  requirements?: string[]; // ["has_materials", "sufficient_energy"]
+  cooldown?: number; // Hours until can use again
+  energyCost?: number; // Energy required
+}
+
 export interface NearbyBuilding {
   id: string;
   name: string;
@@ -196,6 +206,7 @@ export interface NearbyBuilding {
   canEnter: boolean;
   availableActions: string[];
   features: string[]; // Array of feature types: "workshop", "garden", etc.
+  interactionOptions?: BuildingInteractionOption[]; // New interaction system
 }
 
 export interface NearbyBandit {

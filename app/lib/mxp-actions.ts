@@ -18,6 +18,7 @@ import { BreedingSystem } from "./breeding-system";
 import { skillSystem } from "./skill-system";
 import type { TerrainGenerator } from "./terrain-generator";
 import { ElevationUtils } from "./elevation-utils";
+import { executeInteraction } from "./building-interactions";
 
 export interface MXPAction {
   name: string;
@@ -205,6 +206,8 @@ export class MXPActionSystem {
           return await this.executeVisitTradingPost(animal, parameters);
         case "visit_hospital":
           return await this.executeVisitHospital(animal, parameters);
+        case "interact":
+          return await this.executeInteract(animal, parameters);
         default:
           return await this.executeIdle(animal, parameters);
       }
@@ -1749,5 +1752,75 @@ export class MXPActionSystem {
       },
       duration: 5000,
     };
+  }
+
+  private async executeInteract(
+    animal: Animal,
+    params: any
+  ): Promise<ActionResult> {
+    const { buildingId, option } = params;
+
+    if (!buildingId || !option) {
+      return {
+        success: false,
+        message: `${animal.name} needs to specify a building and interaction option`,
+        duration: 1000,
+      };
+    }
+
+    // Get the building
+    const building = buildingSystem.getBuilding(buildingId);
+    if (!building) {
+      return {
+        success: false,
+        message: `${animal.name} cannot find that building`,
+        duration: 1000,
+      };
+    }
+
+    // Check distance
+    const distance = Math.sqrt(
+      Math.pow(building.position.x - animal.position.x, 2) +
+        Math.pow(building.position.z - animal.position.z, 2)
+    );
+
+    if (distance > 5) {
+      return {
+        success: false,
+        message: `${animal.name} is too far from the building to interact`,
+        duration: 1000,
+      };
+    }
+
+    // Execute the interaction using building interactions system
+    try {
+      // const { executeInteraction } = require("./building-interactions");
+      const result = await executeInteraction(animal, building, option);
+
+      // Convert building interaction result to action result format
+      const actionResult: ActionResult = {
+        success: result.success,
+        message: result.message,
+        statChanges: result.statChanges,
+        duration: result.duration,
+      };
+
+      // Add consumed/received items if present
+      if (result.consumedItem) {
+        actionResult.consumedItem = result.consumedItem;
+      }
+      if (result.receivedItem) {
+        actionResult.harvestedItem = result.receivedItem; // Reuse harvestedItem field for consistency
+      }
+
+      return actionResult;
+    } catch (error) {
+      console.error("Error executing building interaction:", error);
+      return {
+        success: false,
+        message: `${animal.name} encountered an error during interaction`,
+        duration: 1000,
+      };
+    }
   }
 }

@@ -21,6 +21,7 @@ import {
 import { nationSystem } from "./nation-system";
 import { GlobalPlanQueue } from "./global-plan-queue";
 import { GameManager } from "./game-manager";
+import { getBuildingInteractionOptions } from "./building-interactions";
 
 export const HARVEST_RADIUS = 10; // Animals can harvest within this radius
 
@@ -572,7 +573,11 @@ export class HealthMonitor {
             if (added) {
               // Trigger taxation on successful harvest (only on harvested item)
               if (animal.nationId) {
-                nationSystem.collectHarvestTax(animal.nationId, animal, harvestResult.item);
+                nationSystem.collectHarvestTax(
+                  animal.nationId,
+                  animal,
+                  harvestResult.item
+                );
               }
             } else {
               console.warn(
@@ -766,6 +771,23 @@ export class HealthMonitor {
           animal,
           building.id
         );
+
+        // Get interaction options from building interactions system
+        let interactionOptions;
+        if (distance <= 5) {
+          // Only show options when close enough to interact
+          try {
+            // const { getBuildingInteractionOptions } = require("./building-interactions");
+            interactionOptions = getBuildingInteractionOptions(
+              building,
+              animal
+            );
+          } catch (error) {
+            console.warn("Failed to load building interaction options:", error);
+            interactionOptions = undefined;
+          }
+        }
+
         return {
           id: building.id,
           name: building.name,
@@ -785,6 +807,7 @@ export class HealthMonitor {
             distance <= 5,
           availableActions: availableActions.map((action) => action.type),
           features: building.features || [], // Include features like workshops, gardens, etc.
+          interactionOptions, // Add interaction options when close enough
         };
       })
       .filter((building) => building.distance <= SIGHT_RADIUS)

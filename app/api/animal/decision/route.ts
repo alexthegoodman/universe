@@ -138,6 +138,10 @@ ADDITIONAL BUILDING PARAMETERS:
   • "add_garden" - Create peaceful outdoor space (needs 2 nutritious materials, trait score ≥40)
   • "purchase_upgrade" - Spend currency to instantly upgrade building size and appearance
 
+BUILDING INTERACTION ACTIONS:
+  • "interact" - Use contextual building options (when close to buildings, check interactionOptions)
+  • Each building offers unique options: homes (rest, organize), trading posts (trade, research), hospitals (treatment, checkup), factories (machinery, optimize), settlements (meetings, construction)
+
 SPECIAL MOVEMENT ACTIONS:
   • "go_home" - Travel to your personal home (if you have one)
   • "visit_trading_post" - Travel to the trading post (if one exists)
@@ -329,6 +333,19 @@ Purchase Upgrade...
     "action": "purchase_upgrade",
     "buildingId": "building_123",
     "amount": 250
+  }}
+}}
+
+For building interaction steps, include buildingId and option in parameters:
+Interact with nearby Building...
+{{
+  "action": "interact",
+  "priority": 7,
+  "turnOffset": 1,
+  "reason": "Include your reason here",
+  "parameters": {{
+    "buildingId": "building_456",
+    "option": "option_1"
   }}
 }}
 
