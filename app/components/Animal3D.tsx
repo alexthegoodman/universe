@@ -68,7 +68,12 @@ export default function Animal3D({
     }
 
     setActionStartTime(Date.now());
-  }, [animal.currentAction, animal.position.x, animal.position.y, animal.position.z]);
+  }, [
+    animal.currentAction,
+    animal.position.x,
+    animal.position.y,
+    animal.position.z,
+  ]);
 
   // Animation frame with action-specific behaviors
   useFrame((state) => {
@@ -207,7 +212,7 @@ export default function Animal3D({
   // Get nation name from nationId
   const getNationName = () => {
     if (!animal.nationId) return "No Nation";
-    const nation = nations.find(n => n.id === animal.nationId);
+    const nation = nations.find((n) => n.id === animal.nationId);
     return nation?.name || "Unknown Nation";
   };
 
@@ -344,7 +349,7 @@ export default function Animal3D({
       {/* Animal Name */}
       <Text
         position={[0, 4, 0]}
-        fontSize={0.3}
+        fontSize={0.6}
         color="#ffffff"
         anchorX="center"
         anchorY="bottom"
@@ -356,7 +361,7 @@ export default function Animal3D({
       {/* Nation Name */}
       <Text
         position={[0, 4.6, 0]}
-        fontSize={0.25}
+        fontSize={0.45}
         color="#cccccc"
         anchorX="center"
         anchorY="bottom"
