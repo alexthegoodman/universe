@@ -1,9 +1,12 @@
-import Game from './components/Game'
+import { ClientOnly } from "./components/ClientOnly";
+import Game from "./components/Game";
 
 export default function Home() {
   return (
     <div className="w-full h-screen">
-      <Game />
+      <ClientOnly>
+        <Game />
+      </ClientOnly>
     </div>
   );
 }

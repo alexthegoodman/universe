@@ -454,6 +454,14 @@ export class GameManager {
     this.breedingSystem = new BreedingSystem();
     this.terrainGenerator = new TerrainGenerator(defaultTerrainConfig);
 
+    // Set terrain generator for nation system to enable proper positioning
+    nationSystem.setTerrainGenerator(this.terrainGenerator);
+
+    // Register nation settlements with building system after both are initialized
+    // try in startGame()
+    // nationSystem.initializeDefaultNations();
+    // nationSystem.registerPendingSettlements(buildingSystem);
+
     this.healthMonitor.setGameManagerReference(this);
 
     // Create global plan queue and connect it to health monitor
@@ -1146,6 +1154,9 @@ export class GameManager {
       return;
     }
 
+    nationSystem.initializeDefaultNations();
+    nationSystem.registerPendingSettlements(buildingSystem);
+
     console.log("🌌 Starting Universe game...");
     this.gameRunning = true;
 
@@ -1161,7 +1172,7 @@ export class GameManager {
     this.startEnvironmentUpdates();
     this.startResourceRegeneration();
     this.startBanditAI();
-    this.startTaxationCycle();
+    // this.startTaxationCycle(); // Disabled: taxation now happens on harvest actions
     // this.startBreedingCycles();
 
     console.log(
@@ -1224,14 +1235,16 @@ export class GameManager {
     }
 
     const name = AnimalLifecycle.generateRandomName();
+    const x =
+      (parent1.position.x + parent2.position.x) / 2 + (Math.random() - 0.5) * 5;
+    const z =
+      (parent1.position.z + parent2.position.z) / 2 + (Math.random() - 0.5) * 5;
+    const terrainHeight = this.terrainGenerator.getHeightAt(x, z);
+
     const position = {
-      x:
-        (parent1.position.x + parent2.position.x) / 2 +
-        (Math.random() - 0.5) * 5,
-      y: 0,
-      z:
-        (parent1.position.z + parent2.position.z) / 2 +
-        (Math.random() - 0.5) * 5,
+      x,
+      y: terrainHeight + 1,
+      z,
       rotation: 0,
     };
 

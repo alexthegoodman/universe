@@ -18,6 +18,7 @@ import {
   clientPlanningManager,
   type PlanStep,
 } from "./client-planning-manager";
+import { nationSystem } from "./nation-system";
 import { GlobalPlanQueue } from "./global-plan-queue";
 import { GameManager } from "./game-manager";
 
@@ -568,7 +569,12 @@ export class HealthMonitor {
               harvestResult.item
             );
 
-            if (!added) {
+            if (added) {
+              // Trigger taxation on successful harvest (only on harvested item)
+              if (animal.nationId) {
+                nationSystem.collectHarvestTax(animal.nationId, animal, harvestResult.item);
+              }
+            } else {
               console.warn(
                 `⚠️ ${animal.name} couldn't carry the harvested items - inventory full`
               );

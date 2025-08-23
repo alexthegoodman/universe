@@ -2,21 +2,39 @@ import type { Nation, TaxationEvent, TerritoryInfo } from "../types/nation";
 import type { Animal } from "../types/animal";
 import type { Building } from "../types/building";
 import { v4 as uuidv4 } from "uuid";
-import { buildingSystem } from "./building-system";
+// Note: buildingSystem import removed to avoid circular dependency
+import { TerrainGenerator } from "./terrain-generator";
+import { BuildingSystem } from "./building-system";
 
 export class NationSystem {
   private nations: Map<string, Nation> = new Map();
   private taxationHistory: TaxationEvent[] = [];
   private territories: TerritoryInfo[] = [];
+  private terrainGenerator: TerrainGenerator | null = null;
+  private pendingSettlements: Building[] = [];
 
   constructor() {
     // Initialize 6 default nations
-    if (typeof window !== "undefined") {
-      this.initializeDefaultNations();
-    }
+    // this.initializeDefaultNations(); // run after initializing map
   }
 
-  private initializeDefaultNations(): void {
+  // Set the terrain generator for proper elevation positioning
+  setTerrainGenerator(terrainGenerator: TerrainGenerator): void {
+    this.terrainGenerator = terrainGenerator;
+  }
+
+  // Register pending settlements with the building system (called after both systems are initialized)
+  registerPendingSettlements(buildingSystem: BuildingSystem): void {
+    for (const settlement of this.pendingSettlements) {
+      buildingSystem.buildings.set(settlement.id, settlement);
+    }
+    this.pendingSettlements = []; // Clear pending list
+    console.log(
+      "🏛️ Registered all pending nation settlements with building system"
+    );
+  }
+
+  initializeDefaultNations(): void {
     const nationNames = [
       "Aetherian Federation",
       "Crystalline Republic",
@@ -44,7 +62,7 @@ export class NationSystem {
         foundingDate: Date.now(),
         settlements: [],
         citizenIds: [],
-        maxCitizens: 12, // Start with capacity for 12 citizens, can grow with settlements
+        maxCitizens: 100, // Start with capacity for 12 citizens, can grow with settlements
         treasury: 100, // Starting treasury
         taxRate: 10, // 10% default tax rate
         lastTaxCollection: Date.now(),
@@ -87,12 +105,18 @@ export class NationSystem {
   }
 
   private spawnInitialSettlements(): void {
-    for (const nation of this.nations.values()) {
-      // Generate a random position for the settlement
-      const position = this.getRandomSettlementPosition();
+    // Get shuffled predetermined positions for all nations
+    const positions = this.getShuffledSpawnPositions();
+    const nations = Array.from(this.nations.values());
+
+    for (let i = 0; i < nations.length; i++) {
+      const nation = nations[i];
+      const position = positions[i] || this.getRandomSettlementPosition(); // Fallback to random if not enough positions
 
       // Create a settlement building for this nation
       const settlementName = `${nation.name} Capital`;
+
+      console.info("Spawning settlement: ", settlementName, position);
 
       // Create the building directly
       const settlement: Building = {
@@ -108,17 +132,17 @@ export class NationSystem {
         lastModifiedAt: Date.now(),
         createdBy: "nation_system", // System created
         currentOccupants: [],
-        maxOccupants: 4,
+        maxOccupants: 12,
         features: ["capital"],
         nationId: nation.id,
-        territoryRadius: 25,
+        territoryRadius: 35,
       };
 
-      // Add building to building system
-      buildingSystem["buildings"].set(settlement.id, settlement);
+      // Store settlement for later registration with building system
+      this.pendingSettlements.push(settlement);
 
       // Create settlement in nation system
-      this.createSettlement(nation.id, settlement, 25);
+      this.createSettlement(nation.id, settlement, 35);
 
       console.log(
         `🏛️ Created initial settlement "${settlementName}" for ${
@@ -128,15 +152,90 @@ export class NationSystem {
     }
   }
 
-  private getRandomSettlementPosition(): { x: number; y: number; z: number } {
-    // Generate positions that are spread out across the map
-    const angle = Math.random() * Math.PI * 2;
-    const distance = 30 + Math.random() * 40; // 30-70 units from center
+  private getShuffledSpawnPositions(): { x: number; y: number; z: number }[] {
+    const worldSize = 160; // Use 80% of 200x200 world size for settlement placement
+    
+    // Define predetermined spawn positions (not in a perfect grid)
+    const basePositions = [
+      { x: -60, z: -45 },  // Northwest
+      { x: 40, z: -50 },   // Northeast 
+      { x: -30, z: 10 },   // West-center
+      { x: 55, z: 25 },    // East-center
+      { x: -45, z: 55 },   // Southwest
+      { x: 20, z: 60 },    // Southeast
+      { x: 0, z: -70 },    // North-center (extra position)
+      { x: -70, z: 0 },    // Far west (extra position)
+    ];
 
+    // Shuffle the positions using Fisher-Yates algorithm
+    const shuffledPositions = [...basePositions];
+    for (let i = shuffledPositions.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffledPositions[i], shuffledPositions[j]] = [shuffledPositions[j], shuffledPositions[i]];
+    }
+
+    // Convert 2D positions to 3D with proper terrain height
+    return shuffledPositions.map(pos => {
+      // Get terrain height at this position, with a reasonable fallback
+      let terrainHeight = 2; // Default ground level
+      if (this.terrainGenerator) {
+        terrainHeight = this.terrainGenerator.getHeightAt(pos.x, pos.z);
+      } else {
+        console.warn(`⚠️ Terrain generator not available, using default height for settlement at (${pos.x}, ${pos.z})`);
+      }
+      
+      return {
+        x: pos.x,
+        y: terrainHeight + 1, // Place settlement 1 unit above terrain
+        z: pos.z
+      };
+    });
+  }
+
+  private getRandomSettlementPosition(): { x: number; y: number; z: number } {
+    const maxAttempts = 100;
+    const minDistance = 80; // Minimum distance between settlements (2x radius + buffer)
+    const worldSize = 160; // Use 80% of 200x200 world size for settlement placement
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      // Generate random position across the map
+      const x = (Math.random() - 0.5) * worldSize;
+      const z = (Math.random() - 0.5) * worldSize;
+
+      const terrainHeight = this.terrainGenerator?.getHeightAt(x, z) || 2;
+      const position = { x, y: terrainHeight + 1, z };
+
+      // Check if this position is far enough from existing settlements
+      let validPosition = true;
+      for (const territory of this.territories) {
+        const distance = Math.sqrt(
+          Math.pow(x - territory.center.x, 2) +
+            Math.pow(z - territory.center.z, 2)
+        );
+
+        if (distance < minDistance) {
+          validPosition = false;
+          break;
+        }
+      }
+
+      if (validPosition) {
+        return position;
+      }
+    }
+
+    // Fallback: if no valid position found after maxAttempts, use a random position
+    console.warn(
+      "Could not find non-overlapping settlement position, using random fallback"
+    );
+    const fallbackX = (Math.random() - 0.5) * worldSize;
+    const fallbackZ = (Math.random() - 0.5) * worldSize;
+    const fallbackHeight =
+      this.terrainGenerator?.getHeightAt(fallbackX, fallbackZ) || 2;
     return {
-      x: Math.cos(angle) * distance,
-      y: 2, // Place settlements slightly above ground
-      z: Math.sin(angle) * distance,
+      x: fallbackX,
+      y: fallbackHeight + 1,
+      z: fallbackZ,
     };
   }
 
@@ -194,16 +293,22 @@ export class NationSystem {
 
     // Find the territory radius for this nation's settlements
     const territory = this.territories.find((t) => t.nationId === nation.id);
-    const radius = territory?.radius || 25;
+    const radius = territory?.radius || 35;
 
     // Generate random position within territory radius
     const angle = Math.random() * Math.PI * 2;
     const distance = Math.random() * (radius - 5); // Keep 5 units away from edge
 
+    const newX = nation.territoryCenter.x + Math.cos(angle) * distance;
+    const newZ = nation.territoryCenter.z + Math.sin(angle) * distance;
+    const terrainHeight =
+      this.terrainGenerator?.getHeightAt(newX, newZ) ||
+      nation.territoryCenter.y;
+
     animal.position = {
-      x: nation.territoryCenter.x + Math.cos(angle) * distance,
-      y: nation.territoryCenter.y,
-      z: nation.territoryCenter.z + Math.sin(angle) * distance,
+      x: newX,
+      y: terrainHeight + 1,
+      z: newZ,
       rotation: animal.position.rotation || 0,
     };
 
@@ -232,7 +337,7 @@ export class NationSystem {
   createSettlement(
     nationId: string,
     building: Building,
-    radius: number = 25
+    radius: number = 35
   ): boolean {
     const nation = this.nations.get(nationId);
     if (!nation) return false;
@@ -362,7 +467,7 @@ export class NationSystem {
     );
   }
 
-  private collectTaxFromAnimal(animal: Animal, taxAmount: number): void {
+  collectTaxFromAnimal(animal: Animal, taxAmount: number): void {
     // Remove items worth approximately the tax amount
     let remaining = taxAmount;
     const itemsToRemove: Array<{ index: number; quantity: number }> = [];
@@ -418,6 +523,72 @@ export class NationSystem {
     return [...this.territories];
   }
 
+  // Tax only harvested items (for harvest-based taxation)
+  collectHarvestTax(
+    nationId: string,
+    animal: Animal,
+    harvestedItem: any
+  ): void {
+    const nation = this.nations.get(nationId);
+    if (!nation) return;
+
+    // Calculate tax on the harvested item only
+    const itemValue = this.getItemValue(
+      harvestedItem.type,
+      harvestedItem.rarity || "common"
+    );
+    const harvestValue =
+      itemValue * harvestedItem.quantity * (harvestedItem.quality / 100);
+    const taxAmount = harvestValue * (nation.taxRate / 100);
+
+    // Find the harvested item in inventory and tax it
+    const inventoryItem = animal.inventory.items.find(
+      (item) => item.id === harvestedItem.id
+    );
+    if (inventoryItem && taxAmount > 0) {
+      const quantityToTax = Math.min(
+        inventoryItem.quantity,
+        Math.ceil(taxAmount / itemValue)
+      );
+
+      if (quantityToTax > 0) {
+        // Remove taxed quantity from inventory
+        inventoryItem.quantity -= quantityToTax;
+        if (inventoryItem.quantity <= 0) {
+          const itemIndex = animal.inventory.items.indexOf(inventoryItem);
+          animal.inventory.items.splice(itemIndex, 1);
+        }
+
+        // Add to nation treasury
+        const actualTaxValue = quantityToTax * itemValue;
+        nation.treasury += actualTaxValue;
+        nation.stats.totalTaxesCollected += actualTaxValue;
+        nation.lastTaxCollection = Date.now();
+
+        // Record taxation event
+        this.taxationHistory.push({
+          id: `harvest_tax_${Date.now()}_${Math.random()
+            .toString(36)
+            .substr(2, 9)}`,
+          nationId,
+          timestamp: Date.now(),
+          citizenId: animal.id,
+          citizenName: animal.name,
+          wealthBefore: this.calculateAnimalWealth(animal) + actualTaxValue, // Wealth before tax was taken
+          taxAmount: actualTaxValue,
+          taxRate: nation.taxRate,
+          success: true,
+        });
+
+        console.log(
+          `💰 ${nation.name} collected ${actualTaxValue.toFixed(
+            1
+          )} wealth as harvest tax from ${animal.name}`
+        );
+      }
+    }
+  }
+
   // Get taxation history
   getTaxationHistory(nationId?: string): TaxationEvent[] {
     if (nationId) {
@@ -462,6 +633,51 @@ export class NationSystem {
     }
 
     return { inTerritory: false };
+  }
+
+  // Check if an animal can build at a position (must be in their own nation's territory only)
+  canAnimalBuildAt(
+    animalId: string,
+    position: { x: number; z: number }
+  ): { canBuild: boolean; reason?: string } {
+    const territoryCheck = this.isPositionInTerritory(position);
+
+    if (!territoryCheck.inTerritory) {
+      // Neutral territory - building not allowed
+      return {
+        canBuild: false,
+        reason: "Buildings can only be constructed within nation territories",
+      };
+    }
+
+    // Find which nation the animal belongs to
+    let animalNationId: string | undefined;
+    for (const nation of this.nations.values()) {
+      if (nation.citizenIds.includes(animalId)) {
+        animalNationId = nation.id;
+        break;
+      }
+    }
+
+    if (!animalNationId) {
+      // Animal doesn't belong to any nation - cannot build anywhere
+      return {
+        canBuild: false,
+        reason: "Animal must belong to a nation to construct buildings",
+      };
+    }
+
+    if (animalNationId === territoryCheck.nationId) {
+      // Animal is in their own nation's territory
+      return { canBuild: true };
+    } else {
+      // Animal is in another nation's territory
+      const otherNation = this.nations.get(territoryCheck.nationId!);
+      return {
+        canBuild: false,
+        reason: `Cannot build in ${otherNation?.name || "foreign"} territory`,
+      };
+    }
   }
 
   // Check if an animal can harvest at a position (must be in their nation's territory or neutral)

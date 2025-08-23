@@ -13,11 +13,12 @@ import type { Animal, InventoryItem } from "../types/animal";
 import { RESOURCE_WEIGHTS } from "../types/weights";
 import type { ResourceType, ResourceTraits } from "./game-manager";
 import { RESOURCE_TRAIT_MAP } from "./game-manager";
+import { nationSystem } from "./nation-system";
 import { CurrencySystem } from "./currency-system";
 import { skillSystem } from "./skill-system";
 
 export class BuildingSystem {
-  private buildings: Map<string, Building> = new Map();
+  buildings: Map<string, Building> = new Map();
   private buildingActions: Record<string, BuildingAction>;
 
   constructor() {
@@ -209,6 +210,19 @@ export class BuildingSystem {
       return {
         success: false,
         message: `Cannot build here - too close to existing ${conflictingBuilding.name} (${conflictingBuilding.id}). Buildings must be at least 8 units apart.`,
+        duration: 2000,
+      };
+    }
+
+    // Check territory restrictions - animals can only build in their own nation's territory
+    const territoryCheck = nationSystem.canAnimalBuildAt(animal.id, {
+      x: position.x,
+      z: position.z,
+    });
+    if (!territoryCheck.canBuild) {
+      return {
+        success: false,
+        message: `${animal.name} cannot build here - ${territoryCheck.reason}`,
         duration: 2000,
       };
     }
