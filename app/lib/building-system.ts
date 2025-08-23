@@ -84,7 +84,7 @@ export class BuildingSystem {
   }
 
   // Check if position is too close to existing buildings
-  private checkBuildingProximity(
+  checkBuildingProximity(
     position: { x: number; y: number; z: number },
     minDistance: number = 8
   ): { canBuild: boolean; conflictingBuilding?: Building } {

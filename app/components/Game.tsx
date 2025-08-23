@@ -24,6 +24,8 @@ import EventsPanel, { type GameEvent } from "./EventsPanel";
 import NationPanel from "./NationPanel";
 import TreasuryDisplay from "./TreasuryDisplay";
 import TabInterface from "./TabInterface";
+import MarketMenu from "./MarketMenu";
+import GhostBuilding from "./GhostBuilding";
 import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useRef, useState as useReactState } from "react";
@@ -31,6 +33,8 @@ import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { TerrainMesh, useTerrainGenerator } from "./TerrainMesh";
 import Territory3D from "./Territory3D";
 import type { Nation, TerritoryInfo } from "../types/nation";
+import type { BuildingType } from "../types/building";
+import { buildingSystem } from "../lib/building-system";
 
 interface SceneProps {
   animals: Animal[];
@@ -45,6 +49,12 @@ interface SceneProps {
   onResourceClick?: (resource: WorldResource) => void;
   onBuildingClick?: (building: Building) => void;
   onBanditClick?: (bandit: Bandit) => void;
+  buildingPlacementMode: {
+    isActive: boolean;
+    buildingType: BuildingType | null;
+    isValidPlacement: boolean;
+  };
+  onGhostPositionChange: (position: THREE.Vector3) => void;
 }
 
 function GroundGlowRing({ selectedAnimals }: { selectedAnimals: Animal[] }) {
@@ -122,6 +132,8 @@ function Scene({
   onResourceClick,
   onBuildingClick,
   onBanditClick,
+  buildingPlacementMode,
+  onGhostPositionChange,
 }: SceneProps) {
   const terrainGenerator = useTerrainGenerator();
 
@@ -208,6 +220,15 @@ function Scene({
       {bandits.map((bandit) => (
         <Bandit3D key={bandit.id} bandit={bandit} onClick={onBanditClick} />
       ))}
+
+      {/* Ghost Building Preview */}
+      {buildingPlacementMode.isActive && buildingPlacementMode.buildingType && (
+        <GhostBuilding
+          buildingType={buildingPlacementMode.buildingType}
+          isValidPlacement={buildingPlacementMode.isValidPlacement}
+          onPositionChange={onGhostPositionChange}
+        />
+      )}
     </>
   );
 }
@@ -229,7 +250,39 @@ export default function Game() {
   const [showAnnouncementPanel, setShowAnnouncementPanel] = useState(false);
   const [playerNationId, setPlayerNationId] = useState<string | null>(null);
   const [showNationSelection, setShowNationSelection] = useState(false);
+  const [buildingPlacementMode, setBuildingPlacementMode] = useState<{
+    isActive: boolean;
+    buildingType: BuildingType | null;
+    ghostPosition: THREE.Vector3 | null;
+    isValidPlacement: boolean;
+  }>({
+    isActive: false,
+    buildingType: null,
+    ghostPosition: null,
+    isValidPlacement: true,
+  });
   const controlsRef = useRef<OrbitControlsImpl>(null);
+
+  const startBuildingPlacement = useCallback((buildingType: BuildingType) => {
+    setBuildingPlacementMode({
+      isActive: true,
+      buildingType,
+      ghostPosition: null,
+      isValidPlacement: true,
+    });
+    // Clear animal selection when entering building mode
+    setSelectedAnimals([]);
+    setSelectedAnimal(null);
+  }, []);
+
+  const cancelBuildingPlacement = useCallback(() => {
+    setBuildingPlacementMode({
+      isActive: false,
+      buildingType: null,
+      ghostPosition: null,
+      isValidPlacement: true,
+    });
+  }, []);
 
   useEffect(() => {
     const manager = new GameManager({
@@ -245,19 +298,29 @@ export default function Game() {
       setActionLogs(logs);
     });
 
+    // Handle ESC key to cancel building placement
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && buildingPlacementMode.isActive) {
+        cancelBuildingPlacement();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
     return () => {
       if (manager) {
         manager.stopGame();
       }
       unsubscribe();
+      document.removeEventListener("keydown", handleKeyDown);
     };
-  }, []);
+  }, [buildingPlacementMode.isActive, cancelBuildingPlacement]);
 
   // Load stored player nation on game start
   useEffect(() => {
     if (gameStarted && nations.length > 0) {
-      const storedNationId = localStorage.getItem('universePlayerNation');
-      if (storedNationId && nations.find(n => n.id === storedNationId)) {
+      const storedNationId = localStorage.getItem("universePlayerNation");
+      if (storedNationId && nations.find((n) => n.id === storedNationId)) {
         setPlayerNationId(storedNationId);
       } else if (!playerNationId) {
         setShowNationSelection(true);
@@ -319,30 +382,33 @@ export default function Game() {
     }
   }, []);
 
-  const handleAnimalClick = useCallback((animal: Animal, ctrlKey = false) => {
-    // Only allow selection/control of animals from player's nation
-    if (playerNationId && animal.nationId !== playerNationId) {
-      return; // Ignore clicks on other nations' animals
-    }
+  const handleAnimalClick = useCallback(
+    (animal: Animal, ctrlKey = false) => {
+      // Only allow selection/control of animals from player's nation
+      if (playerNationId && animal.nationId !== playerNationId) {
+        return; // Ignore clicks on other nations' animals
+      }
 
-    if (ctrlKey) {
-      // Multi-select mode
-      setSelectedAnimals((prev) => {
-        const isAlreadySelected = prev.some((a) => a.id === animal.id);
-        if (isAlreadySelected) {
-          // Deselect if already selected
-          return prev.filter((a) => a.id !== animal.id);
-        } else {
-          // Add to selection
-          return [...prev, animal];
-        }
-      });
-    } else {
-      // Single select mode
-      setSelectedAnimals([animal]);
-      setSelectedAnimal(animal);
-    }
-  }, [playerNationId]);
+      if (ctrlKey) {
+        // Multi-select mode
+        setSelectedAnimals((prev) => {
+          const isAlreadySelected = prev.some((a) => a.id === animal.id);
+          if (isAlreadySelected) {
+            // Deselect if already selected
+            return prev.filter((a) => a.id !== animal.id);
+          } else {
+            // Add to selection
+            return [...prev, animal];
+          }
+        });
+      } else {
+        // Single select mode
+        setSelectedAnimals([animal]);
+        setSelectedAnimal(animal);
+      }
+    },
+    [playerNationId]
+  );
 
   const handleAnimalClickAndCenter = useCallback(
     (animal: Animal, ctrlKey = false) => {
@@ -354,6 +420,58 @@ export default function Game() {
 
   const handleGroundClick = useCallback(
     async (position: THREE.Vector3) => {
+      // Handle building placement
+      if (
+        buildingPlacementMode.isActive &&
+        buildingPlacementMode.buildingType &&
+        gameManager
+      ) {
+        if (buildingPlacementMode.isValidPlacement) {
+          // Find a player animal to create the building
+          const playerAnimals = animals.filter(
+            (animal) => animal.nationId === playerNationId && animal.isAlive
+          );
+
+          if (playerAnimals.length > 0) {
+            const builderAnimal = playerAnimals[0]; // Use first available animal
+
+            try {
+              const result = buildingSystem.createBuilding(
+                builderAnimal,
+                { x: position.x, y: position.y, z: position.z },
+                `${buildingPlacementMode.buildingType} Building`,
+                buildingPlacementMode.buildingType
+              );
+
+              if (result.success) {
+                // Focus camera on new building
+                if (controlsRef.current) {
+                  controlsRef.current.target.set(position.x, 0, position.z);
+                  controlsRef.current.update();
+                }
+                console.log(
+                  `Successfully placed ${buildingPlacementMode.buildingType}`
+                );
+              } else {
+                console.error("Failed to place building:", result.message);
+              }
+            } catch (error) {
+              console.error("Error placing building:", error);
+            }
+          }
+
+          // Exit placement mode
+          setBuildingPlacementMode({
+            isActive: false,
+            buildingType: null,
+            ghostPosition: null,
+            isValidPlacement: true,
+          });
+        }
+        return; // Don't do animal movement when in placement mode
+      }
+
+      // Handle animal movement (original logic)
       if (selectedAnimals.length > 0 && gameManager) {
         // Move selected animals to clicked position using proper movement actions
         for (const [index, animal] of selectedAnimals.entries()) {
@@ -372,13 +490,45 @@ export default function Game() {
         }
       }
     },
-    [selectedAnimals, gameManager]
+    [
+      selectedAnimals,
+      gameManager,
+      buildingPlacementMode,
+      animals,
+      playerNationId,
+    ]
   );
 
   const closeAnimalInfo = useCallback(() => {
     setSelectedAnimal(null);
     setSelectedAnimals([]);
   }, []);
+
+  const handleGhostPositionChange = useCallback(
+    (position: THREE.Vector3) => {
+      if (!gameManager || !buildingPlacementMode.buildingType) return;
+
+      // Check placement validity using building system proximity check
+      let isValid = true;
+      try {
+        const proximityCheck = buildingSystem.checkBuildingProximity?.(
+          { x: position.x, y: position.y, z: position.z },
+          8 // minimum distance
+        );
+        isValid = proximityCheck?.canBuild ?? true;
+      } catch (error) {
+        // If proximity check method doesn't exist, default to valid
+        isValid = true;
+      }
+
+      setBuildingPlacementMode((prev) => ({
+        ...prev,
+        ghostPosition: position,
+        isValidPlacement: isValid,
+      }));
+    },
+    [gameManager, buildingPlacementMode.buildingType]
+  );
 
   const handleBuildingClick = useCallback((building: Building) => {
     console.log("Building clicked:", building.name, building);
@@ -414,9 +564,8 @@ export default function Game() {
     setPlayerNationId(nationId);
     setShowNationSelection(false);
     // Store in localStorage for persistence
-    localStorage.setItem('universePlayerNation', nationId);
+    localStorage.setItem("universePlayerNation", nationId);
   }, []);
-
 
   return (
     <div className="w-full h-screen relative">
@@ -434,6 +583,8 @@ export default function Game() {
             onGroundClick={handleGroundClick}
             onBuildingClick={handleBuildingClick}
             onBanditClick={handleBanditClick}
+            buildingPlacementMode={buildingPlacementMode}
+            onGhostPositionChange={handleGhostPositionChange}
           />
           <OrbitControls
             ref={controlsRef}
@@ -502,13 +653,18 @@ export default function Game() {
                 <div>Territories: {territories.length}</div>
                 {playerNationId && (
                   <div className="border-t pt-2 mt-2">
-                    <div className="font-medium text-sm text-green-600">Your Nation:</div>
-                    {nations.find(n => n.id === playerNationId) && (
-                      <div 
-                        className="text-sm font-semibold" 
-                        style={{ color: nations.find(n => n.id === playerNationId)!.color.primary }}
+                    <div className="font-medium text-sm text-green-600">
+                      Your Nation:
+                    </div>
+                    {nations.find((n) => n.id === playerNationId) && (
+                      <div
+                        className="text-sm font-semibold"
+                        style={{
+                          color: nations.find((n) => n.id === playerNationId)!
+                            .color.primary,
+                        }}
                       >
-                        {nations.find(n => n.id === playerNationId)!.name}
+                        {nations.find((n) => n.id === playerNationId)!.name}
                       </div>
                     )}
                   </div>
@@ -599,6 +755,18 @@ export default function Game() {
                 />
               ),
             },
+            {
+              id: "market",
+              label: "Market",
+              content: (
+                <MarketMenu
+                  gameManager={gameManager}
+                  onStartBuildingPlacement={startBuildingPlacement}
+                  playerNationId={playerNationId}
+                  nations={nations}
+                />
+              ),
+            },
           ]}
         />
       </div>
@@ -614,9 +782,12 @@ export default function Game() {
       {showNationSelection && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h2 className="text-2xl font-bold mb-4 text-center">Choose Your Nation</h2>
+            <h2 className="text-2xl font-bold mb-4 text-center">
+              Choose Your Nation
+            </h2>
             <p className="text-gray-600 mb-6 text-center">
-              Select a nation to rule. You can only control animals from your chosen nation.
+              Select a nation to rule. You can only control animals from your
+              chosen nation.
             </p>
             <div className="grid grid-cols-1 gap-3">
               {nations.map((nation) => (
@@ -631,11 +802,15 @@ export default function Game() {
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="font-semibold" style={{ color: nation.color.primary }}>
+                      <div
+                        className="font-semibold"
+                        style={{ color: nation.color.primary }}
+                      >
                         {nation.name}
                       </div>
                       <div className="text-sm text-gray-600">
-                        {nation.citizenIds.length} citizens • {Math.floor(nation.treasury)}💰
+                        {nation.citizenIds.length} citizens •{" "}
+                        {Math.floor(nation.treasury)}💰
                       </div>
                     </div>
                     <div
