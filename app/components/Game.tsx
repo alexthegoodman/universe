@@ -144,21 +144,8 @@ function Scene({
       <directionalLight position={[10, 10, 5]} intensity={1} castShadow />
 
       {/* Terrain */}
-      <TerrainMesh terrainGenerator={terrainGenerator} />
+      <TerrainMesh terrainGenerator={terrainGenerator} onClick={onGroundClick} />
 
-      {/* Invisible clickable plane for ground interactions */}
-      <mesh
-        rotation={[-Math.PI / 2, 0, 0]}
-        position={[0, 15, 0]}
-        onClick={(event) => {
-          event.stopPropagation();
-          const position = new THREE.Vector3(event.point.x, 0, event.point.z);
-          onGroundClick(position);
-        }}
-      >
-        <planeGeometry args={[200, 200]} />
-        <meshBasicMaterial transparent opacity={0} />
-      </mesh>
 
       {/* Optional grid overlay */}
       <Grid

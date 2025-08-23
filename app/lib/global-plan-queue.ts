@@ -25,8 +25,8 @@ export class GlobalPlanQueue {
   private readonly MAX_CONCURRENT_DECISIONS = 3; // Maximum concurrent decision tasks
   private readonly DECISION_PROCESSING_DELAY = 500; // 500ms between decisions
   private readonly PLAN_EXECUTION_INTERVAL = 2000; // 2s for plan step execution
-  private readonly MAX_RETRIES = 3;
-  private readonly MIN_DECISION_COOLDOWN = 5000; // 5s minimum between decisions per animal
+  private readonly MAX_RETRIES = 0; // Retry seems to be messing up the queue order
+  private readonly MIN_DECISION_COOLDOWN = 15000; // 15s minimum between decisions per animal
 
   constructor(gameManager: GameManager, healthMonitor?: HealthMonitor) {
     this.gameManager = gameManager;
@@ -90,25 +90,26 @@ export class GlobalPlanQueue {
   }
 
   private calculatePriority(animal: Animal): number {
-    let priority = 5; // Base priority
+    // let priority = 5; // Base priority
 
-    // Health-based priority
-    if (animal.stats.health < 30) priority += 3; // Critical health
-    else if (animal.stats.health < 60) priority += 1; // Low health
+    // // Health-based priority
+    // if (animal.stats.health < 30) priority += 3; // Critical health
+    // else if (animal.stats.health < 60) priority += 1; // Low health
 
-    // Hunger-based priority
-    if (animal.stats.hunger < 20) priority += 2; // Very hungry
-    else if (animal.stats.hunger < 40) priority += 1; // Hungry
+    // // Hunger-based priority
+    // if (animal.stats.hunger < 20) priority += 2; // Very hungry
+    // else if (animal.stats.hunger < 40) priority += 1; // Hungry
 
-    // Energy-based priority
-    if (animal.stats.energy < 20) priority += 1; // Low energy
+    // // Energy-based priority
+    // if (animal.stats.energy < 20) priority += 1; // Low energy
 
-    // Plan status priority
-    if (clientPlanningManager.needsNewPlan(animal.id)) {
-      priority += 2; // Needs new plan
-    }
+    // // Plan status priority
+    // if (clientPlanningManager.needsNewPlan(animal.id)) {
+    //   priority += 2; // Needs new plan
+    // }
 
-    return Math.min(priority, 10); // Cap at 10
+    // return Math.min(priority, 10); // Cap at 10
+    return 5; // For now, keep all animals at medium priority
   }
 
   private sortQueue(): void {
@@ -124,30 +125,42 @@ export class GlobalPlanQueue {
     if (this.processing) return;
 
     this.processing = true;
-    console.log("🎯 Starting Global Plan Queue processing with up to 3 concurrent tasks");
+    console.log(
+      "🎯 Starting Global Plan Queue processing with up to 3 concurrent tasks"
+    );
 
     const processingTasks = new Map<string, Promise<void>>();
 
     while (this.queue.length > 0 || processingTasks.size > 0) {
       // Start new concurrent tasks up to the limit
       while (
-        this.queue.length > 0 && 
+        this.queue.length > 0 &&
         processingTasks.size < this.MAX_CONCURRENT_DECISIONS
       ) {
         const entry = this.queue.shift()!;
-        console.log(`🚀 Starting concurrent decision task for animal ${entry.animalId} (${processingTasks.size + 1}/${this.MAX_CONCURRENT_DECISIONS})`);
-        
-        const promise = this.processAnimalDecisionConcurrent(entry)
-          .finally(() => {
+        console.log(
+          `🚀 Starting concurrent decision task for animal ${entry.animalId} (${
+            processingTasks.size + 1
+          }/${this.MAX_CONCURRENT_DECISIONS})`
+        );
+
+        const promise = this.processAnimalDecisionConcurrent(entry).finally(
+          () => {
             processingTasks.delete(entry.animalId);
-          });
-        
+          }
+        );
+
         processingTasks.set(entry.animalId, promise);
       }
 
       // Wait for at least one task to complete if we have any running
+      // if (processingTasks.size > 0) {
+      //   await Promise.race(processingTasks.values());
+      // }
+
+      // Wait for all tasks to complete to assure queue integrity and order
       if (processingTasks.size > 0) {
-        await Promise.race(processingTasks.values());
+        await Promise.all(processingTasks.values());
       }
 
       // Small delay to prevent tight loop
@@ -158,7 +171,9 @@ export class GlobalPlanQueue {
     console.log("✅ Global Plan Queue processing complete");
   }
 
-  private async processAnimalDecisionConcurrent(entry: QueueEntry): Promise<void> {
+  private async processAnimalDecisionConcurrent(
+    entry: QueueEntry
+  ): Promise<void> {
     try {
       const success = await this.processAnimalDecision(entry);
 

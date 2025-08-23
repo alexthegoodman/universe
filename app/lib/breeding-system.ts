@@ -230,10 +230,12 @@ export class BreedingSystem {
       rotation: Math.random() * Math.PI * 2,
     };
 
-    const offspring = AnimalLifecycle.createAnimal(offspringName, position, [
-      parent1.dna,
-      parent2.dna,
-    ]);
+    const offspring = AnimalLifecycle.createAnimal(
+      offspringName,
+      position,
+      [parent1.dna, parent2.dna],
+      parent1.nationId
+    );
 
     // Apply breeding energy cost to parents
     const energyCost = 15;

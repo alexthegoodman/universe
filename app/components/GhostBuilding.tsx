@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import type { BuildingType } from "../types/building";
@@ -17,7 +17,7 @@ export default function GhostBuilding({
   onPositionChange 
 }: GhostBuildingProps) {
   const meshRef = useRef<THREE.Group>(null);
-  const { camera, gl } = useThree();
+  const { camera, gl, scene } = useThree();
   const raycaster = useRef(new THREE.Raycaster());
   const mouse = useRef(new THREE.Vector2());
   const [position, setPosition] = useState(new THREE.Vector3(0, 0, 0));
@@ -37,33 +37,47 @@ export default function GhostBuilding({
   const dimensions = getDimensions(buildingType);
 
   // Track mouse movement and update ghost building position
-  useFrame(() => {
-    const rect = gl.domElement.getBoundingClientRect();
-    const mouseEvent = gl.domElement.onmousemove;
-    
-    if (gl.domElement) {
-      const handleMouseMove = (event: MouseEvent) => {
-        mouse.current.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-        mouse.current.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+  useEffect(() => {
+    const handleMouseMove = (event: MouseEvent) => {
+      const rect = gl.domElement.getBoundingClientRect();
+      mouse.current.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.current.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
-        raycaster.current.setFromCamera(mouse.current, camera);
+      raycaster.current.setFromCamera(mouse.current, camera);
 
-        // Create a plane at ground level (y = -0.5)
+      // Raycast against all objects in the scene to find terrain intersection
+      const intersects = raycaster.current.intersectObjects(scene.children, true);
+      
+      // Find the terrain mesh (should be one of the first intersections)
+      const terrainIntersection = intersects.find(intersect => {
+        // The terrain mesh should have a specific name or be identifiable
+        // For now, we'll use the first intersection as it's likely the terrain
+        return intersect.object.type === 'Mesh' && intersect.point;
+      });
+
+      if (terrainIntersection) {
+        const intersectionPoint = terrainIntersection.point;
+        setPosition(intersectionPoint);
+        onPositionChange(intersectionPoint);
+      } else {
+        // Fallback to ground plane if no terrain intersection found
         const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0.5);
         const intersection = new THREE.Vector3();
-
         if (raycaster.current.ray.intersectPlane(groundPlane, intersection)) {
           setPosition(intersection);
           onPositionChange(intersection);
-          
-          if (meshRef.current) {
-            meshRef.current.position.set(intersection.x, intersection.y, intersection.z);
-          }
         }
-      };
+      }
+    };
 
-      gl.domElement.addEventListener('mousemove', handleMouseMove);
-      return () => gl.domElement.removeEventListener('mousemove', handleMouseMove);
+    gl.domElement.addEventListener('mousemove', handleMouseMove);
+    return () => gl.domElement.removeEventListener('mousemove', handleMouseMove);
+  }, [camera, gl.domElement, scene, onPositionChange]);
+
+  // Update mesh position when position state changes
+  useFrame(() => {
+    if (meshRef.current) {
+      meshRef.current.position.set(position.x, position.y, position.z);
     }
   });
 

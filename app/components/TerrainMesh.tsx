@@ -9,9 +9,10 @@ import {
 
 interface TerrainMeshProps {
   terrainGenerator: TerrainGenerator;
+  onClick?: (position: THREE.Vector3) => void;
 }
 
-export function TerrainMesh({ terrainGenerator }: TerrainMeshProps) {
+export function TerrainMesh({ terrainGenerator, onClick }: TerrainMeshProps) {
   const meshRef = useRef<THREE.Mesh>(null);
 
   const { geometry, material } = useMemo(() => {
@@ -105,6 +106,11 @@ export function TerrainMesh({ terrainGenerator }: TerrainMeshProps) {
       rotation={[-Math.PI / 2, 0, 0]}
       position={[0, 0, 0]}
       receiveShadow
+      onClick={onClick ? (event) => {
+        event.stopPropagation();
+        const position = new THREE.Vector3(event.point.x, event.point.y, event.point.z);
+        onClick(position);
+      } : undefined}
     />
   );
 }

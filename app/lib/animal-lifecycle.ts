@@ -12,7 +12,8 @@ export class AnimalLifecycle {
   static createAnimal(
     name: string,
     position: AnimalPosition = { x: 0, y: 0, z: 0, rotation: 0 },
-    parentDNA?: [any, any]
+    parentDNA?: [any, any],
+    nationId?: string
   ): Animal {
     const now = Date.now();
     const lifespan = this.generateLifespan();
@@ -43,6 +44,7 @@ export class AnimalLifecycle {
       experience: {},
       unlockedAdvancedPaths: [],
       skillPreferences: [],
+      nationId,
     };
 
     // Initialize skills for the new animal
