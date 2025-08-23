@@ -8,12 +8,14 @@ interface SpecialAnnouncementPanelProps {
   isVisible: boolean;
   onClose: () => void;
   totalAnimals: number;
+  playerNationId: string | null;
 }
 
-export default function SpecialAnnouncementPanel({ 
-  isVisible, 
-  onClose, 
-  totalAnimals 
+export default function SpecialAnnouncementPanel({
+  isVisible,
+  onClose,
+  totalAnimals,
+  playerNationId,
 }: SpecialAnnouncementPanelProps) {
   const [memoryText, setMemoryText] = useState("");
   const [isAnnouncing, setIsAnnouncing] = useState(false);
@@ -26,46 +28,51 @@ export default function SpecialAnnouncementPanel({
 
   const announceSpecialMemory = async () => {
     if (!memoryText.trim()) return;
-    
+
     setIsAnnouncing(true);
     setLastAnnouncementResult(null);
 
     try {
       const newMemory: SpecialMemory = {
-        id: `global-memory-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        id: `global-memory-${Date.now()}-${Math.random()
+          .toString(36)
+          .substr(2, 9)}`,
         content: memoryText.trim(),
-        createdAt: Date.now()
+        createdAt: Date.now(),
       };
 
       const allAnimals = animalStateManager.getAllAnimals();
+      const nationAnimals = allAnimals.filter(
+        (a) => a.nationId === playerNationId
+      );
       let successCount = 0;
 
-      for (const animal of allAnimals) {
+      for (const animal of nationAnimals) {
         const currentMemories = animal.specialMemories || [];
         const updatedMemories = [...currentMemories, newMemory];
-        
+
         const success = animalStateManager.updateSpecialMemories(
-          animal.id, 
-          updatedMemories, 
-          'global-announcement'
+          animal.id,
+          updatedMemories,
+          "global-announcement"
         );
-        
+
         if (success) successCount++;
       }
 
       setLastAnnouncementResult({
         success: successCount > 0,
-        count: successCount
+        count: successCount,
       });
 
       if (successCount > 0) {
         setMemoryText("");
       }
     } catch (error) {
-      console.error('Failed to announce special memory:', error);
+      console.error("Failed to announce special memory:", error);
       setLastAnnouncementResult({
         success: false,
-        count: 0
+        count: 0,
       });
     } finally {
       setIsAnnouncing(false);
@@ -73,9 +80,9 @@ export default function SpecialAnnouncementPanel({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && e.ctrlKey && !isAnnouncing) {
+    if (e.key === "Enter" && e.ctrlKey && !isAnnouncing) {
       announceSpecialMemory();
-    } else if (e.key === 'Escape') {
+    } else if (e.key === "Escape") {
       onClose();
     }
   };
@@ -84,7 +91,9 @@ export default function SpecialAnnouncementPanel({
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-bold text-purple-700">Special Announcement</h3>
+          <h3 className="text-xl font-bold text-purple-700">
+            Command Your Nation
+          </h3>
           <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700 text-xl"
@@ -95,7 +104,8 @@ export default function SpecialAnnouncementPanel({
 
         <div className="mb-4">
           <p className="text-sm text-gray-600 mb-2">
-            This will add a Special Memory to all {totalAnimals} animals in the simulation.
+            This will add a Special Memory to all {totalAnimals} animals in your
+            nation.
           </p>
           <p className="text-xs text-gray-500">
             These memories will influence their AI decision-making and behavior.
@@ -114,15 +124,18 @@ export default function SpecialAnnouncementPanel({
         </div>
 
         {lastAnnouncementResult && (
-          <div className={`mb-4 p-3 rounded-lg text-sm ${
-            lastAnnouncementResult.success 
-              ? 'bg-green-100 text-green-800 border border-green-200' 
-              : 'bg-red-100 text-red-800 border border-red-200'
-          }`}>
-            {lastAnnouncementResult.success 
-              ? `✓ Successfully added memory to ${lastAnnouncementResult.count} animal${lastAnnouncementResult.count === 1 ? '' : 's'}`
-              : '✗ Failed to add memory to animals'
-            }
+          <div
+            className={`mb-4 p-3 rounded-lg text-sm ${
+              lastAnnouncementResult.success
+                ? "bg-green-100 text-green-800 border border-green-200"
+                : "bg-red-100 text-red-800 border border-red-200"
+            }`}
+          >
+            {lastAnnouncementResult.success
+              ? `✓ Successfully added memory to ${
+                  lastAnnouncementResult.count
+                } animal${lastAnnouncementResult.count === 1 ? "" : "s"}`
+              : "✗ Failed to add memory to animals"}
           </div>
         )}
 
@@ -132,7 +145,7 @@ export default function SpecialAnnouncementPanel({
             disabled={!memoryText.trim() || isAnnouncing}
             className="flex-1 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-300 text-white px-4 py-2 rounded-lg text-sm font-medium"
           >
-            {isAnnouncing ? 'Announcing...' : 'Announce to All Animals'}
+            {isAnnouncing ? "Announcing..." : "Announce to All Animals"}
           </button>
           <button
             onClick={onClose}

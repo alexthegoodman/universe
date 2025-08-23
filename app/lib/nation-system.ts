@@ -154,40 +154,58 @@ export class NationSystem {
 
   private getShuffledSpawnPositions(): { x: number; y: number; z: number }[] {
     const worldSize = 160; // Use 80% of 200x200 world size for settlement placement
-    
+
     // Define predetermined spawn positions (not in a perfect grid)
+    // made for 200x200
+    // const basePositions = [
+    //   { x: -60, z: -45 },  // Northwest
+    //   { x: 40, z: -50 },   // Northeast
+    //   { x: -30, z: 10 },   // West-center
+    //   { x: 55, z: 25 },    // East-center
+    //   { x: -45, z: 55 },   // Southwest
+    //   { x: 20, z: 60 },    // Southeast
+    //   { x: 0, z: -70 },    // North-center (extra position)
+    //   { x: -70, z: 0 },    // Far west (extra position)
+    // ];
+
+    // for 300x300
     const basePositions = [
-      { x: -60, z: -45 },  // Northwest
-      { x: 40, z: -50 },   // Northeast 
-      { x: -30, z: 10 },   // West-center
-      { x: 55, z: 25 },    // East-center
-      { x: -45, z: 55 },   // Southwest
-      { x: 20, z: 60 },    // Southeast
-      { x: 0, z: -70 },    // North-center (extra position)
-      { x: -70, z: 0 },    // Far west (extra position)
+      { x: -90, z: -70 }, // Northwest
+      { x: 60, z: -75 }, // Northeast
+      { x: -45, z: 15 }, // West-center
+      { x: 80, z: 35 }, // East-center
+      { x: -70, z: 80 }, // Southwest
+      { x: 30, z: 90 }, // Southeast
+      { x: 0, z: -100 }, // North-center (extra position)
+      { x: -100, z: 0 }, // Far west (extra position)
     ];
 
     // Shuffle the positions using Fisher-Yates algorithm
     const shuffledPositions = [...basePositions];
     for (let i = shuffledPositions.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [shuffledPositions[i], shuffledPositions[j]] = [shuffledPositions[j], shuffledPositions[i]];
+      [shuffledPositions[i], shuffledPositions[j]] = [
+        shuffledPositions[j],
+        shuffledPositions[i],
+      ];
     }
 
     // Convert 2D positions to 3D with proper terrain height
-    return shuffledPositions.map(pos => {
+    return shuffledPositions.map((pos) => {
       // Get terrain height at this position, with a reasonable fallback
       let terrainHeight = 2; // Default ground level
       if (this.terrainGenerator) {
         terrainHeight = this.terrainGenerator.getHeightAt(pos.x, pos.z);
       } else {
-        console.warn(`⚠️ Terrain generator not available, using default height for settlement at (${pos.x}, ${pos.z})`);
+        console.warn(
+          `⚠️ Terrain generator not available, using default height for settlement at (${pos.x}, ${pos.z})`
+        );
       }
-      
+
       return {
         x: pos.x,
         y: terrainHeight + 1, // Place settlement 1 unit above terrain
-        z: pos.z
+        z: pos.z,
       };
     });
   }

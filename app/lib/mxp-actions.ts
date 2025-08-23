@@ -67,6 +67,9 @@ export class MXPActionSystem {
   private terrainGenerator?: TerrainGenerator;
   private elevationUtils: ElevationUtils;
 
+  // World bounds for movement and exploration
+  worldBounds = { width: 200, depth: 200, height: 30 }; // Default, can be set externally
+
   constructor(breedingSystem?: BreedingSystem, getAllAnimals?: () => Animal[]) {
     this.breedingSystem = breedingSystem;
     this.getAllAnimals = getAllAnimals;
@@ -231,7 +234,8 @@ export class MXPActionSystem {
     const { targetX = 0, targetZ = 0, speed = 1 } = params;
 
     // World bounds check - prevent movement outside map bounds
-    const worldBounds = { width: 200, depth: 200 }; // Match game-manager.ts config
+    // const worldBounds = { width: 200, depth: 200 }; // Match game-manager.ts config
+    const worldBounds = this.worldBounds;
 
     if (
       !this.elevationUtils.isWithinWorldBounds(targetX, targetZ, worldBounds)
@@ -595,7 +599,8 @@ export class MXPActionSystem {
     }
 
     // World bounds check - prevent exploration outside map bounds
-    const worldBounds = { width: 200, depth: 200 }; // Match game-manager.ts config
+    // const worldBounds = { width: 200, depth: 200 }; // Match game-manager.ts config
+    const worldBounds = this.worldBounds;
 
     console.info(
       "Exploring new position",

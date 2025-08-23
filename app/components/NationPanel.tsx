@@ -8,19 +8,23 @@ interface NationPanelProps {
   nations: Nation[];
   animals: Animal[];
   onSetTaxRate?: (nationId: string, rate: number) => void;
+  playerNationId?: string | null;
 }
 
 export default function NationPanel({
   nations,
   animals,
   onSetTaxRate,
+  playerNationId,
 }: NationPanelProps) {
   const [selectedNationId, setSelectedNationId] = useState<string | null>(null);
   const [newTaxRate, setNewTaxRate] = useState<number>(10);
 
-  const selectedNation = selectedNationId
-    ? nations.find((n) => n.id === selectedNationId)
-    : null;
+  // const selectedNation = selectedNationId
+  //   ? nations.find((n) => n.id === selectedNationId)
+  //   : null;
+
+  const selectedNation = nations.find((n) => n.id === playerNationId) || null;
 
   const getCitizensForNation = (nationId: string) => {
     return animals.filter((animal) => animal.nationId === nationId);
@@ -39,7 +43,7 @@ export default function NationPanel({
       <h3 className="font-semibold text-lg mb-3">Nations</h3>
 
       {/* Nation selector */}
-      <select
+      {/* <select
         value={selectedNationId || ""}
         onChange={(e) => setSelectedNationId(e.target.value || null)}
         className="w-full p-2 border rounded mb-3 text-sm"
@@ -52,7 +56,6 @@ export default function NationPanel({
         ))}
       </select>
 
-      {/* Nation overview */}
       <div className="grid grid-cols-2 gap-2 text-xs mb-3">
         {nations.map((nation) => {
           const citizens = getCitizensForNation(nation.id);
@@ -72,7 +75,7 @@ export default function NationPanel({
             </div>
           );
         })}
-      </div>
+      </div> */}
 
       {/* Selected nation details */}
       {selectedNation && (

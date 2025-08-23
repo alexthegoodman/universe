@@ -454,6 +454,8 @@ export class GameManager {
     this.breedingSystem = new BreedingSystem();
     this.terrainGenerator = new TerrainGenerator(defaultTerrainConfig);
 
+    this.healthMonitor.actionSystem.worldBounds = this.config.worldSize;
+
     // Set terrain generator for nation system to enable proper positioning
     nationSystem.setTerrainGenerator(this.terrainGenerator);
 

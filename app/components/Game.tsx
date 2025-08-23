@@ -144,8 +144,10 @@ function Scene({
       <directionalLight position={[10, 10, 5]} intensity={1} castShadow />
 
       {/* Terrain */}
-      <TerrainMesh terrainGenerator={terrainGenerator} onClick={onGroundClick} />
-
+      <TerrainMesh
+        terrainGenerator={terrainGenerator}
+        onClick={onGroundClick}
+      />
 
       {/* Optional grid overlay */}
       <Grid
@@ -276,6 +278,11 @@ export default function Game() {
       startingAnimals: 36, // 6 nations × 6 animals each
       maxAnimals: 100, // Increased to accommodate all nations
       enableWebSocket: false, // Disable for now to avoid server dependency
+      worldSize: {
+        width: 300,
+        height: 30,
+        depth: 300,
+      },
     });
 
     setGameManager(manager);
@@ -722,6 +729,7 @@ export default function Game() {
                   nations={nations}
                   animals={animals}
                   onSetTaxRate={handleSetTaxRate}
+                  playerNationId={playerNationId}
                 />
               ),
             },
@@ -763,6 +771,7 @@ export default function Game() {
         isVisible={showAnnouncementPanel}
         onClose={() => setShowAnnouncementPanel(false)}
         totalAnimals={animals.filter((a) => a.isAlive).length}
+        playerNationId={playerNationId}
       />
 
       {/* Nation Selection Modal */}
