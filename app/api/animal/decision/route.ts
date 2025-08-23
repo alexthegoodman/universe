@@ -140,7 +140,7 @@ ADDITIONAL BUILDING PARAMETERS:
 
 BUILDING INTERACTION ACTIONS:
   • "interact" - Use contextual building options (when close to buildings, check interactionOptions)
-  • Each building offers unique options: homes (rest, organize), trading posts (trade, research), hospitals (treatment, checkup), factories (machinery, optimize), settlements (meetings, construction)
+  • Each building offers unique options
 
 SPECIAL MOVEMENT ACTIONS:
   • "go_home" - Travel to your personal home (if you have one)
