@@ -86,7 +86,7 @@ export default function GhostBuilding({
   const outlineColor = isValidPlacement ? '#00ff00' : '#ff0000';
 
   return (
-    <group ref={meshRef} position={[position.x, position.y, position.z]}>
+    <group ref={meshRef}>
       {/* Main building structure */}
       <mesh position={[0, dimensions.height / 2, 0]}>
         <boxGeometry args={[dimensions.width, dimensions.height, dimensions.depth]} />
