@@ -155,25 +155,31 @@ function getActionColor(action: string, success: boolean): string {
   }
 }
 
-export default function ActionLog({ entries, animals, nations }: ActionLogProps) {
+export default function ActionLog({
+  entries,
+  animals,
+  nations,
+}: ActionLogProps) {
   const [filter, setFilter] = useState<string>("all");
   const [selectedNationId, setSelectedNationId] = useState<string>("all");
 
-  const filteredEntries = entries
-    .filter((entry) => {
-      const matchesFilter =
-        filter === "all" ||
-        entry.action === filter ||
-        (filter === "success" && entry.result.success) ||
-        (filter === "failed" && !entry.result.success);
+  const fullFilteredEntries = entries.filter((entry) => {
+    const matchesFilter =
+      filter === "all" ||
+      entry.action === filter ||
+      (filter === "success" && entry.result.success) ||
+      (filter === "failed" && !entry.result.success);
 
-      // Filter by nation if a specific nation is selected
-      const matchesNation = selectedNationId === "all" || !animals || 
-        animals.find(animal => animal.id === entry.animalId)?.nationId === selectedNationId;
+    // Filter by nation if a specific nation is selected
+    const matchesNation =
+      selectedNationId === "all" ||
+      !animals ||
+      animals.find((animal) => animal.id === entry.animalId)?.nationId ===
+        selectedNationId;
 
-      return matchesFilter && matchesNation;
-    })
-    .slice(0, 10); // Show only the 10 most recent entries
+    return matchesFilter && matchesNation;
+  });
+  const filteredEntries = fullFilteredEntries.slice(0, 10); // Show only the 10 most recent entries
 
   return (
     <div className="fixed bottom-4 right-4 w-80 h-96 bg-white/95 backdrop-blur-sm border border-gray-300 rounded-lg shadow-lg flex flex-col z-40">
@@ -201,14 +207,16 @@ export default function ActionLog({ entries, animals, nations }: ActionLogProps)
         </div>
         {nations && nations.length > 0 && (
           <div className="mb-2">
-            <label className="block text-xs text-gray-700 mb-1">Nation Filter:</label>
+            <label className="block text-xs text-gray-700 mb-1">
+              Nation Filter:
+            </label>
             <select
               value={selectedNationId}
               onChange={(e) => setSelectedNationId(e.target.value)}
               className="w-full text-xs px-2 py-1 border rounded"
             >
               <option value="all">All Nations</option>
-              {nations.map(nation => (
+              {nations.map((nation) => (
                 <option key={nation.id} value={nation.id}>
                   {nation.name}
                 </option>
@@ -384,7 +392,7 @@ export default function ActionLog({ entries, animals, nations }: ActionLogProps)
 
       {/* Footer */}
       <div className="px-3 py-2 border-t bg-gray-50 text-xs text-gray-600 rounded-b-lg">
-        {filteredEntries.length} of {entries.length} actions
+        {filteredEntries.length} of {fullFilteredEntries.length} actions
       </div>
     </div>
   );
