@@ -168,7 +168,7 @@ export class NationSystem {
     //   { x: -70, z: 0 },    // Far west (extra position)
     // ];
 
-    // for 300x300
+    // for 300x300, each position has 35 unit radius
     const basePositions = [
       { x: -90, z: -70 }, // Northwest
       { x: 60, z: -75 }, // Northeast

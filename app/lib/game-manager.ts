@@ -450,9 +450,16 @@ export class GameManager {
       ...config,
     };
 
+    const terrainConfig = {
+      ...defaultTerrainConfig,
+      width: this.config.worldSize.width,
+      depth: this.config.worldSize.depth,
+      // height: this.config.worldSize.height,
+    };
+
     this.healthMonitor = new HealthMonitor();
     this.breedingSystem = new BreedingSystem();
-    this.terrainGenerator = new TerrainGenerator(defaultTerrainConfig);
+    this.terrainGenerator = new TerrainGenerator(terrainConfig);
 
     this.healthMonitor.actionSystem.worldBounds = this.config.worldSize;
 
@@ -622,7 +629,7 @@ export class GameManager {
     ];
 
     commonStones.forEach((stone, i) => {
-      for (let j = 0; j < 8; j++) {
+      for (let j = 0; j < 16; j++) {
         const biomes =
           stone === "salt"
             ? ["water", "beach"]
@@ -644,7 +651,7 @@ export class GameManager {
     });
 
     uncommonStones.forEach((stone, i) => {
-      for (let j = 0; j < 3; j++) {
+      for (let j = 0; j < 7; j++) {
         const biomes =
           stone === "marble"
             ? ["mountains", "peaks"]
@@ -666,17 +673,19 @@ export class GameManager {
     });
 
     rareStones.forEach((stone, i) => {
-      resources.push(
-        createResource(
-          `${stone}_${i}`,
-          stone,
-          "minerals_stones",
-          "rare",
-          3,
-          false,
-          ["mountains", "peaks"]
-        )
-      );
+      for (let j = 0; j < 4; j++) {
+        resources.push(
+          createResource(
+            `${stone}_${i}_${j}`,
+            stone,
+            "minerals_stones",
+            "rare",
+            3,
+            false,
+            ["mountains", "peaks"]
+          )
+        );
+      }
     });
 
     // ORGANIC MATERIALS (Common: 10, Uncommon: 8, Rare: 2)
@@ -705,7 +714,7 @@ export class GameManager {
     const rareOrganics: ResourceType[] = ["honeycomb", "beeswax"];
 
     commonOrganics.forEach((organic, i) => {
-      for (let j = 0; j < 6; j++) {
+      for (let j = 0; j < 16; j++) {
         resources.push(
           createResource(
             `${organic}_${i}_${j}`,
@@ -720,16 +729,18 @@ export class GameManager {
     });
 
     uncommonOrganics.forEach((organic, i) => {
-      resources.push(
-        createResource(
-          `${organic}_${i}`,
-          organic,
-          "organic_materials",
-          "uncommon",
-          4,
-          false
-        )
-      );
+      for (let j = 0; j < 4; j++) {
+        resources.push(
+          createResource(
+            `${organic}_${i}_${j}`,
+            organic,
+            "organic_materials",
+            "uncommon",
+            4,
+            false
+          )
+        );
+      }
     });
 
     rareOrganics.forEach((organic, i) => {
@@ -776,7 +787,7 @@ export class GameManager {
     const rareEdibles: ResourceType[] = ["chestnuts", "pine_nuts"];
 
     commonEdibles.forEach((edible, i) => {
-      for (let j = 0; j < 8; j++) {
+      for (let j = 0; j < 20; j++) {
         const biomes = edible.includes("berries")
           ? ["forest", "plains"]
           : edible.includes("mushrooms")
@@ -799,7 +810,7 @@ export class GameManager {
     });
 
     uncommonEdibles.forEach((edible, i) => {
-      for (let j = 0; j < 2; j++) {
+      for (let j = 0; j < 6; j++) {
         resources.push(
           createResource(
             `${edible}_${i}_${j}`,
@@ -973,8 +984,8 @@ export class GameManager {
     ];
 
     epicElements.forEach((element, i) => {
-      if (Math.random() < 0.3) {
-        // 30% chance to spawn
+      if (Math.random() < 0.7) {
+        // 50% chance to spawn
         resources.push(
           createResource(
             `${element}_${i}`,
@@ -989,8 +1000,8 @@ export class GameManager {
     });
 
     legendaryElements.forEach((element, i) => {
-      if (Math.random() < 0.1) {
-        // 10% chance to spawn
+      if (Math.random() < 0.6) {
+        // 30% chance to spawn
         resources.push(
           createResource(
             `${element}_${i}`,

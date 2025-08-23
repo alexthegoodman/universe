@@ -245,7 +245,22 @@ export class TerrainGenerator {
     //   };
     // }
 
-    return this.biomeMap[x + z * resolution];
+    let biomeKey = Math.max(
+      0,
+      Math.min(x + z * resolution, this.biomeMap.length - 1)
+    );
+
+    // console.info(
+    //   "getBiomeAt",
+    //   x,
+    //   z,
+    //   resolution,
+    //   this.biomeMap.length,
+    //   x + z * resolution,
+    //   biomeKey
+    // );
+
+    return this.biomeMap[biomeKey];
   }
 
   public getBiomeAtGrid(gridX: number, gridZ: number): BiomeData {

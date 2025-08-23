@@ -37,6 +37,7 @@ import type { BuildingType } from "../types/building";
 import { buildingSystem } from "../lib/building-system";
 
 interface SceneProps {
+  gameManager: GameManager;
   animals: Animal[];
   nations: Nation[];
   resources: WorldResource[];
@@ -120,6 +121,7 @@ function GroundGlowRing({ selectedAnimals }: { selectedAnimals: Animal[] }) {
 }
 
 function Scene({
+  gameManager,
   animals,
   nations,
   resources,
@@ -145,7 +147,8 @@ function Scene({
 
       {/* Terrain */}
       <TerrainMesh
-        terrainGenerator={terrainGenerator}
+        // terrainGenerator={terrainGenerator}
+        gameManager={gameManager}
         onClick={onGroundClick}
       />
 
@@ -566,6 +569,7 @@ export default function Game() {
       <Canvas camera={{ position: [50, 35, 50], fov: 60 }}>
         <Suspense fallback={null}>
           <Scene
+            gameManager={gameManager!}
             animals={animals}
             nations={nations}
             resources={resources}
@@ -587,13 +591,13 @@ export default function Game() {
             enableRotate={true}
             maxPolarAngle={Math.PI / 2}
             minDistance={10}
-            maxDistance={200}
+            maxDistance={325}
             enableDamping={true}
             dampingFactor={0.1}
-            rotateSpeed={0.5}
+            rotateSpeed={0.4}
             target={[0, 10, 0]}
-            zoomSpeed={0.35} // Adjust for desired zoom sensitivity
-            panSpeed={0.5} // Adjust for desired pan sensitivity
+            zoomSpeed={0.3} // Adjust for desired zoom sensitivity
+            panSpeed={0.4} // Adjust for desired pan sensitivity
           />
         </Suspense>
       </Canvas>
@@ -692,7 +696,7 @@ export default function Game() {
               onClick={() => setShowAnnouncementPanel(true)}
               className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg text-sm"
             >
-              Special Announcement
+              Command Your Nation
             </button>
           </>
         )}

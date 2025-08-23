@@ -6,16 +6,19 @@ import {
   TerrainGenerator,
   defaultTerrainConfig,
 } from "../lib/terrain-generator";
+import { GameManager } from "../lib/game-manager";
 
 interface TerrainMeshProps {
-  terrainGenerator: TerrainGenerator;
+  // terrainGenerator: TerrainGenerator;
+  gameManager: GameManager;
   onClick?: (position: THREE.Vector3) => void;
 }
 
-export function TerrainMesh({ terrainGenerator, onClick }: TerrainMeshProps) {
+export function TerrainMesh({ gameManager, onClick }: TerrainMeshProps) {
   const meshRef = useRef<THREE.Mesh>(null);
 
   const { geometry, material } = useMemo(() => {
+    const terrainGenerator = gameManager.terrainGenerator;
     const config = terrainGenerator.getConfig();
     const heightMap = terrainGenerator.getHeightMap();
     const biomeMap = terrainGenerator.getBiomeMap();
@@ -95,7 +98,7 @@ export function TerrainMesh({ terrainGenerator, onClick }: TerrainMeshProps) {
     });
 
     return { geometry, material };
-  }, [terrainGenerator]);
+  }, [gameManager]);
 
   return (
     <mesh
@@ -106,11 +109,19 @@ export function TerrainMesh({ terrainGenerator, onClick }: TerrainMeshProps) {
       rotation={[-Math.PI / 2, 0, 0]}
       position={[0, 0, 0]}
       receiveShadow
-      onClick={onClick ? (event) => {
-        event.stopPropagation();
-        const position = new THREE.Vector3(event.point.x, event.point.y, event.point.z);
-        onClick(position);
-      } : undefined}
+      onClick={
+        onClick
+          ? (event) => {
+              event.stopPropagation();
+              const position = new THREE.Vector3(
+                event.point.x,
+                event.point.y,
+                event.point.z
+              );
+              onClick(position);
+            }
+          : undefined
+      }
     />
   );
 }
