@@ -21,7 +21,7 @@ export interface BuildingStats {
   comfort: number; // 0-100, affects rest quality
 }
 
-export type BuildingType = "home" | "trading_post" | "hospital" | "factory" | "settlement";
+export type BuildingType = "home" | "trading_post" | "hospital" | "factory" | "settlement" | "apartment_complex" | "forge" | "mill" | "brewery" | "electronics_fab" | "mine" | "bank" | "stadium" | "library" | "temple" | "lab" | "greenhouse" | "armory";
 
 export interface Building {
   id: string;
@@ -64,6 +64,19 @@ export interface BuildingAction {
     | "create_hospital"
     | "create_factory"
     | "create_settlement"
+    | "create_apartment_complex"
+    | "create_forge"
+    | "create_mill"
+    | "create_brewery"
+    | "create_electronics_fab"
+    | "create_mine"
+    | "create_bank"
+    | "create_stadium"
+    | "create_library"
+    | "create_temple"
+    | "create_lab"
+    | "create_greenhouse"
+    | "create_armory"
     | "purchase_upgrade";
   name: string;
   description: string;
@@ -191,6 +204,214 @@ export const BUILDING_ACTIONS: Record<string, BuildingAction> = {
       capacityChange: 4,
     },
     buildingType: "settlement",
+  },
+  create_apartment_complex: {
+    type: "create_apartment_complex",
+    name: "Create Apartment Complex",
+    description: "Build a multi-unit residential complex for multiple families",
+    requiredMaterials: {
+      requiredQuantity: 10,
+      suitableTraits: ["durable"],
+      minTraitScore: 55,
+    },
+    effects: {
+      dimensionChanges: { width: 8, height: 6, depth: 6 },
+      statChanges: { durability: 75, beauty: 45, comfort: 65 },
+      capacityChange: 16,
+    },
+    buildingType: "apartment_complex",
+  },
+  create_forge: {
+    type: "create_forge",
+    name: "Create Forge",
+    description: "Build a forge for metalworking and tool creation",
+    requiredMaterials: {
+      requiredQuantity: 6,
+      suitableTraits: ["durable"],
+      minTraitScore: 60,
+    },
+    effects: {
+      dimensionChanges: { width: 5, height: 4, depth: 4 },
+      statChanges: { durability: 85, beauty: 30, comfort: 25 },
+      capacityChange: 4,
+    },
+    buildingType: "forge",
+  },
+  create_mill: {
+    type: "create_mill",
+    name: "Create Mill",
+    description: "Build a mill for processing grains and materials",
+    requiredMaterials: {
+      requiredQuantity: 8,
+      suitableTraits: ["durable"],
+      minTraitScore: 50,
+    },
+    effects: {
+      dimensionChanges: { width: 6, height: 8, depth: 6 },
+      statChanges: { durability: 80, beauty: 35, comfort: 20 },
+      capacityChange: 6,
+    },
+    buildingType: "mill",
+  },
+  create_brewery: {
+    type: "create_brewery",
+    name: "Create Brewery",
+    description: "Build a brewery for fermenting beverages and social gathering",
+    requiredMaterials: {
+      requiredQuantity: 7,
+      suitableTraits: ["durable"],
+      minTraitScore: 50,
+    },
+    effects: {
+      dimensionChanges: { width: 6, height: 4, depth: 5 },
+      statChanges: { durability: 70, beauty: 55, comfort: 50 },
+      capacityChange: 10,
+    },
+    buildingType: "brewery",
+  },
+  create_electronics_fab: {
+    type: "create_electronics_fab",
+    name: "Create Electronics Fab",
+    description: "Build an advanced facility for electronic component manufacturing",
+    requiredMaterials: {
+      requiredQuantity: 12,
+      suitableTraits: ["durable"],
+      minTraitScore: 70,
+    },
+    effects: {
+      dimensionChanges: { width: 10, height: 4, depth: 8 },
+      statChanges: { durability: 95, beauty: 25, comfort: 30 },
+      capacityChange: 8,
+    },
+    buildingType: "electronics_fab",
+  },
+  create_mine: {
+    type: "create_mine",
+    name: "Create Mine",
+    description: "Build a mine shaft for extracting valuable resources from the earth",
+    requiredMaterials: {
+      requiredQuantity: 8,
+      suitableTraits: ["durable"],
+      minTraitScore: 65,
+    },
+    effects: {
+      dimensionChanges: { width: 4, height: 3, depth: 4 },
+      statChanges: { durability: 90, beauty: 15, comfort: 20 },
+      capacityChange: 6,
+    },
+    buildingType: "mine",
+  },
+  create_bank: {
+    type: "create_bank",
+    name: "Create Bank",
+    description: "Build a secure bank for storing currency and valuables",
+    requiredMaterials: {
+      requiredQuantity: 10,
+      suitableTraits: ["durable"],
+      minTraitScore: 75,
+    },
+    effects: {
+      dimensionChanges: { width: 6, height: 5, depth: 5 },
+      statChanges: { durability: 95, beauty: 60, comfort: 40 },
+      capacityChange: 8,
+    },
+    buildingType: "bank",
+  },
+  create_stadium: {
+    type: "create_stadium",
+    name: "Create Stadium",
+    description: "Build a large stadium for sports and entertainment events",
+    requiredMaterials: {
+      requiredQuantity: 20,
+      suitableTraits: ["durable"],
+      minTraitScore: 60,
+    },
+    effects: {
+      dimensionChanges: { width: 15, height: 6, depth: 12 },
+      statChanges: { durability: 85, beauty: 70, comfort: 60 },
+      capacityChange: 50,
+    },
+    buildingType: "stadium",
+  },
+  create_library: {
+    type: "create_library",
+    name: "Create Library",
+    description: "Build a library for storing knowledge and learning",
+    requiredMaterials: {
+      requiredQuantity: 8,
+      suitableTraits: ["durable"],
+      minTraitScore: 55,
+    },
+    effects: {
+      dimensionChanges: { width: 7, height: 4, depth: 6 },
+      statChanges: { durability: 75, beauty: 65, comfort: 70 },
+      capacityChange: 12,
+    },
+    buildingType: "library",
+  },
+  create_temple: {
+    type: "create_temple",
+    name: "Create Temple",
+    description: "Build a sacred temple for worship and spiritual gatherings",
+    requiredMaterials: {
+      requiredQuantity: 12,
+      suitableTraits: ["durable", "beautiful"],
+      minTraitScore: 60,
+    },
+    effects: {
+      dimensionChanges: { width: 8, height: 7, depth: 8 },
+      statChanges: { durability: 85, beauty: 85, comfort: 75 },
+      capacityChange: 20,
+    },
+    buildingType: "temple",
+  },
+  create_lab: {
+    type: "create_lab",
+    name: "Create Laboratory",
+    description: "Build a laboratory for scientific research and experimentation",
+    requiredMaterials: {
+      requiredQuantity: 10,
+      suitableTraits: ["durable"],
+      minTraitScore: 65,
+    },
+    effects: {
+      dimensionChanges: { width: 8, height: 4, depth: 6 },
+      statChanges: { durability: 80, beauty: 40, comfort: 35 },
+      capacityChange: 6,
+    },
+    buildingType: "lab",
+  },
+  create_greenhouse: {
+    type: "create_greenhouse",
+    name: "Create Greenhouse",
+    description: "Build a greenhouse for growing plants in controlled conditions",
+    requiredMaterials: {
+      requiredQuantity: 6,
+      suitableTraits: ["durable"],
+      minTraitScore: 45,
+    },
+    effects: {
+      dimensionChanges: { width: 8, height: 4, depth: 10 },
+      statChanges: { durability: 60, beauty: 70, comfort: 55 },
+      capacityChange: 8,
+    },
+    buildingType: "greenhouse",
+  },
+  create_armory: {
+    type: "create_armory",
+    name: "Create Armory",
+    description: "Build an armory for weapon storage and military training",
+    requiredMaterials: {
+      requiredQuantity: 10,
+      suitableTraits: ["durable"],
+      minTraitScore: 70,
+    },
+    effects: {
+      dimensionChanges: { width: 6, height: 4, depth: 8 },
+      statChanges: { durability: 95, beauty: 25, comfort: 30 },
+      capacityChange: 10,
+    },
+    buildingType: "armory",
   },
   make_wider: {
     type: "make_wider",

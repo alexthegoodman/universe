@@ -402,13 +402,397 @@ export default function Building3D({ building, onClick }: Building3DProps) {
         </>
       )}
 
-      {/* Generic buildings get a simple flag */}
-      {/* {building.type === "generic" && (
-        <mesh position={[0, building.dimensions.height + 1.0, 0]}>
-          <boxGeometry args={[0.6, 0.4, 0.1]} />
-          <meshBasicMaterial color={new THREE.Color(0.5, 0.7, 0.9)} />
-        </mesh>
-      )} */}
+      {/* Apartment Complex - Multiple Units */}
+      {building.type === "apartment_complex" && (
+        <>
+          {/* Balconies */}
+          {Array.from({ length: 6 }, (_, i) => (
+            <mesh
+              key={i}
+              position={[
+                building.dimensions.width / 2 + 0.2,
+                building.dimensions.height * 0.3 + (i % 3) * building.dimensions.height * 0.25,
+                ((i % 2) - 0.5) * building.dimensions.depth * 0.6,
+              ]}
+            >
+              <boxGeometry args={[0.4, 0.1, 1.2]} />
+              <meshLambertMaterial color={getPartColor(3)} />
+            </mesh>
+          ))}
+          {/* Multiple doors indicator */}
+          <mesh position={[0, building.dimensions.height + 1.2, 0]}>
+            <boxGeometry args={[0.8, 0.4, 0.1]} />
+            <meshBasicMaterial color={new THREE.Color(0.9, 0.7, 0.2)} />
+          </mesh>
+        </>
+      )}
+
+      {/* Forge - Anvil and Fire */}
+      {building.type === "forge" && (
+        <>
+          {/* Large anvil outside */}
+          <mesh position={[building.dimensions.width / 2 + 1, 0.3, 0]}>
+            <boxGeometry args={[0.8, 0.6, 0.5]} />
+            <meshLambertMaterial color={new THREE.Color(0.2, 0.2, 0.2)} />
+          </mesh>
+          {/* Forge fire glow */}
+          <mesh position={[0, building.dimensions.height / 2, 0]}>
+            <sphereGeometry args={[building.dimensions.width * 0.4, 8, 6]} />
+            <meshBasicMaterial
+              color={new THREE.Color(1.0, 0.4, 0.1)}
+              transparent
+              opacity={0.3}
+            />
+          </mesh>
+          {/* Hammer symbol */}
+          <mesh position={[0, building.dimensions.height + 1.2, 0]}>
+            <boxGeometry args={[0.6, 0.2, 0.1]} />
+            <meshBasicMaterial color={new THREE.Color(0.6, 0.4, 0.2)} />
+          </mesh>
+        </>
+      )}
+
+      {/* Mill - Large Wheel */}
+      {building.type === "mill" && (
+        <>
+          {/* Mill wheel */}
+          <mesh
+            position={[
+              -building.dimensions.width / 2 - 0.5,
+              building.dimensions.height / 2,
+              0,
+            ]}
+            rotation={[0, 0, Math.PI / 2]}
+          >
+            <cylinderGeometry args={[2, 2, 0.3, 12]} />
+            <meshLambertMaterial color={new THREE.Color(0.4, 0.3, 0.2)} />
+          </mesh>
+          {/* Grain silo */}
+          <mesh
+            position={[
+              building.dimensions.width / 2 + 1,
+              building.dimensions.height / 2,
+              building.dimensions.depth / 2,
+            ]}
+          >
+            <cylinderGeometry args={[0.8, 0.8, building.dimensions.height, 8]} />
+            <meshLambertMaterial color={getPartColor(2)} />
+          </mesh>
+        </>
+      )}
+
+      {/* Brewery - Barrels and Steam */}
+      {building.type === "brewery" && (
+        <>
+          {/* Barrels outside */}
+          {Array.from({ length: 4 }, (_, i) => (
+            <mesh
+              key={i}
+              position={[
+                building.dimensions.width / 2 + 0.8,
+                0.4,
+                (i - 1.5) * 0.8,
+              ]}
+            >
+              <cylinderGeometry args={[0.3, 0.3, 0.8, 8]} />
+              <meshLambertMaterial color={new THREE.Color(0.4, 0.2, 0.1)} />
+            </mesh>
+          ))}
+          {/* Steam from chimney */}
+          {Array.from({ length: 3 }, (_, i) => (
+            <mesh
+              key={i}
+              position={[0, building.dimensions.height + 1.5 + i * 0.4, 0]}
+            >
+              <sphereGeometry args={[0.2 + i * 0.05, 6, 4]} />
+              <meshBasicMaterial
+                color={new THREE.Color(0.9, 0.9, 0.9)}
+                transparent
+                opacity={0.5 - i * 0.1}
+              />
+            </mesh>
+          ))}
+        </>
+      )}
+
+      {/* Electronics Fab - Clean Tech Look */}
+      {building.type === "electronics_fab" && (
+        <>
+          {/* Clean room indicator */}
+          <mesh position={[0, building.dimensions.height / 2, 0]}>
+            <boxGeometry
+              args={[
+                building.dimensions.width * 1.02,
+                building.dimensions.height * 1.02,
+                building.dimensions.depth * 1.02,
+              ]}
+            />
+            <meshLambertMaterial
+              color={new THREE.Color(0.9, 0.95, 1.0)}
+              transparent
+              opacity={0.2}
+            />
+          </mesh>
+          {/* Circuit board pattern on roof */}
+          <mesh position={[0, building.dimensions.height + 0.1, 0]}>
+            <boxGeometry
+              args={[building.dimensions.width * 0.8, 0.1, building.dimensions.depth * 0.8]}
+            />
+            <meshBasicMaterial color={new THREE.Color(0.1, 0.6, 0.2)} />
+          </mesh>
+        </>
+      )}
+
+      {/* Mine - Mine Cart and Entrance */}
+      {building.type === "mine" && (
+        <>
+          {/* Mine entrance tunnel */}
+          <mesh 
+            position={[building.dimensions.width / 2 + 0.5, building.dimensions.height * 0.4, 0]}
+            rotation={[0, 0, Math.PI / 2]}
+          >
+            <cylinderGeometry args={[1, 1, 0.8, 8]} />
+            <meshLambertMaterial color={new THREE.Color(0.1, 0.1, 0.1)} />
+          </mesh>
+          {/* Mine cart */}
+          <mesh position={[building.dimensions.width / 2 + 1.5, 0.2, 0.5]}>
+            <boxGeometry args={[0.8, 0.4, 0.6]} />
+            <meshLambertMaterial color={new THREE.Color(0.3, 0.3, 0.3)} />
+          </mesh>
+          {/* Pickaxe symbol */}
+          <mesh position={[0, building.dimensions.height + 0.8, 0]}>
+            <boxGeometry args={[0.4, 1.0, 0.1]} />
+            <meshBasicMaterial color={new THREE.Color(0.5, 0.3, 0.1)} />
+          </mesh>
+        </>
+      )}
+
+      {/* Bank - Vault and Security */}
+      {building.type === "bank" && (
+        <>
+          {/* Vault door */}
+          <mesh
+            position={[
+              building.dimensions.width / 2 - 0.05,
+              building.dimensions.height * 0.5,
+              0,
+            ]}
+          >
+            <cylinderGeometry args={[0.6, 0.6, 0.2, 8]} />
+            <meshLambertMaterial color={new THREE.Color(0.2, 0.2, 0.2)} />
+          </mesh>
+          {/* Columns */}
+          {Array.from({ length: 3 }, (_, i) => (
+            <mesh
+              key={i}
+              position={[
+                (i - 1) * building.dimensions.width * 0.3,
+                building.dimensions.height / 2,
+                building.dimensions.depth / 2 + 0.2,
+              ]}
+            >
+              <cylinderGeometry args={[0.2, 0.2, building.dimensions.height, 8]} />
+              <meshLambertMaterial color={getPartColor(2)} />
+            </mesh>
+          ))}
+          {/* Dollar sign */}
+          <mesh position={[0, building.dimensions.height + 1.2, 0]}>
+            <boxGeometry args={[0.4, 1.0, 0.1]} />
+            <meshBasicMaterial color={new THREE.Color(0.9, 0.8, 0.2)} />
+          </mesh>
+        </>
+      )}
+
+      {/* Stadium - Seating and Field */}
+      {building.type === "stadium" && (
+        <>
+          {/* Seating tiers */}
+          {Array.from({ length: 4 }, (_, i) => (
+            <mesh
+              key={i}
+              position={[
+                0,
+                building.dimensions.height * 0.2 + i * 0.8,
+                building.dimensions.depth / 2 + 0.5 + i * 0.3,
+              ]}
+            >
+              <boxGeometry
+                args={[building.dimensions.width * 0.9, 0.6, 1.0]}
+              />
+              <meshLambertMaterial color={getPartColor(i + 2)} />
+            </mesh>
+          ))}
+          {/* Playing field */}
+          <mesh position={[0, -0.1, 0]}>
+            <boxGeometry
+              args={[
+                building.dimensions.width * 0.7,
+                0.2,
+                building.dimensions.depth * 0.6,
+              ]}
+            />
+            <meshLambertMaterial color={new THREE.Color(0.2, 0.6, 0.2)} />
+          </mesh>
+        </>
+      )}
+
+      {/* Library - Books and Reading */}
+      {building.type === "library" && (
+        <>
+          {/* Book stacks visible through windows */}
+          {building.stats.beauty > 40 &&
+            Array.from({ length: 4 }, (_, i) => (
+              <mesh
+                key={i}
+                position={[
+                  building.dimensions.width / 2 - 0.3,
+                  building.dimensions.height * 0.6,
+                  (i - 1.5) * 0.8,
+                ]}
+              >
+                <boxGeometry args={[0.4, building.dimensions.height * 0.6, 0.6]} />
+                <meshLambertMaterial color={new THREE.Color(0.6, 0.4, 0.2)} />
+              </mesh>
+            ))}
+          {/* Book symbol */}
+          <mesh position={[0, building.dimensions.height + 1.0, 0]}>
+            <boxGeometry args={[0.6, 0.4, 0.1]} />
+            <meshBasicMaterial color={new THREE.Color(0.6, 0.3, 0.2)} />
+          </mesh>
+        </>
+      )}
+
+      {/* Temple - Sacred Spire */}
+      {building.type === "temple" && (
+        <>
+          {/* Central spire */}
+          <mesh position={[0, building.dimensions.height + 2, 0]}>
+            <coneGeometry args={[1, 4, 6]} />
+            <meshLambertMaterial color={getPartColor(1)} />
+          </mesh>
+          {/* Sacred flame */}
+          <mesh position={[0, building.dimensions.height + 4.5, 0]}>
+            <sphereGeometry args={[0.3, 8, 6]} />
+            <meshBasicMaterial color={new THREE.Color(1.0, 0.8, 0.3)} />
+          </mesh>
+          {/* Prayer bells */}
+          {Array.from({ length: 4 }, (_, i) => (
+            <mesh
+              key={i}
+              position={[
+                Math.cos((i * Math.PI) / 2) * 2,
+                building.dimensions.height + 1,
+                Math.sin((i * Math.PI) / 2) * 2,
+              ]}
+            >
+              <sphereGeometry args={[0.2, 8, 6]} />
+              <meshLambertMaterial color={new THREE.Color(0.8, 0.7, 0.2)} />
+            </mesh>
+          ))}
+        </>
+      )}
+
+      {/* Lab - Equipment and Beakers */}
+      {building.type === "lab" && (
+        <>
+          {/* Lab equipment on tables */}
+          {Array.from({ length: 3 }, (_, i) => (
+            <mesh
+              key={i}
+              position={[
+                building.dimensions.width / 2 - 0.3,
+                building.dimensions.height * 0.4,
+                (i - 1) * building.dimensions.depth * 0.3,
+              ]}
+            >
+              <cylinderGeometry args={[0.15, 0.1, 0.4, 6]} />
+              <meshLambertMaterial color={new THREE.Color(0.7, 0.9, 1.0)} />
+            </mesh>
+          ))}
+          {/* Microscope */}
+          <mesh
+            position={[
+              -building.dimensions.width / 2 + 0.3,
+              building.dimensions.height * 0.5,
+              0,
+            ]}
+          >
+            <boxGeometry args={[0.2, 0.6, 0.2]} />
+            <meshLambertMaterial color={new THREE.Color(0.2, 0.2, 0.2)} />
+          </mesh>
+        </>
+      )}
+
+      {/* Greenhouse - Glass Panels and Plants */}
+      {building.type === "greenhouse" && (
+        <>
+          {/* Glass panel effect */}
+          <mesh position={[0, building.dimensions.height / 2, 0]}>
+            <boxGeometry
+              args={[
+                building.dimensions.width * 1.01,
+                building.dimensions.height * 1.01,
+                building.dimensions.depth * 1.01,
+              ]}
+            />
+            <meshLambertMaterial
+              color={new THREE.Color(0.7, 1.0, 0.7)}
+              transparent
+              opacity={0.3}
+            />
+          </mesh>
+          {/* Growing plants inside */}
+          {Array.from({ length: 12 }, (_, i) => (
+            <mesh
+              key={i}
+              position={[
+                ((i % 4) - 1.5) * building.dimensions.width * 0.2,
+                0.3,
+                (Math.floor(i / 4) - 1) * building.dimensions.depth * 0.3,
+              ]}
+            >
+              <coneGeometry args={[0.2, 0.6, 6]} />
+              <meshLambertMaterial color={new THREE.Color(0.2, 0.8, 0.2)} />
+            </mesh>
+          ))}
+        </>
+      )}
+
+      {/* Armory - Weapons and Training */}
+      {building.type === "armory" && (
+        <>
+          {/* Training dummies outside */}
+          {Array.from({ length: 3 }, (_, i) => (
+            <mesh
+              key={i}
+              position={[
+                building.dimensions.width / 2 + 1.5,
+                0.8,
+                (i - 1) * 1.2,
+              ]}
+            >
+              <cylinderGeometry args={[0.2, 0.2, 1.6, 8]} />
+              <meshLambertMaterial color={new THREE.Color(0.4, 0.3, 0.2)} />
+            </mesh>
+          ))}
+          {/* Weapon racks visible */}
+          <mesh
+            position={[
+              building.dimensions.width / 2 - 0.2,
+              building.dimensions.height * 0.6,
+              0,
+            ]}
+          >
+            <boxGeometry args={[0.2, building.dimensions.height * 0.4, building.dimensions.depth * 0.6]} />
+            <meshLambertMaterial color={new THREE.Color(0.3, 0.3, 0.3)} />
+          </mesh>
+          {/* Shield symbol */}
+          <mesh position={[0, building.dimensions.height + 1.0, 0]}>
+            <cylinderGeometry args={[0.4, 0.4, 0.1, 6]} />
+            <meshBasicMaterial color={new THREE.Color(0.6, 0.6, 0.7)} />
+          </mesh>
+        </>
+      )}
 
       {/* Capacity indicator - small spheres for max occupants */}
       {Array.from({ length: building.maxOccupants }, (_, i) => (

@@ -26,8 +26,8 @@ interface BuildingCategory {
 
 const BUILDING_CATEGORIES: BuildingCategory[] = [
   {
-    id: "farm",
-    label: "Farm",
+    id: "residential",
+    label: "Residential",
     buildings: [
       {
         type: "home",
@@ -37,11 +37,19 @@ const BUILDING_CATEGORIES: BuildingCategory[] = [
         requiredQuantity:
           BUILDING_ACTIONS.create_home.requiredMaterials.requiredQuantity,
       },
+      {
+        type: "apartment_complex",
+        name: "Apartment Complex",
+        description: "Multi-unit residential complex",
+        cost: 650,
+        requiredQuantity:
+          BUILDING_ACTIONS.create_apartment_complex.requiredMaterials.requiredQuantity,
+      },
     ],
   },
   {
-    id: "manufacturing",
-    label: "Manufacturing",
+    id: "industrial",
+    label: "Industrial",
     buildings: [
       {
         type: "factory",
@@ -51,25 +59,43 @@ const BUILDING_CATEGORIES: BuildingCategory[] = [
         requiredQuantity:
           BUILDING_ACTIONS.create_factory.requiredMaterials.requiredQuantity,
       },
-    ],
-  },
-  {
-    id: "defense",
-    label: "Defense",
-    buildings: [
       {
-        type: "settlement",
-        name: "Settlement",
-        description: "Establishes territory and provides protection",
+        type: "forge",
+        name: "Forge",
+        description: "Metalworking and tool creation",
+        cost: 450,
+        requiredQuantity:
+          BUILDING_ACTIONS.create_forge.requiredMaterials.requiredQuantity,
+      },
+      {
+        type: "mill",
+        name: "Mill",
+        description: "Processing grains and materials",
+        cost: 400,
+        requiredQuantity:
+          BUILDING_ACTIONS.create_mill.requiredMaterials.requiredQuantity,
+      },
+      {
+        type: "electronics_fab",
+        name: "Electronics Fab",
+        description: "Advanced electronic manufacturing",
         cost: 800,
         requiredQuantity:
-          BUILDING_ACTIONS.create_settlement.requiredMaterials.requiredQuantity,
+          BUILDING_ACTIONS.create_electronics_fab.requiredMaterials.requiredQuantity,
+      },
+      {
+        type: "mine",
+        name: "Mine",
+        description: "Extract valuable resources",
+        cost: 550,
+        requiredQuantity:
+          BUILDING_ACTIONS.create_mine.requiredMaterials.requiredQuantity,
       },
     ],
   },
   {
-    id: "offense",
-    label: "Offense",
+    id: "commercial",
+    label: "Commercial",
     buildings: [
       {
         type: "trading_post",
@@ -81,12 +107,108 @@ const BUILDING_CATEGORIES: BuildingCategory[] = [
             .requiredQuantity,
       },
       {
+        type: "brewery",
+        name: "Brewery",
+        description: "Beverage production and social hub",
+        cost: 350,
+        requiredQuantity:
+          BUILDING_ACTIONS.create_brewery.requiredMaterials.requiredQuantity,
+      },
+      {
+        type: "bank",
+        name: "Bank",
+        description: "Secure storage for currency",
+        cost: 700,
+        requiredQuantity:
+          BUILDING_ACTIONS.create_bank.requiredMaterials.requiredQuantity,
+      },
+    ],
+  },
+  {
+    id: "civic",
+    label: "Civic",
+    buildings: [
+      {
         type: "hospital",
         name: "Hospital",
         description: "Medical facility for healing",
         cost: 600,
         requiredQuantity:
           BUILDING_ACTIONS.create_hospital.requiredMaterials.requiredQuantity,
+      },
+      {
+        type: "library",
+        name: "Library",
+        description: "Knowledge storage and learning",
+        cost: 500,
+        requiredQuantity:
+          BUILDING_ACTIONS.create_library.requiredMaterials.requiredQuantity,
+      },
+      {
+        type: "lab",
+        name: "Laboratory",
+        description: "Scientific research facility",
+        cost: 650,
+        requiredQuantity:
+          BUILDING_ACTIONS.create_lab.requiredMaterials.requiredQuantity,
+      },
+    ],
+  },
+  {
+    id: "cultural",
+    label: "Cultural",
+    buildings: [
+      {
+        type: "stadium",
+        name: "Stadium",
+        description: "Sports and entertainment events",
+        cost: 1200,
+        requiredQuantity:
+          BUILDING_ACTIONS.create_stadium.requiredMaterials.requiredQuantity,
+      },
+      {
+        type: "temple",
+        name: "Temple",
+        description: "Sacred place for worship",
+        cost: 900,
+        requiredQuantity:
+          BUILDING_ACTIONS.create_temple.requiredMaterials.requiredQuantity,
+      },
+    ],
+  },
+  {
+    id: "agriculture",
+    label: "Agriculture",
+    buildings: [
+      {
+        type: "greenhouse",
+        name: "Greenhouse",
+        description: "Controlled plant cultivation",
+        cost: 400,
+        requiredQuantity:
+          BUILDING_ACTIONS.create_greenhouse.requiredMaterials.requiredQuantity,
+      },
+    ],
+  },
+  {
+    id: "military",
+    label: "Military",
+    buildings: [
+      {
+        type: "settlement",
+        name: "Settlement",
+        description: "Establishes territory and provides protection",
+        cost: 800,
+        requiredQuantity:
+          BUILDING_ACTIONS.create_settlement.requiredMaterials.requiredQuantity,
+      },
+      {
+        type: "armory",
+        name: "Armory",
+        description: "Weapon storage and training",
+        cost: 750,
+        requiredQuantity:
+          BUILDING_ACTIONS.create_armory.requiredMaterials.requiredQuantity,
       },
     ],
   },
@@ -225,16 +347,46 @@ export default function MarketMenu({
                     <div>Comfort: 70</div>
                   </>
                 )}
+                {building.type === "apartment_complex" && (
+                  <>
+                    <div>Capacity: 16</div>
+                    <div>Comfort: 65</div>
+                  </>
+                )}
                 {building.type === "factory" && (
                   <>
                     <div>Capacity: 12</div>
                     <div>Production: High</div>
                   </>
                 )}
-                {building.type === "settlement" && (
+                {building.type === "forge" && (
                   <>
-                    <div>Territory: Yes</div>
-                    <div>Defense: High</div>
+                    <div>Capacity: 4</div>
+                    <div>Metalwork: Yes</div>
+                  </>
+                )}
+                {building.type === "mill" && (
+                  <>
+                    <div>Capacity: 6</div>
+                    <div>Processing: Yes</div>
+                  </>
+                )}
+                {building.type === "brewery" && (
+                  <>
+                    <div>Capacity: 10</div>
+                    <div>Social: Yes</div>
+                  </>
+                )}
+                {building.type === "electronics_fab" && (
+                  <>
+                    <div>Capacity: 8</div>
+                    <div>Tech: Advanced</div>
+                  </>
+                )}
+                {building.type === "mine" && (
+                  <>
+                    <div>Capacity: 6</div>
+                    <div>Mining: Yes</div>
                   </>
                 )}
                 {building.type === "trading_post" && (
@@ -243,10 +395,58 @@ export default function MarketMenu({
                     <div>Capacity: 8</div>
                   </>
                 )}
+                {building.type === "bank" && (
+                  <>
+                    <div>Capacity: 8</div>
+                    <div>Security: High</div>
+                  </>
+                )}
                 {building.type === "hospital" && (
                   <>
                     <div>Healing: Yes</div>
                     <div>Capacity: 6</div>
+                  </>
+                )}
+                {building.type === "library" && (
+                  <>
+                    <div>Capacity: 12</div>
+                    <div>Learning: Yes</div>
+                  </>
+                )}
+                {building.type === "lab" && (
+                  <>
+                    <div>Capacity: 6</div>
+                    <div>Research: Yes</div>
+                  </>
+                )}
+                {building.type === "stadium" && (
+                  <>
+                    <div>Capacity: 50</div>
+                    <div>Events: Yes</div>
+                  </>
+                )}
+                {building.type === "temple" && (
+                  <>
+                    <div>Capacity: 20</div>
+                    <div>Spiritual: Yes</div>
+                  </>
+                )}
+                {building.type === "greenhouse" && (
+                  <>
+                    <div>Capacity: 8</div>
+                    <div>Growing: Yes</div>
+                  </>
+                )}
+                {building.type === "settlement" && (
+                  <>
+                    <div>Territory: Yes</div>
+                    <div>Defense: High</div>
+                  </>
+                )}
+                {building.type === "armory" && (
+                  <>
+                    <div>Capacity: 10</div>
+                    <div>Training: Yes</div>
                   </>
                 )}
               </div>
