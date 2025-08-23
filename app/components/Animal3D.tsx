@@ -2,17 +2,21 @@
 
 import { useRef, useState, useEffect } from "react";
 import { useFrame } from "@react-three/fiber";
+import { Text } from "@react-three/drei";
 import type { Animal } from "../types/animal";
+import type { Nation } from "../types/nation";
 import * as THREE from "three";
 
 interface Animal3DProps {
   animal: Animal;
+  nations?: Nation[];
   onClick?: (animal: Animal, ctrlKey?: boolean) => void;
   isSelected?: boolean;
 }
 
 export default function Animal3D({
   animal,
+  nations = [],
   onClick,
   isSelected = false,
 }: Animal3DProps) {
@@ -200,6 +204,13 @@ export default function Animal3D({
     return 0.9; // Elder
   };
 
+  // Get nation name from nationId
+  const getNationName = () => {
+    if (!animal.nationId) return "No Nation";
+    const nation = nations.find(n => n.id === animal.nationId);
+    return nation?.name || "Unknown Nation";
+  };
+
   return (
     <group
       ref={groupRef}
@@ -329,6 +340,29 @@ export default function Animal3D({
           <meshBasicMaterial color={getHealthColor()} />
         </mesh>
       )}
+
+      {/* Animal Name */}
+      <Text
+        position={[0, 4, 0]}
+        fontSize={0.3}
+        color="#ffffff"
+        anchorX="center"
+        anchorY="bottom"
+        fontWeight="bold"
+      >
+        {animal.name}
+      </Text>
+
+      {/* Nation Name */}
+      <Text
+        position={[0, 4.6, 0]}
+        fontSize={0.25}
+        color="#cccccc"
+        anchorX="center"
+        anchorY="bottom"
+      >
+        {getNationName()}
+      </Text>
     </group>
   );
 }

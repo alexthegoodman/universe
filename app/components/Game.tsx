@@ -34,6 +34,7 @@ import type { Nation, TerritoryInfo } from "../types/nation";
 
 interface SceneProps {
   animals: Animal[];
+  nations: Nation[];
   resources: WorldResource[];
   buildings: Building[];
   bandits: Bandit[];
@@ -110,6 +111,7 @@ function GroundGlowRing({ selectedAnimals }: { selectedAnimals: Animal[] }) {
 
 function Scene({
   animals,
+  nations,
   resources,
   buildings,
   bandits,
@@ -178,6 +180,7 @@ function Scene({
         <Animal3D
           key={animal.id}
           animal={animal}
+          nations={nations}
           onClick={onAnimalClick}
           isSelected={selectedAnimals.some((a) => a.id === animal.id)}
         />
@@ -224,6 +227,8 @@ export default function Game() {
   const [actionLogs, setActionLogs] = useState<ActionLogEntry[]>([]);
   const [events, setEvents] = useState<GameEvent[]>([]);
   const [showAnnouncementPanel, setShowAnnouncementPanel] = useState(false);
+  const [playerNationId, setPlayerNationId] = useState<string | null>(null);
+  const [showNationSelection, setShowNationSelection] = useState(false);
   const controlsRef = useRef<OrbitControlsImpl>(null);
 
   useEffect(() => {
@@ -248,10 +253,23 @@ export default function Game() {
     };
   }, []);
 
+  // Load stored player nation on game start
+  useEffect(() => {
+    if (gameStarted && nations.length > 0) {
+      const storedNationId = localStorage.getItem('universePlayerNation');
+      if (storedNationId && nations.find(n => n.id === storedNationId)) {
+        setPlayerNationId(storedNationId);
+      } else if (!playerNationId) {
+        setShowNationSelection(true);
+      }
+    }
+  }, [gameStarted, nations, playerNationId]);
+
   const startGame = useCallback(async () => {
     if (gameManager && !gameStarted) {
       await gameManager.startGame();
       setGameStarted(true);
+      // Don't immediately show nation selection - let the useEffect handle it
 
       // Update animals and resources periodically
       const interval = setInterval(() => {
@@ -302,6 +320,11 @@ export default function Game() {
   }, []);
 
   const handleAnimalClick = useCallback((animal: Animal, ctrlKey = false) => {
+    // Only allow selection/control of animals from player's nation
+    if (playerNationId && animal.nationId !== playerNationId) {
+      return; // Ignore clicks on other nations' animals
+    }
+
     if (ctrlKey) {
       // Multi-select mode
       setSelectedAnimals((prev) => {
@@ -319,7 +342,7 @@ export default function Game() {
       setSelectedAnimals([animal]);
       setSelectedAnimal(animal);
     }
-  }, []);
+  }, [playerNationId]);
 
   const handleAnimalClickAndCenter = useCallback(
     (animal: Animal, ctrlKey = false) => {
@@ -387,12 +410,21 @@ export default function Game() {
     [gameManager]
   );
 
+  const handleNationSelection = useCallback((nationId: string) => {
+    setPlayerNationId(nationId);
+    setShowNationSelection(false);
+    // Store in localStorage for persistence
+    localStorage.setItem('universePlayerNation', nationId);
+  }, []);
+
+
   return (
     <div className="w-full h-screen relative">
       <Canvas camera={{ position: [50, 35, 50], fov: 60 }}>
         <Suspense fallback={null}>
           <Scene
             animals={animals}
+            nations={nations}
             resources={resources}
             buildings={buildings}
             bandits={bandits}
@@ -468,6 +500,19 @@ export default function Game() {
                 </div>
                 <div>Nations: {nations.length}</div>
                 <div>Territories: {territories.length}</div>
+                {playerNationId && (
+                  <div className="border-t pt-2 mt-2">
+                    <div className="font-medium text-sm text-green-600">Your Nation:</div>
+                    {nations.find(n => n.id === playerNationId) && (
+                      <div 
+                        className="text-sm font-semibold" 
+                        style={{ color: nations.find(n => n.id === playerNationId)!.color.primary }}
+                      >
+                        {nations.find(n => n.id === playerNationId)!.name}
+                      </div>
+                    )}
+                  </div>
+                )}
                 <div className="border-t pt-2 mt-2">
                   <div className="font-medium text-sm">Nation Treasuries:</div>
                   {nations.slice(0, 3).map((nation) => (
@@ -548,6 +593,7 @@ export default function Game() {
               content: (
                 <CurrencyLeaderboard
                   animals={animals}
+                  playerNationId={playerNationId}
                   maxEntries={10}
                   onAnimalClick={handleAnimalClickAndCenter}
                 />
@@ -563,6 +609,46 @@ export default function Game() {
         onClose={() => setShowAnnouncementPanel(false)}
         totalAnimals={animals.filter((a) => a.isAlive).length}
       />
+
+      {/* Nation Selection Modal */}
+      {showNationSelection && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h2 className="text-2xl font-bold mb-4 text-center">Choose Your Nation</h2>
+            <p className="text-gray-600 mb-6 text-center">
+              Select a nation to rule. You can only control animals from your chosen nation.
+            </p>
+            <div className="grid grid-cols-1 gap-3">
+              {nations.map((nation) => (
+                <button
+                  key={nation.id}
+                  onClick={() => handleNationSelection(nation.id)}
+                  className="p-4 rounded-lg border-2 hover:border-opacity-100 transition-all"
+                  style={{
+                    borderColor: nation.color.primary,
+                    backgroundColor: `${nation.color.primary}20`,
+                  }}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="font-semibold" style={{ color: nation.color.primary }}>
+                        {nation.name}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        {nation.citizenIds.length} citizens • {Math.floor(nation.treasury)}💰
+                      </div>
+                    </div>
+                    <div
+                      className="w-6 h-6 rounded-full"
+                      style={{ backgroundColor: nation.color.primary }}
+                    />
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Instructions */}
       {/* <div className="absolute bottom-4 left-4 bg-black/70 text-white p-3 rounded-lg text-sm max-w-sm">

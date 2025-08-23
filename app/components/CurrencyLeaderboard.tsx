@@ -12,6 +12,7 @@ interface LeaderboardEntry {
 
 interface CurrencyLeaderboardProps {
   animals: Animal[];
+  playerNationId?: string | null;
   maxEntries?: number;
   showTitle?: boolean;
   compact?: boolean;
@@ -21,6 +22,7 @@ interface CurrencyLeaderboardProps {
 
 export default function CurrencyLeaderboard({
   animals,
+  playerNationId,
   maxEntries = 10,
   showTitle = true,
   compact = false,
@@ -30,9 +32,14 @@ export default function CurrencyLeaderboard({
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
 
   useEffect(() => {
-    const entries = CurrencySystem.getLeaderboard(animals).slice(0, maxEntries);
+    // Filter animals by player nation if specified
+    const filteredAnimals = playerNationId 
+      ? animals.filter(animal => animal.nationId === playerNationId)
+      : animals;
+    
+    const entries = CurrencySystem.getLeaderboard(filteredAnimals).slice(0, maxEntries);
     setLeaderboard(entries);
-  }, [animals, maxEntries]);
+  }, [animals, playerNationId, maxEntries]);
 
   const getRankColor = (rank: number) => {
     switch (rank) {
@@ -70,7 +77,7 @@ export default function CurrencyLeaderboard({
     >
       {showTitle && (
         <h3 className="text-lg font-bold text-white mb-3 flex items-center">
-          💰 Wealth Leaderboard
+          💰 {playerNationId ? 'National' : 'Wealth'} Leaderboard
         </h3>
       )}
 
@@ -145,7 +152,7 @@ export default function CurrencyLeaderboard({
 
       {!compact && leaderboard.length === 0 && (
         <div className="text-gray-400 text-center py-4">
-          No animals with wealth yet
+          {playerNationId ? 'No citizens with wealth yet' : 'No animals with wealth yet'}
         </div>
       )}
     </div>
@@ -155,11 +162,13 @@ export default function CurrencyLeaderboard({
 // Compact version for quick display
 export function CompactLeaderboard({
   animals,
+  playerNationId,
   maxEntries = 5,
   className = "",
   onAnimalClick,
 }: {
   animals: Animal[];
+  playerNationId?: string | null;
   maxEntries?: number;
   className?: string;
   onAnimalClick?: (animal: Animal, ctrlKey?: boolean) => void;
@@ -167,6 +176,7 @@ export function CompactLeaderboard({
   return (
     <CurrencyLeaderboard
       animals={animals}
+      playerNationId={playerNationId}
       maxEntries={maxEntries}
       showTitle={false}
       compact={true}
@@ -179,19 +189,26 @@ export function CompactLeaderboard({
 // Top 3 podium style display
 export function LeaderboardPodium({
   animals,
+  playerNationId,
   className = "",
   onAnimalClick,
 }: {
   animals: Animal[];
+  playerNationId?: string | null;
   className?: string;
   onAnimalClick?: (animal: Animal, ctrlKey?: boolean) => void;
 }) {
   const [top3, setTop3] = useState<LeaderboardEntry[]>([]);
 
   useEffect(() => {
-    const entries = CurrencySystem.getLeaderboard(animals).slice(0, 3);
+    // Filter animals by player nation if specified
+    const filteredAnimals = playerNationId 
+      ? animals.filter(animal => animal.nationId === playerNationId)
+      : animals;
+    
+    const entries = CurrencySystem.getLeaderboard(filteredAnimals).slice(0, 3);
     setTop3(entries);
-  }, [animals]);
+  }, [animals, playerNationId]);
 
   if (top3.length === 0) {
     return null;

@@ -101,8 +101,7 @@ export default function Building3D({ building, onClick }: Building3DProps) {
         />
         <meshLambertMaterial
           color={getPartColor(0)}
-          transparent
-          opacity={opacity}
+          side={THREE.DoubleSide}
         />
       </mesh>
 
