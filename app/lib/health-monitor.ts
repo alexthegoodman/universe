@@ -121,23 +121,23 @@ export class HealthMonitor {
 
   clearAllAnimals(): void {
     const allAnimals = animalStateManager.getAllAnimals();
-    
+
     // Clean up AI instances and decision stagger
     this.aiInstances.clear();
     this.decisionStagger.clear();
-    
+
     // Remove from global plan queue
     if (this.globalPlanQueue) {
       for (const animal of allAnimals) {
         this.globalPlanQueue.removeAnimal(animal.id);
       }
     }
-    
+
     // Remove each animal from the state manager
     for (const animal of allAnimals) {
       animalStateManager.removeAnimal(animal.id);
     }
-    
+
     // Stop monitoring since no animals remain
     this.stopMonitoring();
   }

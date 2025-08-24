@@ -19,6 +19,7 @@ import { skillSystem } from "./skill-system";
 import type { TerrainGenerator } from "./terrain-generator";
 import { ElevationUtils } from "./elevation-utils";
 import { executeInteraction } from "./building-interactions";
+import { nationSystem, NationSystem } from "./nation-system";
 
 export interface MXPAction {
   name: string;
@@ -66,6 +67,7 @@ export class MXPActionSystem {
   private getAllAnimals?: () => Animal[];
   private terrainGenerator?: TerrainGenerator;
   private elevationUtils: ElevationUtils;
+  // private nationSystem?: NationSystem;
 
   // World bounds for movement and exploration
   worldBounds = { width: 200, depth: 200, height: 30 }; // Default, can be set externally
@@ -73,6 +75,7 @@ export class MXPActionSystem {
   constructor(breedingSystem?: BreedingSystem, getAllAnimals?: () => Animal[]) {
     this.breedingSystem = breedingSystem;
     this.getAllAnimals = getAllAnimals;
+    // this.nationSystem = nationSystem;
     this.config = {
       move: {
         maxDistance: 10,
@@ -245,6 +248,36 @@ export class MXPActionSystem {
         message: `${animal.name} cannot venture beyond the known world boundaries`,
         duration: 1000,
       };
+    }
+
+    // Territory boundary check - prevent animals from roaming outside their nation's territory
+    if (nationSystem && animal.nationId) {
+      const targetPosition = { x: targetX, z: targetZ };
+      const territoryCheck = nationSystem.isPositionInTerritory(targetPosition);
+
+      if (territoryCheck.inTerritory) {
+        // Animal is trying to move into a territory - check if it's their own
+        if (territoryCheck.nationId !== animal.nationId) {
+          const otherNation = nationSystem.getNation(territoryCheck.nationId!);
+          return {
+            success: false,
+            message: `${animal.name} cannot enter ${
+              otherNation?.name || "foreign"
+            } territory`,
+            duration: 1000,
+          };
+        }
+      } else {
+        // Animal is trying to move into neutral territory - not allowed unless no nation territories exist yet
+        const allTerritories = nationSystem.getTerritories();
+        if (allTerritories.length > 0) {
+          return {
+            success: false,
+            message: `${animal.name} cannot leave their nation's territory to roam in neutral areas`,
+            duration: 1000,
+          };
+        }
+      }
     }
 
     // Calculate movement based on agility
@@ -621,6 +654,36 @@ export class MXPActionSystem {
         message: `${animal.name} senses the edge of the known world and turns back`,
         duration: 2000,
       };
+    }
+
+    // Territory boundary check - prevent animals from exploring outside their nation's territory
+    if (nationSystem && animal.nationId) {
+      const targetPosition = { x: newPosition.x, z: newPosition.z };
+      const territoryCheck = nationSystem.isPositionInTerritory(targetPosition);
+
+      if (territoryCheck.inTerritory) {
+        // Animal is trying to explore into a territory - check if it's their own
+        if (territoryCheck.nationId !== animal.nationId) {
+          const otherNation = nationSystem.getNation(territoryCheck.nationId!);
+          return {
+            success: false,
+            message: `${animal.name} reaches the border of ${
+              otherNation?.name || "foreign"
+            } territory and cannot proceed`,
+            duration: 2000,
+          };
+        }
+      } else {
+        // Animal is trying to explore into neutral territory - not allowed unless no nation territories exist yet
+        const allTerritories = nationSystem.getTerritories();
+        if (allTerritories.length > 0) {
+          return {
+            success: false,
+            message: `${animal.name} senses the boundary of their territory and turns back`,
+            duration: 2000,
+          };
+        }
+      }
     }
 
     // Calculate energy cost using elevation utilities
