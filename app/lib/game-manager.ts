@@ -1990,4 +1990,113 @@ export class GameManager {
   ): boolean {
     return nationSystem.createSettlement(nationId, building, radius);
   }
+
+  // Method to load game state from a save file
+  async loadFromSave(savedData: {
+    animals: Animal[];
+    buildings: Building[];
+    resources: WorldResource[];
+    nations: Nation[];
+    bandits: Bandit[];
+    territories: TerritoryInfo[];
+    events: any[];
+    environment: any;
+    worldConfig: any;
+    gameTime: number;
+    version: number;
+  }): Promise<void> {
+    try {
+      // Stop any existing game loops
+      if (this.gameRunning) {
+        this.stopGame();
+      }
+
+      // Update world config if provided
+      if (savedData.worldConfig) {
+        this.config.worldSize = savedData.worldConfig;
+        
+        // Update terrain generator with new config
+        const terrainConfig = {
+          ...defaultTerrainConfig,
+          width: savedData.worldConfig.width,
+          depth: savedData.worldConfig.depth,
+        };
+        this.terrainGenerator = new TerrainGenerator(terrainConfig);
+        
+        // Update health monitor world bounds
+        this.healthMonitor.actionSystem.worldBounds = savedData.worldConfig;
+        
+        // Update nation system terrain generator
+        nationSystem.setTerrainGenerator(this.terrainGenerator);
+      }
+
+      // Clear existing state
+      this.worldState.animals = [];
+      this.worldState.resources = [];
+      this.worldState.buildings = [];
+      this.worldState.bandits = [];
+      this.worldState.events = [];
+
+      // Clear subsystem states
+      this.healthMonitor.clearAllAnimals();
+      buildingSystem.clearAllBuildings();
+
+      // Restore world state
+      this.worldState.resources = [...savedData.resources];
+      this.worldState.bandits = [...savedData.bandits];
+      this.worldState.environment = { ...savedData.environment };
+      this.worldState.events = [...savedData.events];
+
+      // Restore nations first (as animals reference nations)
+      nationSystem.loadNations(savedData.nations);
+      this.worldState.nations = nationSystem.getAllNations();
+      
+      // Restore territories
+      nationSystem.loadTerritories(savedData.territories);
+      this.worldState.territories = nationSystem.getTerritories();
+
+      // Restore buildings
+      for (const building of savedData.buildings) {
+        buildingSystem.restoreBuilding(building);
+      }
+      this.worldState.buildings = buildingSystem.getAllBuildings();
+
+      // Restore animals (this is the most complex part)
+      for (const animalData of savedData.animals) {
+        // Add animal to health monitor which manages the main animal state
+        this.healthMonitor.addExistingAnimal(animalData);
+      }
+      
+      // Update world state animals from health monitor
+      this.worldState.animals = this.healthMonitor.getAllAnimals();
+
+      // Re-establish building occupancy relationships
+      for (const building of this.worldState.buildings) {
+        for (const occupantId of building.currentOccupants) {
+          const animal = this.worldState.animals.find(a => a.id === occupantId);
+          if (animal && building.id) {
+            animal.homeId = building.id;
+          }
+        }
+      }
+
+      // Note: Game time restoration would be handled by specific game time tracking system if needed
+
+      console.log(`Successfully loaded game state:`, {
+        animals: this.worldState.animals.length,
+        buildings: this.worldState.buildings.length,
+        resources: this.worldState.resources.length,
+        nations: this.worldState.nations.length,
+        territories: this.worldState.territories.length,
+        bandits: this.worldState.bandits.length,
+        events: this.worldState.events.length,
+        gameTime: savedData.gameTime,
+        version: savedData.version
+      });
+
+    } catch (error) {
+      console.error('Failed to load game from save:', error);
+      throw error;
+    }
+  }
 }

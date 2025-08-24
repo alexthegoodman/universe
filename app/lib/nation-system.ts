@@ -541,6 +541,23 @@ export class NationSystem {
     return [...this.territories];
   }
 
+  // Load nations from saved data (for loading saved games)
+  loadNations(nations: Nation[]): void {
+    // Clear existing nations
+    this.nations.clear();
+    
+    // Populate with loaded nations
+    nations.forEach(nation => {
+      this.nations.set(nation.id, nation);
+    });
+  }
+
+  // Load territories from saved data (for loading saved games)
+  loadTerritories(territories: TerritoryInfo[]): void {
+    // Replace territories array with loaded data
+    this.territories = [...territories];
+  }
+
   // Tax only harvested items (for harvest-based taxation)
   collectHarvestTax(
     nationId: string,

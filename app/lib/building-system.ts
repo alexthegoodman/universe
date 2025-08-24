@@ -679,6 +679,21 @@ export class BuildingSystem {
     return Array.from(this.buildings.values());
   }
 
+  // Clear all buildings (for loading saved games)
+  clearAllBuildings(): void {
+    this.buildings.clear();
+  }
+
+  // Restore a building from saved data (for loading saved games)
+  restoreBuilding(building: Building): void {
+    // Simply add the building to the buildings map without validation
+    // This is for loading saved data, not creating new buildings
+    this.buildings.set(building.id, {
+      ...building,
+      lastModifiedAt: Date.now() // Update to current time to indicate restoration
+    });
+  }
+
   // Get buildings near a position
   getBuildingsNear(
     position: { x: number; z: number },

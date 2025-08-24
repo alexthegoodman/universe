@@ -35,6 +35,7 @@ import Territory3D from "./Territory3D";
 import type { Nation, TerritoryInfo } from "../types/nation";
 import type { BuildingType } from "../types/building";
 import { buildingSystem } from "../lib/building-system";
+import SaveLoadMenu from "./SaveLoadMenu";
 
 interface SceneProps {
   gameManager: GameManager;
@@ -242,6 +243,7 @@ export default function Game() {
   const [showAnnouncementPanel, setShowAnnouncementPanel] = useState(false);
   const [playerNationId, setPlayerNationId] = useState<string | null>(null);
   const [showNationSelection, setShowNationSelection] = useState(false);
+  const [showSaveLoadMenu, setShowSaveLoadMenu] = useState(false);
   const [buildingPlacementMode, setBuildingPlacementMode] = useState<{
     isActive: boolean;
     buildingType: BuildingType | null;
@@ -295,10 +297,52 @@ export default function Game() {
       setActionLogs(logs);
     });
 
-    // Handle ESC key to cancel building placement
+    // Handle keyboard shortcuts
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape" && buildingPlacementMode.isActive) {
         cancelBuildingPlacement();
+        return;
+      }
+
+      // Quick save/load shortcuts
+      if (event.ctrlKey || event.metaKey) {
+        // Ctrl on Windows/Linux, Cmd on Mac
+        switch (event.key.toLowerCase()) {
+          case "s":
+            event.preventDefault();
+            if (gameManager && gameStarted) {
+              // Quick save
+              import("../lib/save-manager").then(({ SaveManager }) => {
+                const saveManager = new SaveManager(gameManager);
+                saveManager
+                  .quickSave(playerNationId || undefined)
+                  .then((result) => {
+                    console.log(
+                      result.success ? "Quick saved!" : result.message
+                    );
+                  });
+              });
+            }
+            break;
+          case "l":
+            event.preventDefault();
+            if (gameStarted) {
+              // Quick load
+              import("../lib/save-manager").then(({ SaveManager }) => {
+                if (!gameManager) return;
+                const saveManager = new SaveManager(gameManager);
+                saveManager.loadQuickSave().then((result) => {
+                  if (result.success && result.gameManager) {
+                    handleGameLoaded(result.gameManager);
+                    console.log("Quick loaded!");
+                  } else {
+                    console.log(result.message);
+                  }
+                });
+              });
+            }
+            break;
+        }
       }
     };
 
@@ -564,6 +608,44 @@ export default function Game() {
     localStorage.setItem("universePlayerNation", nationId);
   }, []);
 
+  const handleGameLoaded = useCallback(
+    async (loadedGameManager: GameManager) => {
+      // Replace current game manager with loaded one
+      if (gameManager) {
+        gameManager.stopGame();
+      }
+
+      setGameManager(loadedGameManager);
+
+      // Start the loaded game
+      await loadedGameManager.startGame();
+      setGameStarted(true);
+
+      // Update state from loaded game
+      const currentAnimals = loadedGameManager.getAllAnimals();
+      const worldState = loadedGameManager.getWorldState();
+
+      setAnimals([...currentAnimals]);
+      setResources([...worldState.resources]);
+      setBuildings([...worldState.buildings]);
+      setBandits([...worldState.bandits.filter((b) => b.isAlive)]);
+      setNations([...worldState.nations]);
+      setTerritories([...worldState.territories]);
+      setEvents([...worldState.events]);
+      setVersion((v) => v + 1);
+
+      // Clear any selections since animals may have changed
+      setSelectedAnimals([]);
+      setSelectedAnimal(null);
+
+      console.log("Game loaded successfully:", {
+        animals: currentAnimals.length,
+        nations: worldState.nations.length,
+      });
+    },
+    [gameManager]
+  );
+
   return (
     <div className="w-full h-screen relative">
       <Canvas camera={{ position: [50, 35, 50], fov: 60 }}>
@@ -605,12 +687,23 @@ export default function Game() {
       {/* UI Controls */}
       <div className="absolute top-4 left-4 space-y-2">
         {!gameStarted ? (
-          <button
-            onClick={startGame}
-            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg"
-          >
-            Start Universe
-          </button>
+          <div className="bg-white/90 backdrop-blur-sm p-4 rounded-lg space-y-3">
+            {/* <h2 className="font-bold text-lg text-center">Universe Strategy Game</h2> */}
+            <div className="flex flex-col space-y-2">
+              <button
+                onClick={startGame}
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium"
+              >
+                Start New Universe
+              </button>
+              <button
+                onClick={() => setShowSaveLoadMenu(true)}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
+              >
+                Load Universe
+              </button>
+            </div>
+          </div>
         ) : (
           <>
             <div className="bg-white/90 backdrop-blur-sm p-3 rounded-lg">
@@ -691,6 +784,12 @@ export default function Game() {
               className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm"
             >
               Spawn Animal
+            </button>
+            <button
+              onClick={() => setShowSaveLoadMenu(true)}
+              className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm"
+            >
+              Save Game
             </button>
             <button
               onClick={() => setShowAnnouncementPanel(true)}
@@ -824,6 +923,16 @@ export default function Game() {
           </div>
         </div>
       )}
+
+      {/* Save/Load Menu */}
+      <SaveLoadMenu
+        gameManager={gameManager}
+        playerNationId={playerNationId || undefined}
+        onGameLoaded={handleGameLoaded}
+        onClose={() => setShowSaveLoadMenu(false)}
+        isVisible={showSaveLoadMenu}
+        defaultTab={gameStarted ? "save" : "load"}
+      />
 
       {/* Instructions */}
       {/* <div className="absolute bottom-4 left-4 bg-black/70 text-white p-3 rounded-lg text-sm max-w-sm">
