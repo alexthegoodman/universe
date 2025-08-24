@@ -11,10 +11,10 @@ interface GhostBuildingProps {
   onPositionChange: (position: THREE.Vector3) => void;
 }
 
-export default function GhostBuilding({ 
-  buildingType, 
+export default function GhostBuilding({
+  buildingType,
   isValidPlacement,
-  onPositionChange 
+  onPositionChange,
 }: GhostBuildingProps) {
   const meshRef = useRef<THREE.Group>(null);
   const { camera, gl, scene } = useThree();
@@ -25,12 +25,18 @@ export default function GhostBuilding({
   // Get building dimensions based on type
   const getDimensions = (type: BuildingType) => {
     switch (type) {
-      case "home": return { width: 4, height: 3, depth: 4 };
-      case "factory": return { width: 8, height: 5, depth: 8 };
-      case "settlement": return { width: 6, height: 4, depth: 6 };
-      case "trading_post": return { width: 6, height: 4, depth: 6 };
-      case "hospital": return { width: 5, height: 3, depth: 5 };
-      default: return { width: 4, height: 3, depth: 4 };
+      case "home":
+        return { width: 4, height: 3, depth: 4 };
+      case "factory":
+        return { width: 8, height: 5, depth: 8 };
+      case "settlement":
+        return { width: 6, height: 4, depth: 6 };
+      case "trading_post":
+        return { width: 6, height: 4, depth: 6 };
+      case "hospital":
+        return { width: 5, height: 3, depth: 5 };
+      default:
+        return { width: 4, height: 3, depth: 4 };
     }
   };
 
@@ -46,13 +52,25 @@ export default function GhostBuilding({
       raycaster.current.setFromCamera(mouse.current, camera);
 
       // Raycast against all objects in the scene to find terrain intersection
-      const intersects = raycaster.current.intersectObjects(scene.children, true);
-      
+      const intersects = raycaster.current.intersectObjects(
+        scene.children,
+        true
+      );
+
       // Find the terrain mesh (should be one of the first intersections)
-      const terrainIntersection = intersects.find(intersect => {
+      const terrainIntersection = intersects.find((intersect) => {
         // The terrain mesh should have a specific name or be identifiable
         // For now, we'll use the first intersection as it's likely the terrain
-        return intersect.object.type === 'Mesh' && intersect.point;
+        // Traverse up to see if the intersected object is a child of the ghost building
+        let parent: THREE.Object3D<THREE.Object3DEventMap> | null =
+          intersect.object;
+        while (parent) {
+          if (parent.name === "ghost-building") return false; // Exclude if it's the ghost building
+          parent = parent.parent;
+        }
+        // return true; // Include if it's not the ghost building
+
+        return intersect.object.type === "Mesh" && intersect.point;
       });
 
       if (terrainIntersection) {
@@ -70,8 +88,9 @@ export default function GhostBuilding({
       }
     };
 
-    gl.domElement.addEventListener('mousemove', handleMouseMove);
-    return () => gl.domElement.removeEventListener('mousemove', handleMouseMove);
+    gl.domElement.addEventListener("mousemove", handleMouseMove);
+    return () =>
+      gl.domElement.removeEventListener("mousemove", handleMouseMove);
   }, [camera, gl.domElement, scene, onPositionChange]);
 
   // Update mesh position when position state changes
@@ -82,28 +101,32 @@ export default function GhostBuilding({
   });
 
   // Color based on placement validity
-  const color = isValidPlacement ? '#00ff0040' : '#ff004040';
-  const outlineColor = isValidPlacement ? '#00ff00' : '#ff0000';
+  const color = isValidPlacement ? "#00ff0040" : "#ff004040";
+  const outlineColor = isValidPlacement ? "#00ff00" : "#ff0000";
 
   return (
-    <group ref={meshRef}>
+    <group ref={meshRef} name="ghost-building">
       {/* Main building structure */}
       <mesh position={[0, dimensions.height / 2, 0]}>
-        <boxGeometry args={[dimensions.width, dimensions.height, dimensions.depth]} />
-        <meshStandardMaterial 
+        <boxGeometry
+          args={[dimensions.width, dimensions.height, dimensions.depth]}
+        />
+        <meshStandardMaterial
           color={color}
-          transparent 
-          opacity={0.5} 
+          transparent
+          opacity={0.5}
           wireframe={false}
         />
       </mesh>
 
       {/* Wireframe outline */}
       <mesh position={[0, dimensions.height / 2, 0]}>
-        <boxGeometry args={[dimensions.width, dimensions.height, dimensions.depth]} />
-        <meshBasicMaterial 
+        <boxGeometry
+          args={[dimensions.width, dimensions.height, dimensions.depth]}
+        />
+        <meshBasicMaterial
           color={outlineColor}
-          wireframe 
+          wireframe
           transparent
           opacity={0.8}
         />
@@ -111,10 +134,12 @@ export default function GhostBuilding({
 
       {/* Ground indicator circle */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.1, 0]}>
-        <circleGeometry args={[Math.max(dimensions.width, dimensions.depth) / 2 + 1, 32]} />
-        <meshBasicMaterial 
+        <circleGeometry
+          args={[Math.max(dimensions.width, dimensions.depth) / 2 + 1, 32]}
+        />
+        <meshBasicMaterial
           color={outlineColor}
-          transparent 
+          transparent
           opacity={0.3}
           side={THREE.DoubleSide}
         />
@@ -144,7 +169,11 @@ export default function GhostBuilding({
       {buildingType === "hospital" && (
         <mesh position={[0, dimensions.height + 0.5, 0]}>
           <boxGeometry args={[0.5, 1, 0.1]} />
-          <meshStandardMaterial color={outlineColor} transparent opacity={0.8} />
+          <meshStandardMaterial
+            color={outlineColor}
+            transparent
+            opacity={0.8}
+          />
         </mesh>
       )}
     </group>
