@@ -1,6 +1,7 @@
 import type { Animal } from "../types/animal";
 import { DNASystem } from "./dna-system";
 import { AnimalLifecycle } from "./animal-lifecycle";
+import { nationSystem } from "./nation-system";
 
 export interface BreedingPair {
   parent1: Animal;
@@ -236,6 +237,14 @@ export class BreedingSystem {
       [parent1.dna, parent2.dna],
       parent1.nationId
     );
+
+    // Ensure offspring is added to the nation's citizen ID list
+    if (parent1.nationId) {
+      const nation = nationSystem.getNation(parent1.nationId);
+      if (nation && !nation.citizenIds.includes(offspring.id)) {
+        nation.citizenIds.push(offspring.id);
+      }
+    }
 
     // Apply breeding energy cost to parents
     const energyCost = 15;
