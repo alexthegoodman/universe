@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 // Note: buildingSystem import removed to avoid circular dependency
 import { TerrainGenerator } from "./terrain-generator";
 import { BuildingSystem } from "./building-system";
+import { CurrencySystem } from "./currency-system";
 
 export class NationSystem {
   private nations: Map<string, Nation> = new Map();
@@ -458,8 +459,10 @@ export class NationSystem {
   private calculateAnimalWealth(animal: Animal): number {
     // Simplified wealth calculation - count valuable items
     return animal.inventory.items.reduce((wealth, item) => {
-      const baseValue = this.getItemValue(item.type, item.rarity || "common");
-      return wealth + baseValue * item.quantity * (item.quality / 100);
+      // const baseValue = this.getItemValue(item.type, item.rarity || "common");
+      const itemValue = CurrencySystem.calculateItemValue(item);
+      // return wealth + baseValue * item.quantity * (item.quality / 100);
+      return wealth + itemValue;
     }, 0);
   }
 
@@ -494,15 +497,18 @@ export class NationSystem {
 
     for (let i = 0; i < animal.inventory.items.length && remaining > 0; i++) {
       const item = animal.inventory.items[i];
-      const itemValue = this.getItemValue(item.type, item.rarity || "common");
+      // const itemValue = this.getItemValue(item.type, item.rarity || "common");
+      const itemValue = CurrencySystem.calculateItemValue(item);
+      const perItemValue = itemValue / item.quantity;
       const quantityToTake = Math.min(
         item.quantity,
-        Math.ceil(remaining / itemValue)
+        // Math.ceil(remaining / perItemValue) // why ceil?
+        remaining / perItemValue
       );
 
       if (quantityToTake > 0) {
         itemsToRemove.push({ index: i, quantity: quantityToTake });
-        remaining -= quantityToTake * itemValue;
+        remaining -= perItemValue * quantityToTake;
       }
     }
 
@@ -570,12 +576,14 @@ export class NationSystem {
     if (!nation) return;
 
     // Calculate tax on the harvested item only
-    const itemValue = this.getItemValue(
-      harvestedItem.type,
-      harvestedItem.rarity || "common"
-    );
-    const harvestValue =
-      itemValue * harvestedItem.quantity * (harvestedItem.quality / 100);
+    // const itemValue = this.getItemValue(
+    //   harvestedItem.type,
+    //   harvestedItem.rarity || "common"
+    // );
+    const itemValue = CurrencySystem.calculateItemValue(harvestedItem);
+    const harvestValue = itemValue;
+    // const harvestValue =
+    //   itemValue * harvestedItem.quantity * (harvestedItem.quality / 100);
     const taxAmount = harvestValue * (nation.taxRate / 100);
 
     // Find the harvested item in inventory and tax it
@@ -583,9 +591,18 @@ export class NationSystem {
       (item) => item.id === harvestedItem.id
     );
     if (inventoryItem && taxAmount > 0) {
+      // was for when itemValue was per item
+      // const quantityToTax = Math.min(
+      //   inventoryItem.quantity,
+      //   Math.ceil(taxAmount / itemValue)
+      // );
+
+      // Now itemValue represents total value of all harvested quantities
+      let perItemValue = itemValue / harvestedItem.quantity;
       const quantityToTax = Math.min(
         inventoryItem.quantity,
-        Math.ceil(taxAmount / itemValue)
+        // Math.ceil(taxAmount / perItemValue) // why ceil?
+        taxAmount / perItemValue
       );
 
       if (quantityToTax > 0) {
@@ -597,7 +614,7 @@ export class NationSystem {
         }
 
         // Add to nation treasury
-        const actualTaxValue = quantityToTax * itemValue;
+        const actualTaxValue = quantityToTax * perItemValue;
         nation.treasury += actualTaxValue;
         nation.stats.totalTaxesCollected += actualTaxValue;
         nation.lastTaxCollection = Date.now();
