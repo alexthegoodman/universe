@@ -474,14 +474,18 @@ export default function Game() {
           );
 
           if (playerAnimals.length > 0) {
-            const builderAnimal = playerAnimals[0]; // Use first available animal
+            // const builderAnimal = playerAnimals[0]; // Use first available animal
+            // randomly pick an animal to be the builder
+            const builderAnimal =
+              playerAnimals[Math.floor(Math.random() * playerAnimals.length)];
 
             try {
               const result = buildingSystem.createBuilding(
                 builderAnimal,
                 { x: position.x, y: position.y, z: position.z },
                 `${buildingPlacementMode.buildingType} Building`,
-                buildingPlacementMode.buildingType
+                buildingPlacementMode.buildingType,
+                false // usesMaterials
               );
 
               if (result.success) {
@@ -494,7 +498,12 @@ export default function Game() {
                   `Successfully placed ${buildingPlacementMode.buildingType}`
                 );
               } else {
-                console.error("Failed to place building:", result.message);
+                console.warn("Failed to place building:", result.message);
+                alert(
+                  `Failed to place building: ${
+                    result.message || "Unknown error"
+                  }`
+                );
               }
             } catch (error) {
               console.error("Error placing building:", error);

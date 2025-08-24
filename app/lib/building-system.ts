@@ -139,7 +139,8 @@ export class BuildingSystem {
     animal: Animal,
     position: { x: number; y: number; z: number },
     name: string = "Animal Shelter",
-    buildingType: BuildingType = "home"
+    buildingType: BuildingType = "home",
+    usesMaterials: boolean = true
   ): BuildingActionResult {
     // Determine the action type based on buildingType
     let actionKey = "create_home";
@@ -181,26 +182,33 @@ export class BuildingSystem {
     }
 
     // Check skill requirements first
-    const skillCheck = this.checkSkillRequirements(
-      animal,
-      action.skillRequirements
-    );
-    if (!skillCheck.canBuild) {
-      return {
-        success: false,
-        message: skillCheck.message!,
-        duration: 2000,
-      };
+    if (usesMaterials) {
+      const skillCheck = this.checkSkillRequirements(
+        animal,
+        action.skillRequirements
+      );
+      if (!skillCheck.canBuild) {
+        return {
+          success: false,
+          message: skillCheck.message!,
+          duration: 2000,
+        };
+      }
     }
 
     // Check if animal has required materials
-    const materialCheck = this.checkMaterials(animal, action.requiredMaterials);
-    if (!materialCheck.success) {
-      return {
-        success: false,
-        message: materialCheck.message!,
-        duration: 2000,
-      };
+    if (usesMaterials) {
+      const materialCheck = this.checkMaterials(
+        animal,
+        action.requiredMaterials
+      );
+      if (!materialCheck.success) {
+        return {
+          success: false,
+          message: materialCheck.message!,
+          duration: 2000,
+        };
+      }
     }
 
     // Check building proximity to prevent overlapping or too-close buildings
@@ -228,16 +236,21 @@ export class BuildingSystem {
     }
 
     // Consume materials from animal's inventory
-    const consumeResult = this.consumeMaterials(
-      animal,
-      action.requiredMaterials
-    );
-    if (!consumeResult.success) {
-      return {
-        success: false,
-        message: `${animal.name} failed to gather the required materials for building`,
-        duration: 2000,
-      };
+    let materialsUsed: BuildingMaterialsUsed = {};
+    if (usesMaterials) {
+      const consumeResult = this.consumeMaterials(
+        animal,
+        action.requiredMaterials
+      );
+      if (!consumeResult.success) {
+        return {
+          success: false,
+          message: `${animal.name} failed to gather the required materials for building`,
+          duration: 2000,
+        };
+      }
+
+      materialsUsed = consumeResult.materialsUsed;
     }
 
     // Create the building
@@ -251,7 +264,7 @@ export class BuildingSystem {
         height: action.effects.dimensionChanges?.height || 2,
         depth: action.effects.dimensionChanges?.depth || 3,
       },
-      materials: consumeResult.materialsUsed,
+      materials: materialsUsed,
       stats: {
         durability: action.effects.statChanges?.durability || 60,
         beauty: action.effects.statChanges?.beauty || 30,
@@ -281,7 +294,7 @@ export class BuildingSystem {
     return {
       success: true,
       message: `${animal.name} successfully built ${name}!`,
-      materialConsumed: consumeResult.materialsUsed,
+      materialConsumed: materialsUsed,
       buildingChanges: {
         dimensions: building.dimensions,
         stats: building.stats,
@@ -690,7 +703,7 @@ export class BuildingSystem {
     // This is for loading saved data, not creating new buildings
     this.buildings.set(building.id, {
       ...building,
-      lastModifiedAt: Date.now() // Update to current time to indicate restoration
+      lastModifiedAt: Date.now(), // Update to current time to indicate restoration
     });
   }
 

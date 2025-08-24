@@ -200,11 +200,12 @@ export class ExplorationSystem {
 
       const targetX = animal.position.x + direction.x * moveDistance;
       const targetZ = animal.position.z + direction.z * moveDistance;
-      const terrainHeight = terrainGenerator?.getHeightAt?.(targetX, targetZ) || 0;
-      
+      const terrainHeight =
+        terrainGenerator?.getHeightAt?.(targetX, targetZ) || 0;
+
       newPosition = {
         x: targetX,
-        y: terrainHeight + 1, // Place 1 unit above terrain
+        y: terrainHeight + 2, // Place 1 unit above terrain
         z: targetZ,
         rotation: Math.atan2(direction.z, direction.x),
       };
@@ -212,13 +213,16 @@ export class ExplorationSystem {
       // Random exploration with some intelligence
       const range = this.getExplorationRange(animal);
       const angle = Math.random() * Math.PI * 2;
-      const targetX = animal.position.x + Math.cos(angle) * range * Math.random();
-      const targetZ = animal.position.z + Math.sin(angle) * range * Math.random();
-      const terrainHeight = terrainGenerator?.getHeightAt?.(targetX, targetZ) || 0;
+      const targetX =
+        animal.position.x + Math.cos(angle) * range * Math.random();
+      const targetZ =
+        animal.position.z + Math.sin(angle) * range * Math.random();
+      const terrainHeight =
+        terrainGenerator?.getHeightAt?.(targetX, targetZ) || 0;
 
       newPosition = {
         x: targetX,
-        y: terrainHeight + 1, // Place 1 unit above terrain
+        y: terrainHeight + 2, // Place 1 unit above terrain
         z: targetZ,
         rotation: angle,
       };
@@ -227,10 +231,11 @@ export class ExplorationSystem {
     // Clamp position to world bounds
     const clampedX = Math.max(-halfWidth, Math.min(halfWidth, newPosition.x));
     const clampedZ = Math.max(-halfDepth, Math.min(halfDepth, newPosition.z));
-    
+
     // Recalculate terrain height if position was clamped
     if (clampedX !== newPosition.x || clampedZ !== newPosition.z) {
-      const clampedTerrainHeight = terrainGenerator?.getHeightAt?.(clampedX, clampedZ) || 0;
+      const clampedTerrainHeight =
+        terrainGenerator?.getHeightAt?.(clampedX, clampedZ) || 0;
       newPosition.x = clampedX;
       newPosition.z = clampedZ;
       newPosition.y = clampedTerrainHeight + 1;

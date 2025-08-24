@@ -578,7 +578,7 @@ export class GameManager {
         finalPosition.z
       );
 
-      return { x: finalPosition.x, y: terrainHeight, z: finalPosition.z };
+      return { x: finalPosition.x, y: terrainHeight + 2, z: finalPosition.z };
     };
 
     const createResource = (
@@ -1256,7 +1256,7 @@ export class GameManager {
 
     const position = {
       x,
-      y: terrainHeight + 1,
+      y: terrainHeight + 2,
       z,
       rotation: 0,
     };
@@ -1351,7 +1351,7 @@ export class GameManager {
     const terrainHeight = this.terrainGenerator.getHeightAt(x, z);
     return {
       x,
-      y: terrainHeight + 1, // Place 1 unit above terrain
+      y: terrainHeight + 2, // Place 2 unit above terrain
       z,
       rotation: Math.random() * Math.PI * 2,
     };
@@ -2014,7 +2014,7 @@ export class GameManager {
       // Update world config if provided
       if (savedData.worldConfig) {
         this.config.worldSize = savedData.worldConfig;
-        
+
         // Update terrain generator with new config
         const terrainConfig = {
           ...defaultTerrainConfig,
@@ -2022,10 +2022,10 @@ export class GameManager {
           depth: savedData.worldConfig.depth,
         };
         this.terrainGenerator = new TerrainGenerator(terrainConfig);
-        
+
         // Update health monitor world bounds
         this.healthMonitor.actionSystem.worldBounds = savedData.worldConfig;
-        
+
         // Update nation system terrain generator
         nationSystem.setTerrainGenerator(this.terrainGenerator);
       }
@@ -2050,7 +2050,7 @@ export class GameManager {
       // Restore nations first (as animals reference nations)
       nationSystem.loadNations(savedData.nations);
       this.worldState.nations = nationSystem.getAllNations();
-      
+
       // Restore territories
       nationSystem.loadTerritories(savedData.territories);
       this.worldState.territories = nationSystem.getTerritories();
@@ -2066,14 +2066,16 @@ export class GameManager {
         // Add animal to health monitor which manages the main animal state
         this.healthMonitor.addExistingAnimal(animalData);
       }
-      
+
       // Update world state animals from health monitor
       this.worldState.animals = this.healthMonitor.getAllAnimals();
 
       // Re-establish building occupancy relationships
       for (const building of this.worldState.buildings) {
         for (const occupantId of building.currentOccupants) {
-          const animal = this.worldState.animals.find(a => a.id === occupantId);
+          const animal = this.worldState.animals.find(
+            (a) => a.id === occupantId
+          );
           if (animal && building.id) {
             animal.homeId = building.id;
           }
@@ -2091,11 +2093,10 @@ export class GameManager {
         bandits: this.worldState.bandits.length,
         events: this.worldState.events.length,
         gameTime: savedData.gameTime,
-        version: savedData.version
+        version: savedData.version,
       });
-
     } catch (error) {
-      console.error('Failed to load game from save:', error);
+      console.error("Failed to load game from save:", error);
       throw error;
     }
   }

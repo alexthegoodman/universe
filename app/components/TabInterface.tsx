@@ -13,11 +13,16 @@ interface TabInterfaceProps {
   className?: string;
 }
 
-export default function TabInterface({ tabs, className = "" }: TabInterfaceProps) {
+export default function TabInterface({
+  tabs,
+  className = "",
+}: TabInterfaceProps) {
   const [activeTab, setActiveTab] = useState(tabs[0]?.id || "");
 
   return (
-    <div className={`bg-white/90 backdrop-blur-sm rounded-lg shadow-lg ${className}`}>
+    <div
+      className={`max-h-[400px] overflow-y-scroll bg-white/90 backdrop-blur-sm rounded-lg shadow-lg ${className}`}
+    >
       {/* Tab Headers */}
       <div className="flex border-b border-gray-200">
         {tabs.map((tab) => (
@@ -37,7 +42,7 @@ export default function TabInterface({ tabs, className = "" }: TabInterfaceProps
 
       {/* Tab Content */}
       <div className="p-4">
-        {tabs.find(tab => tab.id === activeTab)?.content}
+        {tabs.find((tab) => tab.id === activeTab)?.content}
       </div>
     </div>
   );

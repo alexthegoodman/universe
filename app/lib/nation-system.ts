@@ -325,7 +325,7 @@ export class NationSystem {
 
     animal.position = {
       x: newX,
-      y: terrainHeight + 1,
+      y: terrainHeight + 2, // Place 2 units above terrain
       z: newZ,
       rotation: animal.position.rotation || 0,
     };
@@ -545,9 +545,9 @@ export class NationSystem {
   loadNations(nations: Nation[]): void {
     // Clear existing nations
     this.nations.clear();
-    
+
     // Populate with loaded nations
-    nations.forEach(nation => {
+    nations.forEach((nation) => {
       this.nations.set(nation.id, nation);
     });
   }
