@@ -842,7 +842,7 @@ export class NationSystem {
   }
 
   // Get nation statistics
-  getNationStats(nationId: string): any {
+  getNationStats(nationId: string): NationStats | null {
     const nation = this.nations.get(nationId);
     if (!nation) return null;
 
@@ -857,6 +857,17 @@ export class NationSystem {
       totalTaxesCollected: nation.stats.totalTaxesCollected,
     };
   }
+}
+
+export interface NationStats {
+  name: string;
+  citizens: number;
+  maxCitizens: number;
+  settlements: number;
+  treasury: number;
+  taxRate: number;
+  averageCitizenWealth: number;
+  totalTaxesCollected: number;
 }
 
 // Export singleton instance

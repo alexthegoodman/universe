@@ -15,6 +15,7 @@ import AnimalInfo from "./AnimalInfo";
 import AnimalControlPanel from "./AnimalControlPanel";
 import { Resource3D } from "./Resource3D";
 import Building3D from "./Building3D";
+import BuildingInfo from "./BuildingInfo";
 import ActionLog, { type ActionLogEntry } from "./ActionLog";
 import { actionLogger } from "../lib/action-logger";
 import SpecialAnnouncementPanel from "./SpecialAnnouncementPanel";
@@ -239,6 +240,9 @@ export default function Game() {
   const [territories, setTerritories] = useState<TerritoryInfo[]>([]);
   const [selectedAnimals, setSelectedAnimals] = useState<Animal[]>([]);
   const [selectedAnimal, setSelectedAnimal] = useState<Animal | null>(null);
+  const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(
+    null
+  );
   const [gameStarted, setGameStarted] = useState(false);
   const [version, setVersion] = useState(0);
   const [actionLogs, setActionLogs] = useState<ActionLogEntry[]>([]);
@@ -274,6 +278,7 @@ export default function Game() {
       // Clear animal selection when entering building mode
       setSelectedAnimals([]);
       setSelectedAnimal(null);
+      setSelectedBuilding(null);
     },
     []
   );
@@ -430,6 +435,18 @@ export default function Game() {
             setSelectedAnimal(updated);
           } else {
             setSelectedAnimal(null);
+          }
+        }
+
+        // Update selected building if it still exists
+        if (selectedBuilding) {
+          const updated = worldState.buildings.find(
+            (b) => b.id === selectedBuilding.id
+          );
+          if (updated) {
+            setSelectedBuilding(updated);
+          } else {
+            setSelectedBuilding(null);
           }
         }
       }, 1000);
@@ -624,8 +641,68 @@ export default function Game() {
   );
 
   const handleBuildingClick = useCallback((building: Building) => {
+    setSelectedBuilding(building);
     console.log("Building clicked:", building.name, building);
   }, []);
+
+  const closeBuildingInfo = useCallback(() => {
+    setSelectedBuilding(null);
+  }, []);
+
+  const handleBuildingUpgrade = useCallback(
+    (buildingId: string, amount: number) => {
+      if (gameManagerRef.current && selectedBuilding) {
+        // Find the building's owner
+        const building = buildings.find((b) => b.id === buildingId);
+        if (!building || !building.nationId) {
+          console.error("Building not found or has no nation owner");
+          return;
+        }
+
+        // Get nation treasury
+        const nationStats = nationSystem.getNationStats(building.nationId);
+        const nationTreasury = nationStats ? nationStats.treasury : 0;
+        if (nationTreasury < amount) {
+          console.error("Nation doesn't have enough funds for upgrade");
+          return;
+        }
+
+        // Find a random animal from the nation to perform the upgrade
+        const nationAnimals = animals.filter(
+          (a) => a.nationId === building.nationId
+        );
+        if (nationAnimals.length === 0) {
+          console.error(
+            "No animals available from the owning nation to perform upgrade"
+          );
+          return;
+        }
+
+        const randomAnimal =
+          nationAnimals[Math.floor(Math.random() * nationAnimals.length)];
+
+        // Perform the upgrade
+        const result = buildingSystem.modifyBuilding(
+          randomAnimal,
+          buildingId,
+          "purchase_upgrade",
+          amount
+        );
+
+        if (result.success) {
+          console.log(`Building upgrade successful: ${result.message}`);
+          // Update the selected building with the modified one
+          const updatedBuilding = buildingSystem.getBuilding(buildingId);
+          if (updatedBuilding) {
+            setSelectedBuilding(updatedBuilding);
+          }
+        } else {
+          console.error(`Building upgrade failed: ${result.message}`);
+        }
+      }
+    },
+    [gameManagerRef, selectedBuilding, buildings, animals]
+  );
 
   const handleBanditClick = useCallback((bandit: Bandit) => {
     console.log("Bandit clicked:", bandit.name, bandit);
@@ -863,6 +940,13 @@ export default function Game() {
 
       {/* Animal Info Panel */}
       <AnimalInfo animal={selectedAnimal} onClose={closeAnimalInfo} />
+
+      {/* Building Info Panel */}
+      <BuildingInfo
+        building={selectedBuilding}
+        onClose={closeBuildingInfo}
+        onUpgrade={handleBuildingUpgrade}
+      />
 
       {/* Animal Control Panel */}
       <AnimalControlPanel

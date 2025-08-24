@@ -148,6 +148,20 @@ export class BuildingSystem {
     else if (buildingType === "trading_post") actionKey = "create_trading_post";
     else if (buildingType === "hospital") actionKey = "create_hospital";
     else if (buildingType === "factory") actionKey = "create_factory";
+    else if (buildingType === "settlement") actionKey = "create_settlement";
+    else if (buildingType === "apartment_complex") actionKey = "create_apartment_complex";
+    else if (buildingType === "forge") actionKey = "create_forge";
+    else if (buildingType === "mill") actionKey = "create_mill";
+    else if (buildingType === "brewery") actionKey = "create_brewery";
+    else if (buildingType === "electronics_fab") actionKey = "create_electronics_fab";
+    else if (buildingType === "mine") actionKey = "create_mine";
+    else if (buildingType === "bank") actionKey = "create_bank";
+    else if (buildingType === "stadium") actionKey = "create_stadium";
+    else if (buildingType === "library") actionKey = "create_library";
+    else if (buildingType === "temple") actionKey = "create_temple";
+    else if (buildingType === "lab") actionKey = "create_lab";
+    else if (buildingType === "greenhouse") actionKey = "create_greenhouse";
+    else if (buildingType === "armory") actionKey = "create_armory";
 
     const action = this.buildingActions[actionKey];
     if (!action) {
@@ -289,6 +303,11 @@ export class BuildingSystem {
     // Update animal's home reference if this is a home
     if (buildingType === "home") {
       animal.homeId = building.id;
+    }
+
+    // Create settlement territory if this is a settlement
+    if (buildingType === "settlement" && animal.nationId) {
+      nationSystem.createSettlement(animal.nationId, building, 35);
     }
 
     // Calculate area bonus for the new building
