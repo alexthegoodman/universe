@@ -16,6 +16,7 @@ import { RESOURCE_TRAIT_MAP } from "./game-manager";
 import { nationSystem } from "./nation-system";
 import { CurrencySystem } from "./currency-system";
 import { skillSystem } from "./skill-system";
+import { HARVEST_RADIUS } from "./health-monitor";
 
 export class BuildingSystem {
   buildings: Map<string, Building> = new Map();
@@ -149,11 +150,13 @@ export class BuildingSystem {
     else if (buildingType === "hospital") actionKey = "create_hospital";
     else if (buildingType === "factory") actionKey = "create_factory";
     else if (buildingType === "settlement") actionKey = "create_settlement";
-    else if (buildingType === "apartment_complex") actionKey = "create_apartment_complex";
+    else if (buildingType === "apartment_complex")
+      actionKey = "create_apartment_complex";
     else if (buildingType === "forge") actionKey = "create_forge";
     else if (buildingType === "mill") actionKey = "create_mill";
     else if (buildingType === "brewery") actionKey = "create_brewery";
-    else if (buildingType === "electronics_fab") actionKey = "create_electronics_fab";
+    else if (buildingType === "electronics_fab")
+      actionKey = "create_electronics_fab";
     else if (buildingType === "mine") actionKey = "create_mine";
     else if (buildingType === "bank") actionKey = "create_bank";
     else if (buildingType === "stadium") actionKey = "create_stadium";
@@ -372,11 +375,11 @@ export class BuildingSystem {
         Math.pow(building.position.z - animal.position.z, 2)
     );
 
-    if (distance > 5) {
+    if (distance > HARVEST_RADIUS) {
       // Must be within 5 units
       return {
         success: false,
-        message: `${animal.name} is too far from the building to modify it`,
+        message: `${animal.name} is too far from the building to modify it (must be within ${HARVEST_RADIUS} units)`,
         duration: 1000,
       };
     }

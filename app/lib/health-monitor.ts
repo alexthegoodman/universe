@@ -834,6 +834,8 @@ export class HealthMonitor {
           canEnter:
             building.currentOccupants.length < building.maxOccupants &&
             distance <= 5,
+          // must be within distance
+          canModify: distance <= HARVEST_RADIUS,
           availableActions: availableActions.map((action) => action.type),
           features: building.features || [], // Include features like workshops, gardens, etc.
           interactionOptions, // Add interaction options when close enough
@@ -916,6 +918,7 @@ export class HealthMonitor {
 
     return {
       myPosition: animal.position,
+      myNation: nationSystem.getNation(animal.nationId || "")?.name || null,
       sightRadius: SIGHT_RADIUS,
       harvestRadius: HARVEST_RADIUS,
       nearbyAnimals,

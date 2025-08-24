@@ -225,6 +225,7 @@ export interface NearbyBandit {
 
 export interface SightBasedWorldState {
   myPosition: AnimalPosition;
+  myNation: string | null;
   sightRadius: number;
   harvestRadius: number;
   nearbyAnimals: NearbyAnimal[];
