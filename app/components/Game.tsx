@@ -4,6 +4,7 @@ import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Grid, Environment } from "@react-three/drei";
 import { Suspense, useEffect, useState, useCallback } from "react";
 import { GameManager } from "../lib/game-manager";
+import { nationSystem } from "../lib/nation-system";
 import type { Animal } from "../types/animal";
 import type { Building } from "../types/building";
 import type { WorldResource, Bandit } from "../lib/game-manager";
@@ -247,32 +248,39 @@ export default function Game() {
   const [buildingPlacementMode, setBuildingPlacementMode] = useState<{
     isActive: boolean;
     buildingType: BuildingType | null;
+    buildingCost: number | null;
     ghostPosition: THREE.Vector3 | null;
     isValidPlacement: boolean;
   }>({
     isActive: false,
     buildingType: null,
+    buildingCost: null,
     ghostPosition: null,
     isValidPlacement: true,
   });
   const controlsRef = useRef<OrbitControlsImpl>(null);
 
-  const startBuildingPlacement = useCallback((buildingType: BuildingType) => {
-    setBuildingPlacementMode({
-      isActive: true,
-      buildingType,
-      ghostPosition: null,
-      isValidPlacement: true,
-    });
-    // Clear animal selection when entering building mode
-    setSelectedAnimals([]);
-    setSelectedAnimal(null);
-  }, []);
+  const startBuildingPlacement = useCallback(
+    (buildingType: BuildingType, cost: number) => {
+      setBuildingPlacementMode({
+        isActive: true,
+        buildingType,
+        buildingCost: cost,
+        ghostPosition: null,
+        isValidPlacement: true,
+      });
+      // Clear animal selection when entering building mode
+      setSelectedAnimals([]);
+      setSelectedAnimal(null);
+    },
+    []
+  );
 
   const cancelBuildingPlacement = useCallback(() => {
     setBuildingPlacementMode({
       isActive: false,
       buildingType: null,
+      buildingCost: null,
       ghostPosition: null,
       isValidPlacement: true,
     });
@@ -281,7 +289,7 @@ export default function Game() {
   useEffect(() => {
     const manager = new GameManager({
       // startingAnimals: 36, // 6 nations × 6 animals each
-      startingAnimals: 24, // Reduced for performance and population control
+      startingAnimals: 32, // 4 nations × 8 animals each
       maxAnimals: 100, // Increased to accommodate all nations
       enableWebSocket: false, // Disable for now to avoid server dependency
       worldSize: {
@@ -490,6 +498,25 @@ export default function Game() {
               );
 
               if (result.success) {
+                // Deduct cost from nation treasury
+                if (buildingPlacementMode.buildingCost && playerNationId) {
+                  const treasuryResult = nationSystem.deductFromTreasury(
+                    playerNationId,
+                    buildingPlacementMode.buildingCost
+                  );
+
+                  if (treasuryResult.success) {
+                    console.log(
+                      `Successfully deducted ${buildingPlacementMode.buildingCost} coins from treasury. ${treasuryResult.message}`
+                    );
+                  } else {
+                    console.warn(
+                      "Treasury deduction failed:",
+                      treasuryResult.message
+                    );
+                  }
+                }
+
                 // Focus camera on new building
                 if (controlsRef.current) {
                   controlsRef.current.target.set(position.x, 0, position.z);
@@ -515,6 +542,7 @@ export default function Game() {
           setBuildingPlacementMode({
             isActive: false,
             buildingType: null,
+            buildingCost: null,
             ghostPosition: null,
             isValidPlacement: true,
           });

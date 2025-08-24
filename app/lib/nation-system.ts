@@ -53,7 +53,9 @@ export class NationSystem {
       { primary: "#AB47BC", secondary: "#CE93D8" }, // Purple-Pink
     ];
 
-    for (let i = 0; i < 6; i++) {
+    const numberOfNations = 4; // Supports up to 6 nations
+
+    for (let i = 0; i < numberOfNations; i++) {
       const nationId = `nation_${i + 1}`;
       const nation: Nation = {
         id: nationId,
@@ -84,7 +86,7 @@ export class NationSystem {
       this.nations.set(nationId, nation);
 
       // Initialize relationships with other nations
-      for (let j = 0; j < 6; j++) {
+      for (let j = 0; j < numberOfNations; j++) {
         if (i !== j) {
           const otherNationId = `nation_${j + 1}`;
           nation.relationships[otherNationId] = {
@@ -755,6 +757,55 @@ export class NationSystem {
         reason: `Cannot harvest in ${otherNation?.name || "foreign"} territory`,
       };
     }
+  }
+
+  // Deduct money from nation treasury
+  deductFromTreasury(
+    nationId: string,
+    amount: number
+  ): { success: boolean; message?: string; newBalance?: number } {
+    const nation = this.nations.get(nationId);
+    if (!nation) {
+      return { success: false, message: "Nation not found" };
+    }
+
+    if (nation.treasury < amount) {
+      return {
+        success: false,
+        message: `Insufficient funds. Required: ${amount}, Available: ${Math.floor(
+          nation.treasury
+        )}`,
+      };
+    }
+
+    nation.treasury -= amount;
+    return {
+      success: true,
+      newBalance: nation.treasury,
+      message: `Successfully deducted ${amount} from treasury. New balance: ${Math.floor(
+        nation.treasury
+      )}`,
+    };
+  }
+
+  // Add money to nation treasury
+  addToTreasury(
+    nationId: string,
+    amount: number
+  ): { success: boolean; message?: string; newBalance?: number } {
+    const nation = this.nations.get(nationId);
+    if (!nation) {
+      return { success: false, message: "Nation not found" };
+    }
+
+    nation.treasury += amount;
+    return {
+      success: true,
+      newBalance: nation.treasury,
+      message: `Successfully added ${amount} to treasury. New balance: ${Math.floor(
+        nation.treasury
+      )}`,
+    };
   }
 
   // Get nation statistics

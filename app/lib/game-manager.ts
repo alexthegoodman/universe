@@ -15,6 +15,7 @@ import { skillSystem } from "./skill-system";
 import { v4 as uuidv4 } from "uuid";
 import { TerrainGenerator, defaultTerrainConfig } from "./terrain-generator";
 import { nationSystem } from "./nation-system";
+import { nationAI } from "./nation-ai";
 import type { Nation, TerritoryInfo } from "../types/nation";
 
 export interface GameConfig {
@@ -465,6 +466,7 @@ export class GameManager {
 
     // Set terrain generator for nation system to enable proper positioning
     nationSystem.setTerrainGenerator(this.terrainGenerator);
+    nationAI.setTerrainGenerator(this.terrainGenerator);
 
     // Register nation settlements with building system after both are initialized
     // try in startGame()
@@ -1185,6 +1187,7 @@ export class GameManager {
     this.startEnvironmentUpdates();
     this.startResourceRegeneration();
     this.startBanditAI();
+    this.startNationAI();
     // this.startTaxationCycle(); // Disabled: taxation now happens on harvest actions
     // this.startBreedingCycles();
 
@@ -1400,6 +1403,50 @@ export class GameManager {
 
       this.performTaxation();
     }, 2 * 60 * 1000); // 2 minutes
+  }
+
+  private startNationAI(): void {
+    // Nation AI checks every 60-120 seconds
+    setInterval(() => {
+      if (!this.gameRunning) return;
+
+      this.processNationAI();
+    }, 60000 + Math.random() * 60000); // 60-120 seconds
+  }
+
+  private async processNationAI(): Promise<void> {
+    try {
+      const allAnimals = this.getAllAnimals();
+      const allBuildings = buildingSystem.getAllBuildings();
+      const allNations = nationSystem.getAllNations();
+
+      // Process AI decisions for all nations
+      await nationAI.processAllNations(allNations, allAnimals, allBuildings);
+
+      // Update world state
+      this.worldState.nations = allNations;
+      this.worldState.territories = nationSystem.getTerritories();
+
+      // Broadcast changes if websocket is available
+      if (this.websocketServer) {
+        this.websocketServer.broadcastToClients({
+          type: "nationUpdate",
+          data: {
+            nations: this.worldState.nations,
+            territories: this.worldState.territories,
+            buildings: allBuildings,
+          },
+        });
+      }
+
+      // Log periodic update (but not too spam-y)
+      if (Math.random() < 0.3) {
+        // Only log 30% of the time
+        this.addEvent("nation-ai", "Nations processed AI decisions");
+      }
+    } catch (error) {
+      console.error("Error in Nation AI processing:", error);
+    }
   }
 
   private updateEnvironment(): void {
