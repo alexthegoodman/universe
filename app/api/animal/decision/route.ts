@@ -640,21 +640,77 @@ ${animal.specialMemories
       )
       .replace("{sleepConstraint}", sleepCheck.reason);
 
-    const responseData = await openai.chat.completions.create({
-      model: "gpt-5-nano",
-      messages: [
-        {
-          role: "system",
-          content: systemPrompt,
-        },
-        {
-          role: "user",
-          content: userPrompt,
-        },
-      ],
-      response_format: { type: "json_object" },
-      reasoning_effort: "minimal",
-    });
+    // Retry logic with x-ratelimit header handling
+    let responseData;
+    let retryAttempt = 0;
+    const maxRetries = 3;
+    
+    while (retryAttempt <= maxRetries) {
+      try {
+        responseData = await openai.chat.completions.create({
+          model: "gpt-5-nano",
+          messages: [
+            {
+              role: "system",
+              content: systemPrompt,
+            },
+            {
+              role: "user",
+              content: userPrompt,
+            },
+          ],
+          response_format: { type: "json_object" },
+          reasoning_effort: "minimal",
+        });
+        break; // Success, exit retry loop
+      } catch (error: any) {
+        retryAttempt++;
+        
+        // Check if it's a rate limit error
+        if (error?.status === 429 && retryAttempt <= maxRetries) {
+          console.log(`⏳ Rate limited for ${animal?.name || "unknown animal"}, attempt ${retryAttempt}/${maxRetries + 1}`);
+          
+          // Extract delay from headers or error response
+          let delayMs = 1000 * retryAttempt; // Default exponential backoff
+          
+          if (error.headers) {
+            // Check for x-ratelimit-reset-* headers
+            const resetTime = error.headers['x-ratelimit-reset-time'] || 
+                             error.headers['x-ratelimit-reset-tokens'] ||
+                             error.headers['x-ratelimit-reset-requests'];
+            
+            if (resetTime) {
+              // Parse reset time and calculate delay
+              const resetTimestamp = parseFloat(resetTime);
+              if (!isNaN(resetTimestamp)) {
+                const now = Date.now() / 1000;
+                delayMs = Math.max(100, (resetTimestamp - now) * 1000);
+              }
+            }
+            
+            // Check for retry-after header
+            const retryAfter = error.headers['retry-after'];
+            if (retryAfter) {
+              delayMs = parseFloat(retryAfter) * 1000;
+            }
+          }
+          
+          // Cap delay at 30 seconds for safety
+          delayMs = Math.min(delayMs, 30000);
+          
+          console.log(`💤 Waiting ${Math.round(delayMs / 1000)}s before retry...`);
+          await new Promise(resolve => setTimeout(resolve, delayMs));
+          continue;
+        }
+        
+        // If it's not a rate limit error or we've exhausted retries, rethrow
+        throw error;
+      }
+    }
+
+    if (!responseData) {
+      throw new Error("Failed to get response from OpenAI after retries");
+    }
 
     const responseText = responseData.choices[0].message.content;
 
