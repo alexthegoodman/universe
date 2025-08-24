@@ -1,6 +1,6 @@
 import type { Nation, TaxationEvent, TerritoryInfo } from "../types/nation";
 import type { Animal } from "../types/animal";
-import type { Building } from "../types/building";
+import type { Building, BuildingType } from "../types/building";
 import { v4 as uuidv4 } from "uuid";
 // Note: buildingSystem import removed to avoid circular dependency
 import { TerrainGenerator } from "./terrain-generator";
@@ -692,45 +692,61 @@ export class NationSystem {
   // Check if an animal can build at a position (must be in their own nation's territory only)
   canAnimalBuildAt(
     animalId: string,
-    position: { x: number; z: number }
+    position: { x: number; z: number },
+    buildingType: BuildingType
   ): { canBuild: boolean; reason?: string } {
-    const territoryCheck = this.isPositionInTerritory(position);
+    if (buildingType !== "settlement") {
+      const territoryCheck = this.isPositionInTerritory(position);
 
-    if (!territoryCheck.inTerritory) {
-      // Neutral territory - building not allowed
-      return {
-        canBuild: false,
-        reason: "Buildings can only be constructed within nation territories",
-      };
-    }
-
-    // Find which nation the animal belongs to
-    let animalNationId: string | undefined;
-    for (const nation of this.nations.values()) {
-      if (nation.citizenIds.includes(animalId)) {
-        animalNationId = nation.id;
-        break;
+      if (!territoryCheck.inTerritory) {
+        // Neutral territory - building not allowed
+        return {
+          canBuild: false,
+          reason: "Buildings can only be constructed within nation territories",
+        };
       }
-    }
 
-    if (!animalNationId) {
-      // Animal doesn't belong to any nation - cannot build anywhere
-      return {
-        canBuild: false,
-        reason: "Animal must belong to a nation to construct buildings",
-      };
-    }
+      // Find which nation the animal belongs to
+      let animalNationId: string | undefined;
+      for (const nation of this.nations.values()) {
+        if (nation.citizenIds.includes(animalId)) {
+          animalNationId = nation.id;
+          break;
+        }
+      }
 
-    if (animalNationId === territoryCheck.nationId) {
-      // Animal is in their own nation's territory
-      return { canBuild: true };
+      if (!animalNationId) {
+        // Animal doesn't belong to any nation - cannot build anywhere
+        return {
+          canBuild: false,
+          reason: "Animal must belong to a nation to construct buildings",
+        };
+      }
+
+      if (animalNationId === territoryCheck.nationId) {
+        // Animal is in their own nation's territory
+        return { canBuild: true };
+      } else {
+        // Animal is in another nation's territory
+        const otherNation = this.nations.get(territoryCheck.nationId!);
+        return {
+          canBuild: false,
+          reason: `Cannot build in ${otherNation?.name || "foreign"} territory`,
+        };
+      }
     } else {
-      // Animal is in another nation's territory
-      const otherNation = this.nations.get(territoryCheck.nationId!);
-      return {
-        canBuild: false,
-        reason: `Cannot build in ${otherNation?.name || "foreign"} territory`,
-      };
+      // Settlements can be built anywhere (even neutral territory) except inside other settlements
+      const territoryCheck = this.isPositionInTerritory(position);
+
+      if (territoryCheck.inTerritory) {
+        return {
+          canBuild: false,
+          reason:
+            "Settlements cannot be built inside existing nation territories",
+        };
+      }
+
+      return { canBuild: true };
     }
   }
 

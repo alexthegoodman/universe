@@ -44,8 +44,8 @@ const BUILDING_COSTS: BuildingCosts = {
 
 export class NationAI {
   private lastDecisionTime: Map<string, number> = new Map();
-  // private decisionCooldown: number = 60000; // 1 minute in milliseconds
-  private decisionCooldown: number = 300000; // 5 minutes cooldown to reduce frequency
+  private decisionCooldown: number = 60000; // 1 minute in milliseconds
+  // private decisionCooldown: number = 300000; // 5 minutes cooldown to reduce frequency
   private terrainGenerator: TerrainGenerator | null = null;
 
   constructor() {}

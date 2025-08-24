@@ -223,10 +223,14 @@ export class BuildingSystem {
     }
 
     // Check territory restrictions - animals can only build in their own nation's territory
-    const territoryCheck = nationSystem.canAnimalBuildAt(animal.id, {
-      x: position.x,
-      z: position.z,
-    });
+    const territoryCheck = nationSystem.canAnimalBuildAt(
+      animal.id,
+      {
+        x: position.x,
+        z: position.z,
+      },
+      buildingType
+    );
     if (!territoryCheck.canBuild) {
       return {
         success: false,
