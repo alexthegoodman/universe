@@ -280,7 +280,8 @@ export default function Game() {
 
   useEffect(() => {
     const manager = new GameManager({
-      startingAnimals: 36, // 6 nations × 6 animals each
+      // startingAnimals: 36, // 6 nations × 6 animals each
+      startingAnimals: 24, // Reduced for performance and population control
       maxAnimals: 100, // Increased to accommodate all nations
       enableWebSocket: false, // Disable for now to avoid server dependency
       worldSize: {
@@ -349,9 +350,9 @@ export default function Game() {
     document.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      if (manager) {
-        manager.stopGame();
-      }
+      // if (manager) {
+      //   manager.stopGame();
+      // }
       unsubscribe();
       document.removeEventListener("keydown", handleKeyDown);
     };
