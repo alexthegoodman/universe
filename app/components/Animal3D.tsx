@@ -349,7 +349,7 @@ export default function Animal3D({
       {/* Animal Name */}
       <Text
         position={[0, 4, 0]}
-        fontSize={0.6}
+        fontSize={1.2}
         color="#ffffff"
         anchorX="center"
         anchorY="bottom"
@@ -360,7 +360,7 @@ export default function Animal3D({
 
       {/* Nation Name */}
       <Text
-        position={[0, 4.6, 0]}
+        position={[0, 5.4, 0]}
         fontSize={0.45}
         color="#cccccc"
         anchorX="center"
