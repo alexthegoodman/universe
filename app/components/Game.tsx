@@ -3,6 +3,7 @@
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Grid, Environment } from "@react-three/drei";
 import { Suspense, useEffect, useState, useCallback } from "react";
+import { useDevEffectOnce } from "../hooks/useDevOnce";
 import { GameManager } from "../lib/game-manager";
 import { nationSystem } from "../lib/nation-system";
 import type { Animal } from "../types/animal";
@@ -228,7 +229,8 @@ function Scene({
 }
 
 export default function Game() {
-  const [gameManager, setGameManager] = useState<GameManager | null>(null);
+  const gameManagerRef = useRef<GameManager | null>(null);
+  const [gameManagerLoaded, setGameManagerLoaded] = useState(false);
   const [animals, setAnimals] = useState<Animal[]>([]);
   const [resources, setResources] = useState<WorldResource[]>([]);
   const [buildings, setBuildings] = useState<Building[]>([]);
@@ -286,7 +288,9 @@ export default function Game() {
     });
   }, []);
 
-  useEffect(() => {
+  useDevEffectOnce(() => {
+    console.log("Initializing GameManager...");
+
     const manager = new GameManager({
       // startingAnimals: 36, // 6 nations × 6 animals each
       startingAnimals: 32, // 4 nations × 8 animals each
@@ -299,7 +303,9 @@ export default function Game() {
       },
     });
 
-    setGameManager(manager);
+    gameManagerRef.current = manager;
+
+    setGameManagerLoaded(true);
 
     // Subscribe to action logs
     const unsubscribe = actionLogger.subscribe((logs) => {
@@ -319,10 +325,10 @@ export default function Game() {
         switch (event.key.toLowerCase()) {
           case "s":
             event.preventDefault();
-            if (gameManager && gameStarted) {
+            if (gameManagerRef.current && gameStarted) {
               // Quick save
               import("../lib/save-manager").then(({ SaveManager }) => {
-                const saveManager = new SaveManager(gameManager);
+                const saveManager = new SaveManager(gameManagerRef.current!);
                 saveManager
                   .quickSave(playerNationId || undefined)
                   .then((result) => {
@@ -338,10 +344,11 @@ export default function Game() {
             if (gameStarted) {
               // Quick load
               import("../lib/save-manager").then(({ SaveManager }) => {
-                if (!gameManager) return;
-                const saveManager = new SaveManager(gameManager);
+                if (!gameManagerRef.current) return;
+                const saveManager = new SaveManager(gameManagerRef.current);
                 saveManager.loadQuickSave().then((result) => {
                   if (result.success && result.gameManager) {
+                    gameManagerRef.current = result.gameManager;
                     handleGameLoaded(result.gameManager);
                     console.log("Quick loaded!");
                   } else {
@@ -364,7 +371,7 @@ export default function Game() {
       unsubscribe();
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [buildingPlacementMode.isActive, cancelBuildingPlacement]);
+  });
 
   // Load stored player nation on game start
   useEffect(() => {
@@ -379,15 +386,17 @@ export default function Game() {
   }, [gameStarted, nations, playerNationId]);
 
   const startGame = useCallback(async () => {
-    if (gameManager && !gameStarted) {
-      await gameManager.startGame();
+    if (gameManagerRef.current && !gameStarted) {
+      await gameManagerRef.current.startGame();
       setGameStarted(true);
       // Don't immediately show nation selection - let the useEffect handle it
 
       // Update animals and resources periodically
       const interval = setInterval(() => {
-        const currentAnimals = gameManager.getAllAnimals();
-        const worldState = gameManager.getWorldState();
+        if (!gameManagerRef.current) return;
+
+        const currentAnimals = gameManagerRef.current.getAllAnimals();
+        const worldState = gameManagerRef.current.getWorldState();
 
         console.info("Animal count:", currentAnimals.length);
 
@@ -423,7 +432,7 @@ export default function Game() {
 
       return () => clearInterval(interval);
     }
-  }, [gameManager, gameStarted, selectedAnimal]);
+  }, [gameStarted, selectedAnimal]);
 
   const centerOnAnimal = useCallback((animal: Animal) => {
     if (controlsRef.current) {
@@ -474,7 +483,7 @@ export default function Game() {
       if (
         buildingPlacementMode.isActive &&
         buildingPlacementMode.buildingType &&
-        gameManager
+        gameManagerRef.current
       ) {
         if (buildingPlacementMode.isValidPlacement) {
           // Find a player animal to create the building
@@ -551,7 +560,7 @@ export default function Game() {
       }
 
       // Handle animal movement (original logic)
-      if (selectedAnimals.length > 0 && gameManager) {
+      if (selectedAnimals.length > 0 && gameManagerRef.current) {
         // Move selected animals to clicked position using proper movement actions
         for (const [index, animal] of selectedAnimals.entries()) {
           const offset = index * 2; // Spread animals out
@@ -560,7 +569,7 @@ export default function Game() {
 
           // Use proper movement action for energy cost and memory tracking
           // TODO: use executeAnimalAction from healthMonitor
-          await gameManager.executeAnimalAction(animal.id, {
+          await gameManagerRef.current.executeAnimalAction(animal.id, {
             action: "moving",
             targetX,
             targetZ,
@@ -571,7 +580,7 @@ export default function Game() {
     },
     [
       selectedAnimals,
-      gameManager,
+      gameManagerRef.current,
       buildingPlacementMode,
       animals,
       playerNationId,
@@ -585,7 +594,8 @@ export default function Game() {
 
   const handleGhostPositionChange = useCallback(
     (position: THREE.Vector3) => {
-      if (!gameManager || !buildingPlacementMode.buildingType) return;
+      if (!gameManagerRef.current || !buildingPlacementMode.buildingType)
+        return;
 
       // Check placement validity using building system proximity check
       let isValid = true;
@@ -606,7 +616,7 @@ export default function Game() {
         isValidPlacement: isValid,
       }));
     },
-    [gameManager, buildingPlacementMode.buildingType]
+    [buildingPlacementMode.buildingType]
   );
 
   const handleBuildingClick = useCallback((building: Building) => {
@@ -618,26 +628,23 @@ export default function Game() {
   }, []);
 
   const spawnNewAnimal = useCallback(async () => {
-    if (gameManager) {
-      await gameManager.spawnRandomAnimal();
+    if (gameManagerRef.current) {
+      await gameManagerRef.current.spawnRandomAnimal();
     }
-  }, [gameManager]);
+  }, []);
 
-  const handleSetTaxRate = useCallback(
-    (nationId: string, rate: number) => {
-      if (gameManager) {
-        const success = gameManager.setNationTaxRate(nationId, rate);
-        if (success) {
-          console.log(
-            `Successfully set tax rate for nation ${nationId} to ${rate}%`
-          );
-        } else {
-          console.error(`Failed to set tax rate for nation ${nationId}`);
-        }
+  const handleSetTaxRate = useCallback((nationId: string, rate: number) => {
+    if (gameManagerRef.current) {
+      const success = gameManagerRef.current.setNationTaxRate(nationId, rate);
+      if (success) {
+        console.log(
+          `Successfully set tax rate for nation ${nationId} to ${rate}%`
+        );
+      } else {
+        console.error(`Failed to set tax rate for nation ${nationId}`);
       }
-    },
-    [gameManager]
-  );
+    }
+  }, []);
 
   const handleNationSelection = useCallback((nationId: string) => {
     setPlayerNationId(nationId);
@@ -649,11 +656,11 @@ export default function Game() {
   const handleGameLoaded = useCallback(
     async (loadedGameManager: GameManager) => {
       // Replace current game manager with loaded one
-      if (gameManager) {
-        gameManager.stopGame();
+      if (gameManagerRef.current) {
+        gameManagerRef.current.stopGame();
       }
 
-      setGameManager(loadedGameManager);
+      gameManagerRef.current = loadedGameManager;
 
       // Start the loaded game
       await loadedGameManager.startGame();
@@ -681,29 +688,36 @@ export default function Game() {
         nations: worldState.nations.length,
       });
     },
-    [gameManager]
+    []
   );
+
+  let threeScene = null;
+  if (gameManagerLoaded && gameManagerRef.current) {
+    threeScene = (
+      <Scene
+        gameManager={gameManagerRef.current}
+        animals={animals}
+        nations={nations}
+        resources={resources}
+        buildings={buildings}
+        bandits={bandits}
+        territories={territories}
+        selectedAnimals={selectedAnimals}
+        onAnimalClick={handleAnimalClick}
+        onGroundClick={handleGroundClick}
+        onBuildingClick={handleBuildingClick}
+        onBanditClick={handleBanditClick}
+        buildingPlacementMode={buildingPlacementMode}
+        onGhostPositionChange={handleGhostPositionChange}
+      />
+    );
+  }
 
   return (
     <div className="w-full h-screen relative">
       <Canvas camera={{ position: [50, 35, 50], fov: 60 }}>
         <Suspense fallback={null}>
-          <Scene
-            gameManager={gameManager!}
-            animals={animals}
-            nations={nations}
-            resources={resources}
-            buildings={buildings}
-            bandits={bandits}
-            territories={territories}
-            selectedAnimals={selectedAnimals}
-            onAnimalClick={handleAnimalClick}
-            onGroundClick={handleGroundClick}
-            onBuildingClick={handleBuildingClick}
-            onBanditClick={handleBanditClick}
-            buildingPlacementMode={buildingPlacementMode}
-            onGhostPositionChange={handleGhostPositionChange}
-          />
+          {threeScene}
           <OrbitControls
             ref={controlsRef}
             enablePan={true}
@@ -845,7 +859,7 @@ export default function Game() {
       {/* Animal Control Panel */}
       <AnimalControlPanel
         selectedAnimals={selectedAnimals}
-        gameManager={gameManager}
+        gameManager={gameManagerRef.current}
         onClearSelection={() => {
           setSelectedAnimals([]);
           setSelectedAnimal(null);
@@ -896,7 +910,7 @@ export default function Game() {
               label: "Market",
               content: (
                 <MarketMenu
-                  gameManager={gameManager}
+                  gameManager={gameManagerRef.current}
                   onStartBuildingPlacement={startBuildingPlacement}
                   playerNationId={playerNationId}
                   nations={nations}
@@ -964,7 +978,7 @@ export default function Game() {
 
       {/* Save/Load Menu */}
       <SaveLoadMenu
-        gameManager={gameManager}
+        gameManager={gameManagerRef.current}
         playerNationId={playerNationId || undefined}
         onGameLoaded={handleGameLoaded}
         onClose={() => setShowSaveLoadMenu(false)}

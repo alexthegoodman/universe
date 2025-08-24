@@ -32,6 +32,7 @@ export class GlobalPlanQueue {
     this.gameManager = gameManager;
     this.healthMonitor = healthMonitor || null;
     this.startPlanExecution();
+    this.startProcessing();
   }
 
   setHealthMonitor(healthMonitor: HealthMonitor): void {
@@ -70,10 +71,6 @@ export class GlobalPlanQueue {
 
     this.queue.push(entry);
     this.sortQueue();
-
-    if (!this.processing) {
-      this.startProcessing();
-    }
   }
 
   removeAnimal(animalId: string): void {
@@ -131,7 +128,7 @@ export class GlobalPlanQueue {
 
     const processingTasks = new Map<string, Promise<void>>();
 
-    while (this.queue.length > 0 || processingTasks.size > 0) {
+    while (this.processing) {
       // Start new concurrent tasks up to the limit
       while (
         this.queue.length > 0 &&
@@ -154,21 +151,20 @@ export class GlobalPlanQueue {
       }
 
       // Wait for at least one task to complete if we have any running
-      // if (processingTasks.size > 0) {
-      //   await Promise.race(processingTasks.values());
-      // }
-
-      // Wait for all tasks to complete to assure queue integrity and order
       if (processingTasks.size > 0) {
-        await Promise.all(processingTasks.values());
+        await Promise.race(processingTasks.values());
       }
 
-      // Small delay to prevent tight loop
+      // Wait for all tasks to complete to assure queue integrity and order
+      // if (processingTasks.size > 0) {
+      //   await Promise.all(processingTasks.values());
+      // }
+
+      // Small delay to prevent tight loop, especially when queue is empty
       await this.delay(this.DECISION_PROCESSING_DELAY);
     }
 
-    this.processing = false;
-    console.log("✅ Global Plan Queue processing complete");
+    console.log("✅ Global Plan Queue processing stopped");
   }
 
   private async processAnimalDecisionConcurrent(

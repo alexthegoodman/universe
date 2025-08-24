@@ -1,4 +1,8 @@
-import type { Animal, InventoryItem, CraftingIngredient } from "../types/animal";
+import type {
+  Animal,
+  InventoryItem,
+  CraftingIngredient,
+} from "../types/animal";
 import type { ResourceType, ResourceTraits } from "./game-manager";
 
 export interface CurrencyValues {
@@ -11,150 +15,150 @@ export interface CurrencyValues {
 // Base currency values for each resource type
 const BASE_CURRENCY_VALUES: Record<ResourceType, number> = {
   // Minerals & Stones (10-100 base value)
-  granite: 15,
-  limestone: 12,
-  sandstone: 10,
-  slate: 18,
-  marble: 45,
-  obsidian: 35,
-  iron_ore: 25,
-  copper_ore: 20,
-  gold_ore: 80,
-  silver_ore: 60,
-  tin_ore: 15,
-  quartz_crystal: 30,
-  amethyst: 120,
-  ruby: 200,
-  emerald: 220,
-  diamond: 500,
-  coal: 8,
-  salt: 5,
+  granite: 150,
+  limestone: 120,
+  sandstone: 100,
+  slate: 180,
+  marble: 450,
+  obsidian: 350,
+  iron_ore: 250,
+  copper_ore: 200,
+  gold_ore: 800,
+  silver_ore: 600,
+  tin_ore: 150,
+  quartz_crystal: 300,
+  amethyst: 1200,
+  ruby: 2000,
+  emerald: 2200,
+  diamond: 5000,
+  coal: 80,
+  salt: 50,
 
   // Organic Materials - Woods (8-25 base value)
-  oak_wood: 12,
-  pine_wood: 8,
-  birch_wood: 10,
-  cedar_wood: 15,
-  bamboo: 10,
+  oak_wood: 120,
+  pine_wood: 80,
+  birch_wood: 100,
+  cedar_wood: 150,
+  bamboo: 100,
 
   // Organic Materials - Textiles & Animal Products (10-60 base value)
-  cotton: 12,
-  wool: 18,
-  silk: 45,
-  hemp: 10,
-  flax: 8,
-  animal_hide: 15,
-  leather: 25,
-  fur: 35,
-  feathers: 12,
-  bone: 8,
+  cotton: 120,
+  wool: 180,
+  silk: 450,
+  hemp: 100,
+  flax: 80,
+  animal_hide: 150,
+  leather: 250,
+  fur: 350,
+  feathers: 120,
+  bone: 80,
 
   // Organic Materials - Natural Substances (5-40 base value)
-  honeycomb: 25,
-  beeswax: 20,
-  resin: 15,
-  sap: 5,
-  moss: 3,
+  honeycomb: 250,
+  beeswax: 200,
+  resin: 150,
+  sap: 50,
+  moss: 30,
 
   // Edible Plants - Berries (3-8 base value)
-  blueberries: 6,
-  strawberries: 7,
-  blackberries: 5,
-  raspberries: 7,
-  elderberries: 8,
+  blueberries: 60,
+  strawberries: 70,
+  blackberries: 50,
+  raspberries: 70,
+  elderberries: 80,
 
   // Edible Plants - Fruits (4-12 base value)
-  apples: 5,
-  pears: 5,
-  cherries: 8,
-  plums: 6,
-  grapes: 7,
+  apples: 50,
+  pears: 50,
+  cherries: 80,
+  plums: 60,
+  grapes: 70,
 
   // Edible Plants - Nuts (8-25 base value)
-  acorns: 4,
-  walnuts: 15,
-  hazelnuts: 12,
-  chestnuts: 10,
-  pine_nuts: 20,
+  acorns: 40,
+  walnuts: 150,
+  hazelnuts: 120,
+  chestnuts: 100,
+  pine_nuts: 200,
 
   // Edible Plants - Vegetables (2-6 base value)
-  wild_carrots: 3,
-  wild_onions: 4,
-  mushrooms: 8,
-  turnips: 2,
-  radishes: 2,
+  wild_carrots: 30,
+  wild_onions: 40,
+  mushrooms: 80,
+  turnips: 20,
+  radishes: 20,
 
   // Edible Plants - Grains (5-12 base value)
-  wild_rice: 8,
-  barley: 6,
-  wheat: 7,
-  oats: 6,
-  millet: 5,
+  wild_rice: 80,
+  barley: 60,
+  wheat: 70,
+  oats: 60,
+  millet: 50,
 
   // Medicinal Herbs - Healing (15-80 base value)
-  aloe_vera: 20,
-  chamomile: 15,
-  echinacea: 25,
-  ginseng: 80,
-  willow_bark: 18,
+  aloe_vera: 200,
+  chamomile: 150,
+  echinacea: 250,
+  ginseng: 800,
+  willow_bark: 180,
 
   // Medicinal Herbs - Energy & Stimulant (12-50 base value)
-  ginkgo: 35,
-  guarana: 40,
-  green_tea: 12,
-  yerba_mate: 25,
-  gotu_kola: 30,
+  ginkgo: 350,
+  guarana: 400,
+  green_tea: 120,
+  yerba_mate: 250,
+  gotu_kola: 300,
 
   // Medicinal Herbs - Calming (10-35 base value)
-  lavender: 25,
-  valerian: 20,
-  passionflower: 18,
-  lemon_balm: 15,
-  sage: 12,
+  lavender: 250,
+  valerian: 200,
+  passionflower: 180,
+  lemon_balm: 150,
+  sage: 120,
 
   // Medicinal Herbs - Immune & Health (15-40 base value)
-  elderflower: 15,
-  astragalus: 30,
-  cats_claw: 35,
-  turmeric: 25,
-  garlic: 8,
+  elderflower: 150,
+  astragalus: 300,
+  cats_claw: 350,
+  turmeric: 250,
+  garlic: 80,
 
   // Spices & Seasonings - Common (5-15 base value)
-  black_pepper: 12,
-  mint: 8,
-  rosemary: 10,
-  thyme: 9,
-  oregano: 8,
-  basil: 10,
-  paprika: 12,
-  chili: 10,
+  black_pepper: 120,
+  mint: 80,
+  rosemary: 100,
+  thyme: 90,
+  oregano: 80,
+  basil: 100,
+  paprika: 120,
+  chili: 100,
 
   // Spices & Seasonings - Uncommon (12-25 base value)
-  white_pepper: 15,
-  cayenne: 14,
-  cinnamon: 20,
-  nutmeg: 22,
-  allspice: 18,
+  white_pepper: 150,
+  cayenne: 140,
+  cinnamon: 200,
+  nutmeg: 220,
+  allspice: 180,
 
   // Spices & Seasonings - Rare (30-60 base value)
-  cloves: 35,
-  cardamom: 50,
+  cloves: 350,
+  cardamom: 500,
 
   // Rare Elements - Epic (100-300 base value)
-  meteorite_fragment: 250,
-  lightning_glass: 200,
-  volcanic_ash: 100,
-  glacier_ice: 150,
-  amber: 180,
-  coral: 160,
-  pearl: 220,
-  jade: 200,
+  meteorite_fragment: 2500,
+  lightning_glass: 2000,
+  volcanic_ash: 1000,
+  glacier_ice: 1500,
+  amber: 1800,
+  coral: 1600,
+  pearl: 2200,
+  jade: 2000,
 
   // Rare Elements - Legendary (400-1000 base value)
-  moonstone: 600,
-  ancient_fossil: 500,
-  dragon_scale: 1000,
-  phoenix_feather: 800,
+  moonstone: 6000,
+  ancient_fossil: 5000,
+  dragon_scale: 10000,
+  phoenix_feather: 8000,
 };
 
 // Rarity multipliers for final currency value
@@ -203,7 +207,9 @@ export class CurrencySystem {
       baseValue = this.calculateCraftedItemBaseValue(item.craftingIngredients);
     } else {
       // Get base value for the resource type
-      const baseName = item.name.replace(/\s+/g, "_").toLowerCase() as ResourceType;
+      const baseName = item.name
+        .replace(/\s+/g, "_")
+        .toLowerCase() as ResourceType;
       baseValue = BASE_CURRENCY_VALUES[baseName] || 10; // Default to 10 if not found
     }
 
@@ -219,7 +225,8 @@ export class CurrencySystem {
     let traitBonus = 1.0;
     if (item.traits) {
       Object.entries(item.traits).forEach(([trait, value]) => {
-        const bonusPercentage = TRAIT_BONUSES[trait as keyof typeof TRAIT_BONUSES] || 0;
+        const bonusPercentage =
+          TRAIT_BONUSES[trait as keyof typeof TRAIT_BONUSES] || 0;
         // Trait value (0-100) affects how much of the bonus applies
         traitBonus += bonusPercentage * (value / 100);
       });
@@ -252,11 +259,11 @@ export class CurrencySystem {
     rank: number;
   }> {
     const wealthData = animals
-      .filter(animal => animal.isAlive)
-      .map(animal => ({
+      .filter((animal) => animal.isAlive)
+      .map((animal) => ({
         animal,
         wealth: this.calculateAnimalWealth(animal),
-        rank: 0 // Will be set below
+        rank: 0, // Will be set below
       }))
       .sort((a, b) => b.wealth - a.wealth);
 
@@ -271,7 +278,10 @@ export class CurrencySystem {
   /**
    * Get top N animals by wealth
    */
-  static getTopAnimals(animals: Animal[], count: number = 5): Array<{
+  static getTopAnimals(
+    animals: Animal[],
+    count: number = 5
+  ): Array<{
     animal: Animal;
     wealth: number;
     rank: number;
@@ -282,14 +292,17 @@ export class CurrencySystem {
   /**
    * Find an animal's position in the leaderboard
    */
-  static getAnimalRank(targetAnimal: Animal, animals: Animal[]): {
+  static getAnimalRank(
+    targetAnimal: Animal,
+    animals: Animal[]
+  ): {
     rank: number;
     wealth: number;
     totalAnimals: number;
   } {
     const leaderboard = this.getLeaderboard(animals);
-    const entry = leaderboard.find(e => e.animal.id === targetAnimal.id);
-    
+    const entry = leaderboard.find((e) => e.animal.id === targetAnimal.id);
+
     return {
       rank: entry?.rank || leaderboard.length + 1,
       wealth: entry?.wealth || 0,
@@ -301,19 +314,25 @@ export class CurrencySystem {
    * Check if an item is crafted (has a dynamic ID not in base values)
    */
   static isCraftedItem(item: InventoryItem): boolean {
-    const baseName = item.name.replace(/\s+/g, "_").toLowerCase() as ResourceType;
+    const baseName = item.name
+      .replace(/\s+/g, "_")
+      .toLowerCase() as ResourceType;
     return !BASE_CURRENCY_VALUES[baseName] && item.id.includes("_");
   }
 
   /**
    * Calculate base value for crafted items based on ingredients
    */
-  static calculateCraftedItemBaseValue(ingredients: CraftingIngredient[]): number {
+  static calculateCraftedItemBaseValue(
+    ingredients: CraftingIngredient[]
+  ): number {
     // Sum up the base values of all ingredients
     const totalIngredientValue = ingredients.reduce((sum, ingredient) => {
-      const baseName = ingredient.name.replace(/\s+/g, "_").toLowerCase() as ResourceType;
+      const baseName = ingredient.name
+        .replace(/\s+/g, "_")
+        .toLowerCase() as ResourceType;
       const baseValue = BASE_CURRENCY_VALUES[baseName] || 10;
-      return sum + (baseValue * ingredient.quantity);
+      return sum + baseValue * ingredient.quantity;
     }, 0);
 
     // Return the total value of ingredients as the base (before multipliers)
@@ -349,17 +368,25 @@ export class CurrencySystem {
     const baseValue = BASE_CURRENCY_VALUES[baseName as ResourceType] || 10;
     const rarityMultiplier = RARITY_MULTIPLIERS[item.rarity || "common"];
     const qualityMultiplier = getQualityMultiplier(item.quality);
-    
+
     let traitBonus = 1.0;
     if (item.traits) {
       Object.entries(item.traits).forEach(([trait, value]) => {
-        const bonusPercentage = TRAIT_BONUSES[trait as keyof typeof TRAIT_BONUSES] || 0;
+        const bonusPercentage =
+          TRAIT_BONUSES[trait as keyof typeof TRAIT_BONUSES] || 0;
         traitBonus += bonusPercentage * (value / 100);
       });
     }
 
     const craftingBonus = item.id.startsWith("crafted_") ? 2.5 : 1.0;
-    const totalValue = Math.round(baseValue * rarityMultiplier * qualityMultiplier * traitBonus * craftingBonus * item.quantity);
+    const totalValue = Math.round(
+      baseValue *
+        rarityMultiplier *
+        qualityMultiplier *
+        traitBonus *
+        craftingBonus *
+        item.quantity
+    );
 
     return {
       baseName,
