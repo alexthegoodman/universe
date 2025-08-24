@@ -33,7 +33,7 @@ const BUILDING_CATEGORIES: BuildingCategory[] = [
         type: "home",
         name: "Home",
         description: "Personal residence for animals",
-        cost: 100,
+        cost: 500,
         requiredQuantity:
           BUILDING_ACTIONS.create_home.requiredMaterials.requiredQuantity,
       },
@@ -41,9 +41,10 @@ const BUILDING_CATEGORIES: BuildingCategory[] = [
         type: "apartment_complex",
         name: "Apartment Complex",
         description: "Multi-unit residential complex",
-        cost: 325,
+        cost: 1000,
         requiredQuantity:
-          BUILDING_ACTIONS.create_apartment_complex.requiredMaterials.requiredQuantity,
+          BUILDING_ACTIONS.create_apartment_complex.requiredMaterials
+            .requiredQuantity,
       },
     ],
   },
@@ -55,7 +56,7 @@ const BUILDING_CATEGORIES: BuildingCategory[] = [
         type: "factory",
         name: "Factory",
         description: "Mass production facility",
-        cost: 250,
+        cost: 1250,
         requiredQuantity:
           BUILDING_ACTIONS.create_factory.requiredMaterials.requiredQuantity,
       },
@@ -63,7 +64,7 @@ const BUILDING_CATEGORIES: BuildingCategory[] = [
         type: "forge",
         name: "Forge",
         description: "Metalworking and tool creation",
-        cost: 225,
+        cost: 1225,
         requiredQuantity:
           BUILDING_ACTIONS.create_forge.requiredMaterials.requiredQuantity,
       },
@@ -71,7 +72,7 @@ const BUILDING_CATEGORIES: BuildingCategory[] = [
         type: "mill",
         name: "Mill",
         description: "Processing grains and materials",
-        cost: 200,
+        cost: 1200,
         requiredQuantity:
           BUILDING_ACTIONS.create_mill.requiredMaterials.requiredQuantity,
       },
@@ -79,15 +80,16 @@ const BUILDING_CATEGORIES: BuildingCategory[] = [
         type: "electronics_fab",
         name: "Electronics Fab",
         description: "Advanced electronic manufacturing",
-        cost: 400,
+        cost: 1400,
         requiredQuantity:
-          BUILDING_ACTIONS.create_electronics_fab.requiredMaterials.requiredQuantity,
+          BUILDING_ACTIONS.create_electronics_fab.requiredMaterials
+            .requiredQuantity,
       },
       {
         type: "mine",
         name: "Mine",
         description: "Extract valuable resources",
-        cost: 275,
+        cost: 1275,
         requiredQuantity:
           BUILDING_ACTIONS.create_mine.requiredMaterials.requiredQuantity,
       },
@@ -101,7 +103,7 @@ const BUILDING_CATEGORIES: BuildingCategory[] = [
         type: "trading_post",
         name: "Trading Post",
         description: "Commerce hub for resource exchange",
-        cost: 200,
+        cost: 800,
         requiredQuantity:
           BUILDING_ACTIONS.create_trading_post.requiredMaterials
             .requiredQuantity,
@@ -110,7 +112,7 @@ const BUILDING_CATEGORIES: BuildingCategory[] = [
         type: "brewery",
         name: "Brewery",
         description: "Beverage production and social hub",
-        cost: 175,
+        cost: 675,
         requiredQuantity:
           BUILDING_ACTIONS.create_brewery.requiredMaterials.requiredQuantity,
       },
@@ -118,7 +120,7 @@ const BUILDING_CATEGORIES: BuildingCategory[] = [
         type: "bank",
         name: "Bank",
         description: "Secure storage for currency",
-        cost: 350,
+        cost: 950,
         requiredQuantity:
           BUILDING_ACTIONS.create_bank.requiredMaterials.requiredQuantity,
       },
@@ -132,7 +134,7 @@ const BUILDING_CATEGORIES: BuildingCategory[] = [
         type: "hospital",
         name: "Hospital",
         description: "Medical facility for healing",
-        cost: 300,
+        cost: 1300,
         requiredQuantity:
           BUILDING_ACTIONS.create_hospital.requiredMaterials.requiredQuantity,
       },
@@ -140,7 +142,7 @@ const BUILDING_CATEGORIES: BuildingCategory[] = [
         type: "library",
         name: "Library",
         description: "Knowledge storage and learning",
-        cost: 250,
+        cost: 750,
         requiredQuantity:
           BUILDING_ACTIONS.create_library.requiredMaterials.requiredQuantity,
       },
@@ -148,7 +150,7 @@ const BUILDING_CATEGORIES: BuildingCategory[] = [
         type: "lab",
         name: "Laboratory",
         description: "Scientific research facility",
-        cost: 325,
+        cost: 925,
         requiredQuantity:
           BUILDING_ACTIONS.create_lab.requiredMaterials.requiredQuantity,
       },
@@ -162,7 +164,7 @@ const BUILDING_CATEGORIES: BuildingCategory[] = [
         type: "stadium",
         name: "Stadium",
         description: "Sports and entertainment events",
-        cost: 600,
+        cost: 1600,
         requiredQuantity:
           BUILDING_ACTIONS.create_stadium.requiredMaterials.requiredQuantity,
       },
@@ -184,7 +186,7 @@ const BUILDING_CATEGORIES: BuildingCategory[] = [
         type: "greenhouse",
         name: "Greenhouse",
         description: "Controlled plant cultivation",
-        cost: 200,
+        cost: 400,
         requiredQuantity:
           BUILDING_ACTIONS.create_greenhouse.requiredMaterials.requiredQuantity,
       },
@@ -198,7 +200,7 @@ const BUILDING_CATEGORIES: BuildingCategory[] = [
         type: "settlement",
         name: "Settlement",
         description: "Establishes territory and provides protection",
-        cost: 400,
+        cost: 1500,
         requiredQuantity:
           BUILDING_ACTIONS.create_settlement.requiredMaterials.requiredQuantity,
       },
@@ -206,7 +208,7 @@ const BUILDING_CATEGORIES: BuildingCategory[] = [
         type: "armory",
         name: "Armory",
         description: "Weapon storage and training",
-        cost: 375,
+        cost: 775,
         requiredQuantity:
           BUILDING_ACTIONS.create_armory.requiredMaterials.requiredQuantity,
       },
