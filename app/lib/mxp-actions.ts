@@ -918,7 +918,11 @@ export class MXPActionSystem {
       );
       return {
         success: false,
-        message: `${animal.name} couldn't harvest this resource`,
+        message: `${
+          animal.name
+        } couldn't harvest this resource (quantity left: ${
+          resource ? resource.quantity : "N/A"
+        })`,
         duration: 2000,
       };
     }

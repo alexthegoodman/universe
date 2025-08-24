@@ -379,6 +379,10 @@ export default function Game() {
       const storedNationId = localStorage.getItem("universePlayerNation");
       if (storedNationId && nations.find((n) => n.id === storedNationId)) {
         setPlayerNationId(storedNationId);
+        // Notify GameManager about player nation selection
+        if (gameManagerRef.current) {
+          gameManagerRef.current.setPlayerNation(storedNationId);
+        }
       } else if (!playerNationId) {
         setShowNationSelection(true);
       }
@@ -651,6 +655,10 @@ export default function Game() {
     setShowNationSelection(false);
     // Store in localStorage for persistence
     localStorage.setItem("universePlayerNation", nationId);
+    // Notify GameManager about player nation selection
+    if (gameManagerRef.current) {
+      gameManagerRef.current.setPlayerNation(nationId);
+    }
   }, []);
 
   const handleGameLoaded = useCallback(

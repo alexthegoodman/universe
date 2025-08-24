@@ -414,6 +414,7 @@ export class GameManager {
   private websocketServer: any;
   public terrainGenerator: TerrainGenerator;
   private gameRunning: boolean = false;
+  private playerNationId: string | null = null;
 
   private getItemWeight(item: any): number {
     const baseWeight =
@@ -1420,8 +1421,11 @@ export class GameManager {
       const allBuildings = buildingSystem.getAllBuildings();
       const allNations = nationSystem.getAllNations();
 
-      // Process AI decisions for all nations
-      await nationAI.processAllNations(allNations, allAnimals, allBuildings);
+      // Filter out player nation from AI processing
+      const aiNations = allNations.filter(nation => nation.id !== this.playerNationId);
+
+      // Process AI decisions only for AI-controlled nations
+      await nationAI.processAllNations(aiNations, allAnimals, allBuildings);
 
       // Update world state
       this.worldState.nations = allNations;
@@ -1442,7 +1446,10 @@ export class GameManager {
       // Log periodic update (but not too spam-y)
       if (Math.random() < 0.3) {
         // Only log 30% of the time
-        this.addEvent("nation-ai", "Nations processed AI decisions");
+        const playerNationName = this.playerNationId 
+          ? allNations.find(n => n.id === this.playerNationId)?.name || this.playerNationId
+          : 'none';
+        this.addEvent("nation-ai", `AI processed decisions for ${aiNations.length} nations (player nation: ${playerNationName})`);
       }
     } catch (error) {
       console.error("Error in Nation AI processing:", error);
@@ -2036,6 +2043,17 @@ export class GameManager {
     radius: number = 25
   ): boolean {
     return nationSystem.createSettlement(nationId, building, radius);
+  }
+
+  // Set which nation is controlled by the player
+  setPlayerNation(nationId: string | null): void {
+    this.playerNationId = nationId;
+    console.log(`Player nation set to: ${nationId || 'none'}`);
+  }
+
+  // Get the current player nation ID
+  getPlayerNation(): string | null {
+    return this.playerNationId;
   }
 
   // Method to load game state from a save file
